@@ -1,0 +1,4 @@
+desktop-tracker/
+node_modules/
+.next/
+out/

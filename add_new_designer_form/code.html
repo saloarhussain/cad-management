@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "tertiary": "#fefffe",
+                    "background": "#161308",
+                    "on-secondary-fixed-variant": "#514700",
+                    "tertiary-container": "#00fbfe",
+                    "on-background": "#e9e2cf",
+                    "on-secondary": "#383100",
+                    "secondary-fixed": "#f4e48c",
+                    "on-secondary-container": "#cbbd6a",
+                    "primary-container": "#ffe30c",
+                    "secondary": "#d7c773",
+                    "primary-fixed-dim": "#e0c700",
+                    "surface-container-highest": "#383528",
+                    "tertiary-fixed-dim": "#00dcdf",
+                    "on-error": "#690005",
+                    "secondary-container": "#564c00",
+                    "on-error-container": "#ffdad6",
+                    "on-primary-container": "#726500",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#383528",
+                    "inverse-surface": "#e9e2cf",
+                    "inverse-primary": "#6b5f00",
+                    "secondary-fixed-dim": "#d7c773",
+                    "on-tertiary": "#003738",
+                    "on-primary-fixed": "#201c00",
+                    "primary-fixed": "#ffe311",
+                    "surface": "#161308",
+                    "outline": "#979177",
+                    "surface-container": "#222014",
+                    "outline-variant": "#4b4732",
+                    "on-tertiary-fixed-variant": "#004f50",
+                    "on-primary-fixed-variant": "#514700",
+                    "on-tertiary-fixed": "#002020",
+                    "on-primary": "#383100",
+                    "surface-container-low": "#1e1c10",
+                    "primary": "#ffffff",
+                    "surface-bright": "#3c392c",
+                    "surface-container-lowest": "#100e05",
+                    "on-surface-variant": "#cec7ab",
+                    "on-secondary-fixed": "#201c00",
+                    "error-container": "#93000a",
+                    "tertiary-fixed": "#02fbfe",
+                    "surface-tint": "#e0c700",
+                    "surface-container-high": "#2d2a1d",
+                    "on-tertiary-container": "#007071",
+                    "inverse-on-surface": "#333024",
+                    "surface-dim": "#161308",
+                    "on-surface": "#e9e2cf"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Plus Jakarta Sans"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .prism-gradient {
+            background: linear-gradient(45deg, #fce003 0%, #84782d 50%, #00fbfe 100%);
+        }
+        .kinetic-glow:focus-within {
+            box-shadow: 0 0 15px rgba(252, 224, 3, 0.25);
+            border-color: #fce003;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col items-center">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-[#7b7767]/80 backdrop-blur-xl dark:bg-[#1a1a1a]/80 shadow-[0_0_15px_rgba(252,224,3,0.12)]">
+<div class="flex justify-between items-center w-full px-6 py-4 max-w-full">
+<div class="flex items-center gap-4">
+<button class="text-[#fce003] active:scale-95 duration-200 hover:bg-[#fce003]/10 p-2 rounded-lg">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-xl text-[#fce003]">New Designer</h1>
+</div>
+<button class="text-[#fce003] font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-sm active:scale-95 duration-200">
+                SAVE DESIGNER
+            </button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="w-full max-w-md px-6 pt-24 pb-32 flex-grow">
+<!-- Identity Header -->
+<div class="mb-8">
+<p class="font-['Inter'] text-[10px] uppercase font-bold tracking-[0.2em] text-on-surface-variant mb-2">Onboarding Flow</p>
+<h2 class="font-['Plus_Jakarta_Sans'] text-3xl font-extrabold tracking-tighter text-on-background">Onboard New Designer</h2>
+<div class="h-1 w-12 prism-gradient mt-4 rounded-full"></div>
+</div>
+<!-- Form Section -->
+<div class="space-y-6">
+<!-- Full Name -->
+<div class="group">
+<label class="block font-['Inter'] text-xs font-medium tracking-wide text-on-surface-variant mb-2 uppercase">Full Name</label>
+<div class="relative bg-surface-container-lowest rounded-lg kinetic-glow border border-outline-variant transition-all duration-300">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-background px-4 py-3 placeholder:text-outline/50" placeholder="e.g. Julian Vesta" type="text"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-outline">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+</div>
+</div>
+<!-- Specialty -->
+<div class="group">
+<label class="block font-['Inter'] text-xs font-medium tracking-wide text-on-surface-variant mb-2 uppercase">Specialty</label>
+<div class="relative bg-surface-container-lowest rounded-lg kinetic-glow border border-outline-variant transition-all duration-300">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-background pl-4 pr-20 py-3 placeholder:text-outline/50" placeholder="e.g. CAD Designer" type="text"/>
+<div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-outline">workspace_premium</span>
+<button class="bg-[#fce003] w-8 h-8 rounded flex items-center justify-center text-on-primary-fixed shadow-lg active:scale-95 transition-transform">
+<span class="material-symbols-outlined font-bold text-lg">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contact Row -->
+<div class="grid grid-cols-1 gap-6">
+<!-- Email -->
+<div class="group">
+<label class="block font-['Inter'] text-xs font-medium tracking-wide text-on-surface-variant mb-2 uppercase">Email Address</label>
+<div class="relative bg-surface-container-lowest rounded-lg kinetic-glow border border-outline-variant transition-all duration-300">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-background px-4 py-3 placeholder:text-outline/50" placeholder="julian@cadportal.com" type="email"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-outline">
+<span class="material-symbols-outlined text-sm">mail</span>
+</div>
+</div>
+</div>
+<!-- Mobile Number -->
+<div class="group">
+<label class="block font-['Inter'] text-xs font-medium tracking-wide text-on-surface-variant mb-2 uppercase">Mobile Number</label>
+<div class="relative bg-surface-container-lowest rounded-lg kinetic-glow border border-outline-variant transition-all duration-300">
+<input class="w-full bg-transparent border-none focus:ring-0 text-on-background px-4 py-3 placeholder:text-outline/50" placeholder="+1 (555) 000-0000" type="tel"/>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 text-outline">
+<span class="material-symbols-outlined text-sm">call</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Country Dropdown -->
+<div class="group">
+<label class="block font-['Inter'] text-xs font-medium tracking-wide text-on-surface-variant mb-2 uppercase">Country</label>
+<div class="relative bg-surface-container-lowest rounded-lg kinetic-glow border border-outline-variant transition-all duration-300">
+<select class="w-full bg-transparent border-none focus:ring-0 text-on-background px-4 py-3 appearance-none">
+<option value="us">United States</option>
+<option value="uk">United Kingdom</option>
+<option value="ch">Switzerland</option>
+<option value="it">Italy</option>
+<option value="jp">Japan</option>
+</select>
+<div class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+<div class="w-5 h-3 bg-gradient-to-br from-blue-600 via-white to-red-600 rounded-[1px]"></div>
+<span class="material-symbols-outlined text-outline text-sm">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Designer Preview Card (Asymmetric Layout Example) -->
+<div class="mt-10 p-[1.5px] rounded-xl prism-gradient opacity-80">
+<div class="bg-surface-container rounded-[11px] p-5 flex gap-4 items-center">
+<div class="relative">
+<img alt="Designer Profile" class="w-16 h-16 rounded-lg object-cover grayscale contrast-125" data-alt="Modern close-up portrait of a creative designer in a dark studio setting with soft cyan rim lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBY99fykefL0X3Ul13l1FY8pmDVbCc865QL1Dup0EIPhXvk76Lf0SkKoXOfMAKaPLyLVTGywnvKPK9rjgTo_zxealq3BEIKdhq09mJ-_5egSR7OB_yG3xe-AO3VpM84pIdlyxvnmxjs9L_i0q5cfaz0XlkV1ouofM2wjwT9z4535zXtKnITf8StIo6LAXBZmfr72oYe_jEpRr7B0Zn-Fln5M_oYhmqVZVoER2cW8ZK0IGZjmpoEyWCpXvcqVngslx-GfIczeRP1LDA"/>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-primary-container rounded-full border-2 border-surface flex items-center justify-center">
+<div class="w-1.5 h-1.5 bg-on-primary-container rounded-full animate-pulse"></div>
+</div>
+</div>
+<div class="flex-1">
+<h4 class="font-['Plus_Jakarta_Sans'] font-bold text-on-background leading-tight">Visualizing Profile...</h4>
+<p class="font-['Inter'] text-xs text-on-surface-variant mt-1">Data encrypting to Vault</p>
+</div>
+<span class="material-symbols-outlined text-[#00fbfe] text-xl">shield</span>
+</div>
+</div>
+</main>
+<!-- Bottom Action Button Container -->
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background/90 to-transparent">
+<button class="w-full py-4 rounded-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-transform shadow-[0_0_20px_rgba(252,224,3,0.3)] bg-gradient-to-r from-[#fce003] via-[#ff8c00] to-[#ff0000]">
+<span class="font-['Plus_Jakarta_Sans'] font-black tracking-widest text-white text-sm">SAVE DESIGNER</span>
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+<!-- Bottom Navigation (Shared Component Style) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-16 lg:hidden bg-[#7b7767]/90 backdrop-blur-2xl dark:bg-[#1a1a1a]/90 shadow-[0_-4px_20px_rgba(0,0,0,0.4)] translate-y-16 pointer-events-none opacity-0">
+<!-- Suppressed as per "The Destination Rule" for Transactional Task Page -->
+</nav>
+</body></html>

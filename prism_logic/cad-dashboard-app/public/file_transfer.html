@@ -1,0 +1,1994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    
+    <!-- Primary SEO Title (Optimized for "file transfer", "secure file transfer", "CAD file transfer") -->
+    <title>Secure File Transfer | Share Large CAD & 3D Files - Prism Logic</title>
+    
+    <!-- High-Performance SEO Meta Tags -->
+    <meta name="description" content="Send large CAD models, STL 3D prints, and design files securely. Fast, end-to-end encrypted file transfer with password protection and self-destruct timers. Try it now." />
+    <meta name="keywords" content="file transfer, secure file share, send large files, CAD file transfer, STL file upload, 3DM sharing, encrypted transfer, jewellery design share" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph (Social Media Card Integration) -->
+    <meta property="og:title" content="Secure File Transfer | Share Large CAD & 3D Files - Prism Logic" />
+    <meta property="og:description" content="Fast, encrypted file transfer built for designers and engineers. Share STL, 3DM, and high-res renders safely with custom expiration times." />
+    <meta property="og:image" content="https://cadonce.com/jewelry_cad_masterpiece.png" />
+    <meta property="og:url" content="https://cadonce.com/file_transfer.html" />
+    <meta property="og:type" content="website" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Secure File Transfer | Share Large CAD & 3D Files" />
+    <meta name="twitter:description" content="Fast, encrypted file transfer built for designers. Send heavy CAD files securely with password shielding." />
+    <meta name="twitter:image" content="https://cadonce.com/jewelry_cad_masterpiece.png" />
+
+    <!-- Modern Typography & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!-- Premium Vanilla CSS Styling -->
+    <style>
+        :root {
+            --bg-color: #100e05;
+            --surface-color: #161308;
+            --surface-card: #1e1c10;
+            --surface-hover: #2d2a1d;
+            --surface-input: #0f0e05;
+            --primary: #ffffff;
+            --accent-yellow: #fce003;
+            --accent-cyan: #00fbfe;
+            --accent-gold: #d7c773;
+            --text-primary: #e9e2cf;
+            --text-secondary: #cec7ab;
+            --text-muted: #979177;
+            --border-color: rgba(151, 145, 119, 0.15);
+            --border-hover: rgba(0, 251, 254, 0.3);
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glow-cyan: 0 0 20px rgba(0, 251, 254, 0.2);
+            --glow-yellow: 0 0 20px rgba(252, 224, 3, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(252, 224, 3, 0.02) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 251, 254, 0.03) 0%, transparent 40%);
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: var(--primary);
+            font-weight: 800;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: var(--transition-smooth);
+        }
+
+        /* --- Header Navigation --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: rgba(22, 19, 8, 0.8);
+            backdrop-filter: blur(16px);
+            border-b: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8%;
+            z-index: 1000;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--bg-color);
+            box-shadow: 0 0 15px rgba(252, 224, 3, 0.3);
+        }
+
+        .logo-text {
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            color: var(--accent-yellow);
+            text-shadow: 0 0 8px rgba(252, 224, 3, 0.3);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 10px rgba(0, 251, 254, 0.2);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--accent-yellow);
+            color: var(--accent-yellow);
+            padding: 10px 22px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-yellow);
+            color: var(--bg-color);
+            box-shadow: var(--glow-yellow);
+            transform: translateY(-2px);
+        }
+
+        /* --- Hero/Introduction Section --- */
+        .main-wrapper {
+            margin-top: 140px;
+            padding: 0 8% 80px 8%;
+            max-width: 1400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-section {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 60px auto;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 251, 254, 0.08);
+            border: 1px solid rgba(0, 251, 254, 0.25);
+            padding: 6px 16px;
+            border-radius: 100px;
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 24px;
+        }
+
+        .hero-badge span.pulse {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            line-height: 1.15;
+            letter-spacing: -2px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--primary) 30%, var(--accent-gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* --- Interactive Hub Grid --- */
+        .workspace-grid {
+            display: grid;
+            grid-template-cols: 1.8fr 1.2fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .glass-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-smooth);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-yellow), var(--accent-cyan));
+            opacity: 0.7;
+        }
+
+        .card-header {
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .card-accent-bar {
+            width: 6px;
+            height: 28px;
+            background: var(--accent-cyan);
+            border-radius: 3px;
+            box-shadow: var(--glow-cyan);
+        }
+
+        .card-header h3 {
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        /* --- Interactive Uploader Drag and Drop --- */
+        .dropzone {
+            border: 2px dashed rgba(151, 145, 119, 0.3);
+            background: var(--surface-input);
+            border-radius: 18px;
+            padding: 50px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-col: column;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            position: relative;
+        }
+
+        .dropzone:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 251, 254, 0.02);
+            box-shadow: 0 0 20px rgba(0, 251, 254, 0.05);
+        }
+
+        .dropzone-icon {
+            font-size: 3.5rem;
+            color: var(--text-muted);
+            transition: var(--transition-smooth);
+        }
+
+        .dropzone:hover .dropzone-icon {
+            color: var(--accent-cyan);
+            transform: scale(1.1);
+        }
+
+        .dropzone-text-main {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1.05rem;
+        }
+
+        .dropzone-text-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .browse-btn {
+            background: var(--surface-hover);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .browse-btn:hover {
+            background: var(--text-muted);
+            color: var(--bg-color);
+        }
+
+        /* --- Selected Files UI --- */
+        .file-list {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .file-item {
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .file-icon {
+            color: var(--accent-gold);
+            font-size: 2rem;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .file-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--primary);
+            word-break: break-all;
+        }
+
+        .file-size {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .remove-file {
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            font-size: 1.25rem;
+        }
+
+        .remove-file:hover {
+            color: #ffb4ab;
+        }
+
+        /* --- Settings Panel Inside Form --- */
+        .settings-grid {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .form-select, .form-input {
+            width: 100%;
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: var(--transition-smooth);
+        }
+
+        .form-select:focus, .form-input:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 251, 254, 0.1);
+        }
+
+        .security-toggle {
+            grid-column: span 2;
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .toggle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toggle-label-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toggle-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .toggle-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Standard Toggle Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--surface-hover);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid var(--border-color);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--text-secondary);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+            background-color: var(--bg-color);
+        }
+
+        .password-wrapper {
+            position: relative;
+            animation: slideDown 0.3s ease;
+        }
+
+        .password-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .password-wrapper .form-input {
+            padding-left: 40px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            margin-top: 30px;
+            border-t: 1px solid var(--border-color);
+            padding-top: 24px;
+        }
+
+        .reset-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .reset-btn:hover {
+            border-color: var(--text-muted);
+            color: var(--primary);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-cyan));
+            color: var(--bg-color);
+            border: none;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 14px 32px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--glow-yellow);
+            transition: var(--transition-smooth);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .submit-btn:hover {
+            box-shadow: 0 0 30px rgba(0, 251, 254, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* --- Progress & Result Panels --- */
+        .progress-card {
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .progress-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .progress-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .progress-percentage {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            font-size: 1.1rem;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 6px;
+            background: var(--surface-hover);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-yellow), var(--accent-cyan));
+            width: 0%;
+            border-radius: 100px;
+            transition: width 0.1s linear;
+        }
+
+        .result-card {
+            background: var(--surface-input);
+            border: 1px solid var(--accent-cyan);
+            border-radius: 16px;
+            padding: 24px;
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: var(--glow-cyan);
+            animation: pulse-border 2s infinite;
+        }
+
+        .result-title {
+            font-size: 1rem;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .link-copy-wrapper {
+            display: flex;
+            gap: 12px;
+        }
+
+        .share-link-input {
+            flex-grow: 1;
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            color: var(--primary);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            outline: none;
+            cursor: text;
+        }
+
+        .copy-btn {
+            background: var(--accent-cyan);
+            color: var(--bg-color);
+            border: none;
+            padding: 0 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            box-shadow: var(--glow-cyan);
+            transform: scale(1.02);
+        }
+
+        /* --- Sidebar Blueprint Accordion --- */
+        .util-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .stats-box {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .stat-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .stat-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .stat-bar-track {
+            height: 6px;
+            width: 100%;
+            background: var(--surface-hover);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-yellow));
+            width: 5%;
+            border-radius: 10px;
+        }
+
+        .stat-details-grid {
+            display: grid;
+            grid-template-cols: 1fr 1fr;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .stat-card {
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-card-title {
+            font-size: 0.65rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-cyan);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .accordion-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .accordion-item {
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px 20px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .accordion-item:hover {
+            border-color: var(--border-hover);
+        }
+
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .accordion-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .accordion-title-wrap .icon-gold {
+            color: var(--accent-gold);
+            font-size: 1.15rem;
+        }
+
+        .accordion-title-wrap .icon-cyan {
+            color: var(--accent-cyan);
+            font-size: 1.15rem;
+        }
+
+        .accordion-icon {
+            font-size: 1.25rem;
+            color: var(--text-muted);
+            transition: transform 0.3s ease;
+        }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0, 1, 0, 1);
+            font-size: 0.75rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-top: 0;
+        }
+
+        .accordion-item.active .accordion-icon {
+            transform: rotate(180deg);
+            color: var(--accent-cyan);
+        }
+
+        .accordion-item.active .accordion-body {
+            max-height: 200px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-t: 1px solid rgba(151, 145, 119, 0.05);
+            transition: max-height 0.3s cubic-bezier(1, 0, 1, 0);
+        }
+
+        /* --- Key Features Grid --- */
+        .features-section {
+            margin-top: 100px;
+            margin-bottom: 80px;
+        }
+
+        .section-title-wrap {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        .section-title-wrap h2 {
+            font-size: 2.25rem;
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .section-title-wrap p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-cols: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px 24px;
+            transition: var(--transition-smooth);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .feature-icon-box {
+            width: 48px;
+            height: 48px;
+            background: var(--surface-input);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-cyan);
+            transition: var(--transition-smooth);
+        }
+
+        .feature-card:hover .feature-icon-box {
+            color: var(--bg-color);
+            background: var(--accent-cyan);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .feature-icon-box span {
+            font-size: 1.5rem;
+        }
+
+        .feature-title {
+            font-size: 1.1rem;
+            letter-spacing: -0.2px;
+        }
+
+        .feature-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* --- Interactive Local Share History --- */
+        .history-section {
+            margin-bottom: 80px;
+        }
+
+        .table-card {
+            background: var(--surface-card);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .table-header {
+            padding: 24px 32px;
+            border-b: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h4 {
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .table-header .accent-circle {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: var(--glow-cyan);
+            animation: pulse-ring 1.5s infinite;
+        }
+
+        .table-badge {
+            background: var(--surface-hover);
+            border: 1px solid var(--border-color);
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: rgba(45, 42, 29, 0.2);
+            padding: 16px 32px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            border-b: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 20px 32px;
+            border-b: 1px solid var(--border-color);
+            vertical-align: middle;
+            color: var(--text-secondary);
+        }
+
+        tr:last-child td {
+            border-b: none;
+        }
+
+        tr:hover td {
+            background: rgba(255,255,255,0.01);
+        }
+
+        .share-details-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .share-cell-name {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .share-cell-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .security-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .security-badge.encrypted {
+            background: rgba(0, 251, 254, 0.08);
+            border: 1px solid rgba(0, 251, 254, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        .security-badge.password {
+            background: rgba(252, 224, 3, 0.08);
+            border: 1px solid rgba(252, 224, 3, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-pill.active {
+            background: rgba(0, 251, 254, 0.1);
+            color: var(--accent-cyan);
+        }
+
+        .status-pill.expired {
+            background: rgba(255, 180, 171, 0.1);
+            color: #ffb4ab;
+        }
+
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            color: var(--text-muted);
+        }
+
+        .empty-text {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* --- Footer --- */
+        footer {
+            border-t: 1px solid var(--border-color);
+            background: var(--surface-color);
+            padding: 60px 8% 40px 8%;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-cols: 1.5fr 1fr 1fr;
+            gap: 40px;
+            max-width: 1400px;
+            margin: 0 auto 40px auto;
+        }
+
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .footer-brand p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            max-width: 320px;
+            line-height: 1.7;
+        }
+
+        .footer-col-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--primary);
+            margin-bottom: 24px;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.85rem;
+        }
+
+        .footer-link {
+            color: var(--text-secondary);
+        }
+
+        .footer-link:hover {
+            color: var(--accent-cyan);
+            padding-left: 4px;
+        }
+
+        .footer-bottom {
+            max-width: 1400px;
+            margin: 0 auto;
+            border-t: 1px solid var(--border-color);
+            padding-top: 30px;
+            border-top: 1px solid rgba(151, 145, 119, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .footer-legal {
+            display: flex;
+            gap: 24px;
+        }
+
+        /* --- Animations --- */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 251, 254, 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 251, 254, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 251, 254, 0);
+            }
+        }
+
+        @keyframes pulse-border {
+            0% {
+                border-color: rgba(0, 251, 254, 0.4);
+            }
+            50% {
+                border-color: rgba(0, 251, 254, 1);
+                box-shadow: 0 0 15px rgba(0, 251, 254, 0.15);
+            }
+            100% {
+                border-color: rgba(0, 251, 254, 0.4);
+            }
+        }
+
+        /* --- Responsive Styles --- */
+        @media (max-width: 1024px) {
+            .workspace-grid {
+                grid-template-cols: 1fr;
+            }
+            .features-grid {
+                grid-template-cols: repeat(2, 1fr);
+            }
+            .hero-title {
+                font-size: 2.75rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 0 5%;
+            }
+            .nav-links {
+                display: none;
+            }
+            .main-wrapper {
+                padding: 0 5% 60px 5%;
+                margin-top: 110px;
+            }
+            .hero-title {
+                font-size: 2.25rem;
+            }
+            .features-grid {
+                grid-template-cols: 1fr;
+            }
+            .settings-grid {
+                grid-template-cols: 1fr;
+            }
+            .security-toggle {
+                grid-column: span 1;
+            }
+            .footer-grid {
+                grid-template-cols: 1fr;
+                gap: 30px;
+            }
+            .footer-bottom {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">diamond</span>
+            </div>
+            <h1 class="logo-text">Prism Logic</h1>
+        </div>
+        <nav class="nav-links">
+            <a class="nav-link" href="index.html">Dashboard</a>
+            <a class="nav-link active" href="file_transfer.html">File Transfer</a>
+            <a class="nav-link" href="#features">Security Features</a>
+            <a class="nav-link" href="#history">Transfer History</a>
+        </nav>
+        <button class="nav-btn" onclick="window.location.href='index.html'">Admin Portal</button>
+    </header>
+
+    <!-- Main Workspace Wrapper -->
+    <main class="main-wrapper">
+        
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-badge">
+                <span class="pulse"></span>
+                <span>Military-Grade AES-256 Enabled</span>
+            </div>
+            <h2 class="hero-title">Secure CAD &amp; 3D File Transfer</h2>
+            <p class="hero-desc">Securely share heavy Rhinoceros (.3dm), 3D print (.stl) models, and photorealistic jewel renders. Safe, encrypted, and built for elite design houses.</p>
+        </section>
+
+        <!-- Interactive Grid Hub -->
+        <div class="workspace-grid">
+            
+            <!-- Secure Uploader Card -->
+            <section class="glass-card">
+                <div class="card-header">
+                    <div class="card-accent-bar"></div>
+                    <h3>Start New Encrypted Transfer</h3>
+                </div>
+                
+                <form id="public-upload-form" onsubmit="handleFormSubmit(event)">
+                    <!-- Drag and Drop Zone -->
+                    <div class="dropzone" id="drag-drop-zone">
+                        <input type="file" id="file-input" class="hidden" multiple onchange="handleFileSelection(event)" />
+                        <span class="material-symbols-outlined dropzone-icon">cloud_upload</span>
+                        <div>
+                            <p class="dropzone-text-main">Drag &amp; drop design files here</p>
+                            <p class="dropzone-text-sub">Supports 3DM, STL, OBJ, ZIP, PNG, and PDF (Max 2.0 GB per transfer)</p>
+                        </div>
+                        <button type="button" class="browse-btn" onclick="document.getElementById('file-input').click()">Browse Files</button>
+                    </div>
+
+                    <!-- File List Display Container -->
+                    <div class="file-list" id="files-list-container">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+
+                    <!-- Simulated Uploading State Card -->
+                    <div class="progress-card" id="upload-progress-card" style="display: none;">
+                        <div class="progress-details">
+                            <div class="progress-text">
+                                <span class="material-symbols-outlined text-accent-cyan animate-spin" style="color: var(--accent-cyan);">sync</span>
+                                <div>
+                                    <h4 class="file-name" id="upload-current-file">Uploading model_design.3dm...</h4>
+                                    <p class="progress-meta" id="upload-time-meta">Remaining: -- | Speed: --</p>
+                                </div>
+                            </div>
+                            <span class="progress-percentage" id="progress-percentage-label">0%</span>
+                        </div>
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progress-fill-bar"></div>
+                        </div>
+                    </div>
+
+                    <!-- Completed Link Share Result Card -->
+                    <div class="result-card" id="upload-result-card" style="display: none;">
+                        <h4 class="result-title">
+                            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            Secure Link Generated Successfully!
+                        </h4>
+                        <p class="dropzone-text-sub" style="margin-top: -8px;">Provide this encrypted download link to your casting house or retail customer.</p>
+                        <div class="link-copy-wrapper">
+                            <input type="text" class="share-link-input" id="share-link-url" readonly value="https://cadonce.com/share?id=pr-7a2e9b" />
+                            <button type="button" class="copy-btn" id="btn-copy-link" onclick="copyShareLink()">
+                                <span class="material-symbols-outlined" style="font-size: 1.1rem;">content_copy</span>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Form Settings & Metadata -->
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="transfer-recipient">Client Recipient</label>
+                            <select class="form-select" id="transfer-recipient">
+                                <option value="General Link">No Client (Generate General Share Link)</option>
+                                <option value="Alexander Sterling">Alexander Sterling (Sterling Jewelers)</option>
+                                <option value="Sophia Laurent">Sophia Laurent (Laurent Designs)</option>
+                                <option value="Vance Casting House">Vance Casting House (NYC)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="transfer-expiry">Expiration Timer</label>
+                            <select class="form-select" id="transfer-expiry">
+                                <option value="1h">1 Hour (Highly Confidential)</option>
+                                <option value="1d">1 Day (Quick Review)</option>
+                                <option value="7d" selected>7 Days (Standard)</option>
+                                <option value="30d">30 Days (Extended)</option>
+                            </select>
+                        </div>
+
+                        <!-- Security Shield / Password protection -->
+                        <div class="security-toggle">
+                            <div class="toggle-header">
+                                <div class="toggle-label-wrap">
+                                    <span class="material-symbols-outlined" style="color: var(--accent-gold);">key</span>
+                                    <div>
+                                        <div class="toggle-title">Enable Password Shield</div>
+                                        <div class="toggle-desc">Requires recipient to input a unique passcode to unlock files</div>
+                                    </div>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="password-toggle" onchange="togglePasswordInput(event)" />
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="password-wrapper" id="password-input-container" style="display: none;">
+                                <span class="material-symbols-outlined password-icon">lock</span>
+                                <input type="password" class="form-input" id="passcode-input" placeholder="Create a secure passcode..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" onclick="resetForm()">Reset Form</button>
+                        <button type="submit" class="submit-btn" id="btn-submit-transfer">
+                            <span class="material-symbols-outlined" style="font-weight: bold;">link</span>
+                            <span>Generate Encrypted Link</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Blueprint FAQ & Analytics (Sidebar) -->
+            <aside class="util-wrapper">
+                
+                <!-- Cloud Storage Analytics -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-accent-bar" style="background: var(--accent-yellow); box-shadow: var(--glow-yellow);"></div>
+                        <h3>Transfer Hub Analytics</h3>
+                    </div>
+                    <div class="stats-box">
+                        <div class="stat-bar-container">
+                            <div class="stat-bar-label">
+                                <span>Confidential Cloud Storage Space</span>
+                                <strong id="storage-numerical-label">2.4 GB / 50 GB</strong>
+                            </div>
+                            <div class="stat-bar-track">
+                                <div class="stat-bar-fill" id="storage-percentage-bar" style="width: 4.8%;"></div>
+                            </div>
+                        </div>
+                        <div class="stat-details-grid">
+                            <div class="stat-card">
+                                <div class="stat-card-title">Active Links</div>
+                                <div class="stat-card-value" id="stats-active-links">3</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-card-title">Downloads</div>
+                                <div class="stat-card-value" id="stats-clicks">48</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utilization Blueprint Accordion -->
+                <div class="glass-card">
+                    <div class="card-header">
+                        <div class="card-accent-bar"></div>
+                        <h3>Utilization Blueprint</h3>
+                    </div>
+                    <div class="accordion-list">
+                        <!-- Accordion item 1 -->
+                        <div class="accordion-item" onclick="toggleAccordion(this)">
+                            <div class="accordion-header">
+                                <div class="accordion-title-wrap">
+                                    <span class="material-symbols-outlined icon-gold">diamond</span>
+                                    <span>1. Heavy CAD Sharing</span>
+                                </div>
+                                <span class="material-symbols-outlined accordion-icon">expand_more</span>
+                            </div>
+                            <div class="accordion-body">
+                                Rhinoceros 3D design files (.3dm) and SLA/DLP printing meshes (.stl) easily surpass email size limits. Drop them here, secure them, and send a high-speed download link instantly.
+                            </div>
+                        </div>
+
+                        <!-- Accordion item 2 -->
+                        <div class="accordion-item" onclick="toggleAccordion(this)">
+                            <div class="accordion-header">
+                                <div class="accordion-title-wrap">
+                                    <span class="material-symbols-outlined icon-cyan">security</span>
+                                    <span>2. Safe Ring Casting</span>
+                                </div>
+                                <span class="material-symbols-outlined accordion-icon">expand_more</span>
+                            </div>
+                            <div class="accordion-body">
+                                Lock custom, high-end retail designs using the Password Shield feature before sharing. This protects copyright files from being printed or duplicated prior to formal invoice clearances.
+                            </div>
+                        </div>
+
+                        <!-- Accordion item 3 -->
+                        <div class="accordion-item" onclick="toggleAccordion(this)">
+                            <div class="accordion-header">
+                                <div class="accordion-title-wrap">
+                                    <span class="material-symbols-outlined icon-gold">hourglass_bottom</span>
+                                    <span>3. Expiration Purges</span>
+                                </div>
+                                <span class="material-symbols-outlined accordion-icon">expand_more</span>
+                            </div>
+                            <div class="accordion-body">
+                                Choose standard 7-day expiration or highly confidential 1-hour purging options. Once the countdown expires, files are automatically destroyed from cloud storage servers permanently.
+                            </div>
+                        </div>
+
+                        <!-- Accordion item 4 -->
+                        <div class="accordion-item" onclick="toggleAccordion(this)">
+                            <div class="accordion-header">
+                                <div class="accordion-title-wrap">
+                                    <span class="material-symbols-outlined icon-cyan">receipt_long</span>
+                                    <span>4. Verified Download Logs</span>
+                                </div>
+                                <span class="material-symbols-outlined accordion-icon">expand_more</span>
+                            </div>
+                            <div class="accordion-body">
+                                Keep track of every single file click directly inside your history ledger. Know the exact moment a print house or artisan has fetched the files to guarantee production is active.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </aside>
+        </div>
+
+        <!-- Interactive Secure Share History Table -->
+        <section class="history-section" id="history" style="margin-top: 60px;">
+            <div class="table-card">
+                <div class="table-header">
+                    <h4>
+                        <span class="accent-circle"></span>
+                        Active Encrypted Transfers History
+                    </h4>
+                    <div class="table-badge">Cloud-Linked Ledger</div>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Share Details</th>
+                                <th>Client Recipient</th>
+                                <th>Expiry Countdown</th>
+                                <th>Security</th>
+                                <th>Verified Clicks</th>
+                                <th>Download Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <!-- Dynamic items injected here. Default mock rows provided initially. -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">diamond</span>
+                    </div>
+                    <span class="logo-text">Prism Logic</span>
+                </div>
+                <p>Enterprise CAD Asset Infrastructure &amp; Secure Jewellery Production Management. Encrypted, monitored, and optimized for global 3D casting operations.</p>
+            </div>
+            <div>
+                <h4 class="footer-col-title">File Security</h4>
+                <div class="footer-links">
+                    <a class="footer-link" href="#features">AES-256 Encryption</a>
+                    <a class="footer-link" href="#features">Password Protection Shield</a>
+                    <a class="footer-link" href="#features">Zero-Knowledge Storage</a>
+                    <a class="footer-link" href="#features">Auto-purging Protocols</a>
+                </div>
+            </div>
+            <div>
+                <h4 class="footer-col-title">Quick Actions</h4>
+                <div class="footer-links">
+                    <a class="footer-link" href="index.html">Admin Dashboard</a>
+                    <a class="footer-link" href="file_transfer.html">Public Transfer Portal</a>
+                    <a class="footer-link" href="index.html">Client Database</a>
+                    <a class="footer-link" href="index.html">CAD Task Queue</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Prism Logic. All rights reserved. Globally synchronized.</p>
+            <div class="footer-legal">
+                <a href="#privacy">Privacy Safeguard</a>
+                <a href="#terms">Usage Blueprint Terms</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive JS Program -->
+    <script>
+        // Track currently selected files
+        let selectedFiles = [];
+        let uploadInProgress = false;
+
+        // Default mock database for the history log (Stored in localStorage or initial arrays)
+        let transfersDatabase = [
+            {
+                id: "pr-4f9e1a",
+                name: "engagement_ring_emerald_v2.3dm",
+                size: "42.8 MB",
+                recipient: "Alexander Sterling",
+                expiry: "6 days remaining",
+                security: "AES-256",
+                clicks: 14,
+                status: "Active"
+            },
+            {
+                id: "pr-9x2b8c",
+                name: "gold_pendant_mesh_print.stl",
+                size: "18.5 MB",
+                recipient: "Vance Casting House",
+                expiry: "2 days remaining",
+                security: "AES-256 + Password",
+                clicks: 8,
+                status: "Active"
+            },
+            {
+                id: "pr-1z7v3m",
+                name: "high_res_diamond_earrings_render.png",
+                size: "12.4 MB",
+                recipient: "Sophia Laurent",
+                expiry: "Expired",
+                security: "AES-256",
+                clicks: 26,
+                status: "Expired"
+            }
+        ];
+
+        // On document load, draw the history table
+        window.addEventListener('DOMContentLoaded', () => {
+            // Restore from localStorage if present
+            const stored = localStorage.getItem('prism_public_transfers');
+            if (stored) {
+                transfersDatabase = JSON.parse(stored);
+            } else {
+                localStorage.setItem('prism_public_transfers', JSON.stringify(transfersDatabase));
+            }
+            renderHistoryTable();
+            updateAnalyticsSummary();
+
+            // Set up Drag and Drop event listeners
+            const dropzone = document.getElementById('drag-drop-zone');
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = 'var(--accent-cyan)';
+                    dropzone.style.background = 'rgba(0, 251, 254, 0.05)';
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    dropzone.style.borderColor = 'rgba(151, 145, 119, 0.3)';
+                    dropzone.style.background = 'var(--surface-input)';
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleSelectedFilesList(files);
+            });
+        });
+
+        // Toggle Password Input UI
+        function togglePasswordInput(e) {
+            const inputContainer = document.getElementById('password-input-container');
+            if (e.target.checked) {
+                inputContainer.style.display = 'block';
+                document.getElementById('passcode-input').focus();
+            } else {
+                inputContainer.style.display = 'none';
+                document.getElementById('passcode-input').value = '';
+            }
+        }
+
+        // Toggle Accordion functionality
+        function toggleAccordion(element) {
+            // Toggle active class on clicked item
+            const isActive = element.classList.contains('active');
+            
+            // Close all items
+            const allItems = document.querySelectorAll('.accordion-item');
+            allItems.forEach(item => item.classList.remove('active'));
+
+            if (!isActive) {
+                element.classList.add('active');
+            }
+        }
+
+        // Handle browse file selection
+        function handleFileSelection(e) {
+            handleSelectedFilesList(e.target.files);
+        }
+
+        // Process files array
+        function handleSelectedFilesList(filesList) {
+            if (uploadInProgress) return;
+
+            for (let i = 0; i < filesList.length; i++) {
+                const file = filesList[i];
+                // Check if file already exists in selected files
+                if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    selectedFiles.push(file);
+                }
+            }
+            renderFileList();
+        }
+
+        // Display selected files
+        function renderFileList() {
+            const container = document.getElementById('files-list-container');
+            container.innerHTML = '';
+            
+            if (selectedFiles.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+
+            container.style.display = 'flex';
+            
+            selectedFiles.forEach((file, index) => {
+                const item = document.createElement('div');
+                item.className = 'file-item';
+                
+                const displaySize = formatBytes(file.size);
+                
+                item.innerHTML = `
+                    <div class="file-info">
+                        <span class="material-symbols-outlined file-icon">description</span>
+                        <div class="file-details">
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">${displaySize}</span>
+                        </div>
+                    </div>
+                    <span class="material-symbols-outlined remove-file" onclick="removeSelectedFile(${index})">close</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Remove single file
+        function removeSelectedFile(index) {
+            if (uploadInProgress) return;
+            selectedFiles.splice(index, 1);
+            renderFileList();
+        }
+
+        // Format bytes utility
+        function formatBytes(bytes, decimals = 2) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+
+        // Reset the form
+        function resetForm() {
+            if (uploadInProgress) return;
+            selectedFiles = [];
+            document.getElementById('public-upload-form').reset();
+            document.getElementById('files-list-container').style.display = 'none';
+            document.getElementById('upload-progress-card').style.display = 'none';
+            document.getElementById('upload-result-card').style.display = 'none';
+            document.getElementById('password-input-container').style.display = 'none';
+            document.getElementById('btn-submit-transfer').disabled = false;
+        }
+
+        // Submit and run Simulated Upload Routine
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (uploadInProgress) return;
+
+            if (selectedFiles.length === 0) {
+                alert("Please drop or browse files to transfer first.");
+                return;
+            }
+
+            uploadInProgress = true;
+            document.getElementById('btn-submit-transfer').disabled = true;
+            document.getElementById('upload-result-card').style.display = 'none';
+            
+            const progressCard = document.getElementById('upload-progress-card');
+            const progressFill = document.getElementById('progress-fill-bar');
+            const progressPercent = document.getElementById('progress-percentage-label');
+            const currentFileTitle = document.getElementById('upload-current-file');
+            const uploadMeta = document.getElementById('upload-time-meta');
+            
+            progressCard.style.display = 'flex';
+            
+            // Start simulation
+            let percent = 0;
+            const totalBytes = selectedFiles.reduce((acc, f) => acc + fileFakeSize(f.size), 0);
+            const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+            
+            currentFileTitle.textContent = selectedFiles.length === 1 
+                ? `Uploading ${selectedFiles[0].name}...`
+                : `Uploading ${selectedFiles.length} files (${totalMb} MB)...`;
+
+            const interval = setInterval(() => {
+                percent += Math.floor(Math.random() * 8) + 2;
+                if (percent >= 100) {
+                    percent = 100;
+                    clearInterval(interval);
+                    
+                    // Finalize upload
+                    setTimeout(() => {
+                        finalizeSimulation();
+                    }, 500);
+                }
+                
+                progressFill.style.width = percent + '%';
+                progressPercent.textContent = percent + '%';
+                
+                // Simulate speed and time remaining
+                const speed = (Math.random() * 15 + 10).toFixed(1); // MB/s
+                const timeRemaining = Math.max(1, Math.round(((100 - percent) / 100) * (totalMb / speed)));
+                uploadMeta.textContent = `Remaining: ${timeRemaining}s | Upload Speed: ${speed} MB/s`;
+                
+            }, 150);
+        }
+
+        // Return actual size or minimum size for folder displays
+        function fileFakeSize(size) {
+            return size > 0 ? size : 1024 * 1024 * 5; // Default 5MB if empty
+        }
+
+        // Handle finalized upload card and add to history
+        function finalizeSimulation() {
+            uploadInProgress = false;
+            document.getElementById('upload-progress-card').style.display = 'none';
+            
+            // Set Result Card Link values
+            const uniqueId = "pr-" + Math.random().toString(36).substring(2, 8);
+            const resultLink = `https://cadonce.com/share?id=${uniqueId}`;
+            
+            document.getElementById('share-link-url').value = resultLink;
+            document.getElementById('upload-result-card').style.display = 'flex';
+            
+            // Add item to database
+            const recipient = document.getElementById('transfer-recipient').value;
+            const expiryVal = document.getElementById('transfer-expiry').value;
+            const hasPassword = document.getElementById('password-toggle').checked;
+            
+            let expiryText = "7 days remaining";
+            if (expiryVal === "1h") expiryText = "59 minutes remaining";
+            else if (expiryVal === "1d") expiryText = "23 hours remaining";
+            else if (expiryVal === "30d") expiryText = "29 days remaining";
+
+            const securityText = hasPassword ? "AES-256 + Password" : "AES-256";
+            
+            const totalBytes = selectedFiles.reduce((acc, f) => acc + fileFakeSize(f.size), 0);
+            const totalSizeStr = formatBytes(totalBytes);
+
+            const newTransfer = {
+                id: uniqueId,
+                name: selectedFiles.length === 1 ? selectedFiles[0].name : `${selectedFiles.length} files (Archive.zip)`,
+                size: totalSizeStr,
+                recipient: recipient,
+                expiry: expiryText,
+                security: securityText,
+                clicks: 0,
+                status: "Active"
+            };
+
+            // Prepend new transfer
+            transfersDatabase.unshift(newTransfer);
+            localStorage.setItem('prism_public_transfers', JSON.stringify(transfersDatabase));
+
+            // Rerender table
+            renderHistoryTable();
+            updateAnalyticsSummary();
+        }
+
+        // Renders active transfer rows
+        function renderHistoryTable() {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+            
+            if (transfersDatabase.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined empty-icon">folder_open</span>
+                                <div class="empty-text">No active secure transfers log found</div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            transfersDatabase.forEach(item => {
+                const tr = document.createElement('tr');
+                
+                const isExpired = item.status === "Expired" || item.expiry === "Expired";
+                const statusClass = isExpired ? "expired" : "active";
+                const securityClass = item.security.includes("Password") ? "password" : "encrypted";
+                
+                tr.innerHTML = `
+                    <td>
+                        <div class="share-details-cell">
+                            <span class="share-cell-name">${item.name}</span>
+                            <span class="share-cell-meta">${item.size} | ID: ${item.id}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 600; color: var(--primary);">${item.recipient}</span>
+                    </td>
+                    <td>
+                        <span style="font-weight: 500; font-size: 0.8rem; color: ${isExpired ? '#ffb4ab' : 'var(--accent-gold)'};">${item.expiry}</span>
+                    </td>
+                    <td>
+                        <span class="security-badge ${securityClass}">
+                            <span class="material-symbols-outlined" style="font-size: 0.95rem;">${securityClass === 'password' ? 'key' : 'verified_user'}</span>
+                            ${item.security}
+                        </span>
+                    </td>
+                    <td style="text-align: center; font-weight: 800; color: var(--primary);">
+                        ${item.clicks}
+                    </td>
+                    <td style="text-align: right;">
+                        <span class="status-pill ${statusClass}">${item.status}</span>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Update stats calculations on side card
+        function updateAnalyticsSummary() {
+            const activeLinksCount = transfersDatabase.filter(t => t.status === "Active").length;
+            const totalClicks = transfersDatabase.reduce((acc, t) => acc + t.clicks, 0);
+            
+            // Calculate storage mockup size
+            let storageGb = 2.4;
+            transfersDatabase.forEach(t => {
+                if (t.status === "Active") {
+                    const cleanMb = parseFloat(t.size.replace(/[^\d\.]/g, ''));
+                    if (t.size.includes("MB")) {
+                        storageGb += (cleanMb / 1024);
+                    } else if (t.size.includes("KB")) {
+                        storageGb += (cleanMb / (1024 * 1024));
+                    } else if (t.size.includes("GB")) {
+                        storageGb += cleanMb;
+                    }
+                }
+            });
+            
+            const storageFinal = Math.min(50, storageGb).toFixed(2);
+            const storagePercent = ((storageFinal / 50) * 100).toFixed(1);
+
+            document.getElementById('stats-active-links').textContent = activeLinksCount;
+            document.getElementById('stats-clicks').textContent = totalClicks;
+            document.getElementById('storage-numerical-label').textContent = `${storageFinal} GB / 50 GB`;
+            document.getElementById('storage-percentage-bar').style.width = `${storagePercent}%`;
+        }
+
+        // Copy button script
+        function copyShareLink() {
+            const linkInput = document.getElementById('share-link-url');
+            linkInput.select();
+            linkInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            // Clipboard API
+            navigator.clipboard.writeText(linkInput.value).then(() => {
+                const btn = document.getElementById('btn-copy-link');
+                const btnText = btn.querySelector('span:not(.material-symbols-outlined)');
+                const btnIcon = btn.querySelector('.material-symbols-outlined');
+                
+                btnText.textContent = "Copied!";
+                btnIcon.textContent = "done";
+                btn.style.background = "var(--accent-yellow)";
+                btn.style.boxShadow = "var(--glow-yellow)";
+                
+                setTimeout(() => {
+                    btnText.textContent = "Copy";
+                    btnIcon.textContent = "content_copy";
+                    btn.style.background = "var(--accent-cyan)";
+                    btn.style.boxShadow = "none";
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

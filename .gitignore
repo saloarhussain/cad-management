@@ -1,0 +1,10 @@
+.vercel
+node_modules/
+.next/
+*.mjs
+**/scratch/
+**/*.mjs
+**/*.txt
+**/*.js
+!**/src/**/*.js
+.env*

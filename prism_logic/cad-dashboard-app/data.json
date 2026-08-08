@@ -1,0 +1,68 @@
+{
+  "projects": [
+    {
+      "id": "1776887301985",
+      "title": "Gents Ring",
+      "orderId": "TGHYJUKI687",
+      "client": "Aftab Hussain",
+      "designer": "Saloar Hussain",
+      "revenue": "120",
+      "expense": "25",
+      "orderDate": "2026-04-23",
+      "deadlineDate": "2026-04-28",
+      "description": "Ring size - U\r\nYellow Gold 9kt - 4gm",
+      "images": "https://cdn.discordapp.com/attachments/1464630780318716118/1495460995785556139/JE13788-1YS300_4_lar.jpg?ex=69eaf155&is=69e99fd5&hm=4e44fe498590b559660fb11626a1d28efe9fa93514bc35d39d39d52dfba91ec6\r\nhttps://cdn.discordapp.com/attachments/1464630780318716118/1495461539724132635/4_sets_of_rings.webp?ex=69eaf1d7&is=69e9a057&hm=c46fe006cf3b3b62a2bf6bb3211a97a91289e713e9470c9596fea4aa90797688",
+      "status": "High Priority",
+      "createdAt": "2026-04-22T19:48:21.985Z",
+      "updatedAt": "2026-04-23T16:35:44.574Z",
+      "paymentStatus": "50% Advance",
+      "paidAmount": "58"
+    }
+  ],
+  "designers": [
+    {
+      "id": "1776871451316",
+      "fullName": "Saloar Hussain",
+      "specialty": "cad designer",
+      "email": "business.saloarhussain@gmail.com",
+      "mobile": "+919975788318",
+      "country": "us",
+      "createdAt": "2026-04-22T15:24:11.316Z"
+    },
+    {
+      "id": "1776871818438",
+      "fullName": "Alex Rivera (Lead)",
+      "specialty": "Lead CAD Specialist",
+      "email": "alex.rivera@kinetic.com",
+      "mobile": "+1234567890",
+      "country": "us",
+      "createdAt": "2026-04-22T15:30:18.438Z"
+    }
+  ],
+  "clients": [
+    {
+      "id": "1776873110910",
+      "name": "Kabudachu",
+      "email": "skaftabhussain971@gmail.com",
+      "mobile": "+919049992834",
+      "platform": "Direct Referral",
+      "priority": null,
+      "createdAt": "2026-04-22T15:51:50.910Z",
+      "companyName": "Aftab Hussain",
+      "country": "India",
+      "updatedAt": "2026-04-22T18:43:57.302Z"
+    },
+    {
+      "id": "1776878469634",
+      "name": "Minecom",
+      "companyName": "Zeenat Fatema",
+      "email": "minecom2024@gmail.com",
+      "mobile": "+918958215896",
+      "platform": "Fiverr",
+      "priority": null,
+      "createdAt": "2026-04-22T17:21:09.634Z",
+      "country": "India"
+    }
+  ],
+  "settings": {}
+}

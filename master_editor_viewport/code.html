@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>KINETIC_CAD_v1 - Master Editor Viewport</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Inter:wght@400;500;600;900&amp;display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-bright": "#3c392c",
+            "on-surface-variant": "#cec7ab",
+            "primary": "#ffffff",
+            "secondary-fixed-dim": "#d7c773",
+            "on-primary-fixed": "#201c00",
+            "background": "#161308",
+            "on-primary-container": "#726500",
+            "on-primary": "#383100",
+            "on-tertiary": "#003738",
+            "on-error-container": "#ffdad6",
+            "surface-tint": "#e0c700",
+            "surface-container-lowest": "#100e05",
+            "surface-container-low": "#1e1c10",
+            "surface-container-highest": "#383528",
+            "on-tertiary-fixed-variant": "#004f50",
+            "surface": "#161308",
+            "on-tertiary-container": "#007071",
+            "error-container": "#93000a",
+            "tertiary-container": "#00fbfe",
+            "on-error": "#690005",
+            "primary-container": "#ffe30c",
+            "surface-container": "#222014",
+            "on-surface": "#e9e2cf",
+            "error": "#ffb4ab",
+            "tertiary": "#fefffe",
+            "on-secondary-fixed-variant": "#514700",
+            "on-secondary": "#383100",
+            "on-primary-fixed-variant": "#514700",
+            "primary-fixed": "#ffe311",
+            "inverse-primary": "#6b5f00",
+            "inverse-surface": "#e9e2cf",
+            "primary-fixed-dim": "#e0c700",
+            "outline-variant": "#4b4732",
+            "tertiary-fixed-dim": "#00dcdf",
+            "tertiary-fixed": "#02fbfe",
+            "surface-variant": "#383528",
+            "on-secondary-container": "#cbbd6a",
+            "secondary-container": "#564c00",
+            "outline": "#979177",
+            "surface-dim": "#161308",
+            "surface-container-high": "#2d2a1d",
+            "on-background": "#e9e2cf",
+            "on-tertiary-fixed": "#002020",
+            "on-secondary-fixed": "#201c00",
+            "inverse-on-surface": "#333024",
+            "secondary-fixed": "#f4e48c",
+            "secondary": "#d7c773"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Plus Jakarta Sans"],
+            "display": ["Plus Jakarta Sans"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .glow-sm {
+      text-shadow: 0 0 10px rgba(0, 251, 254, 0.5);
+    }
+    .wireframe-glow {
+      filter: drop-shadow(0 0 8px rgba(0, 251, 254, 0.4)) drop-shadow(0 0 2px rgba(252, 224, 3, 0.3));
+    }
+    .tonal-shift-surface {
+      background: linear-gradient(180deg, rgba(34, 32, 20, 0.8) 0%, rgba(16, 14, 5, 0.95) 100%);
+    }
+    /* Render View Specific CSS Filters for Gold Materials */
+    .material-gold {
+      filter: sepia(0.85) hue-rotate(5deg) saturate(3.5) brightness(1.0) contrast(1.15) drop-shadow(0 0 25px rgba(252, 224, 3, 0.4));
+    }
+    .material-rosegold {
+      filter: sepia(0.85) hue-rotate(-22deg) saturate(2.5) brightness(0.9) contrast(1.2) drop-shadow(0 0 25px rgba(244, 63, 94, 0.35));
+    }
+    .material-platinum {
+      filter: saturate(0.0) brightness(1.25) contrast(1.2) drop-shadow(0 0 25px rgba(0, 251, 254, 0.25));
+    }
+    /* Glow animations */
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 15px rgba(0, 251, 254, 0.3)); }
+      50% { filter: drop-shadow(0 0 25px rgba(0, 251, 254, 0.6)); }
+    }
+    .ring-glow {
+      animation: pulse-glow 4s infinite ease-in-out;
+    }
+  </style>
+  <style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container overflow-hidden">
+  
+  <!-- TopAppBar -->
+  <header class="fixed top-0 left-0 w-full z-50 bg-neutral-900/80 backdrop-blur-xl flex justify-between items-center px-6 py-4 border-b border-white/5">
+    <div class="flex items-center gap-3">
+      <button class="text-neutral-400 hover:text-[#fce003] transition-colors duration-300 active:scale-90 flex items-center justify-center">
+        <span class="material-symbols-outlined text-2xl">arrow_back</span>
+      </button>
+      <h1 class="text-xl font-black text-[#fce003] drop-shadow-[0_0_8px_rgba(252,224,3,0.5)] font-['Plus_Jakarta_Sans'] tracking-tighter uppercase">KINETIC_CAD_v1</h1>
+    </div>
+    <div class="flex items-center gap-4">
+      <div id="connection-status" class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+        <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+        <span class="text-[9px] tracking-widest font-black text-green-500 uppercase">GPU ONLINE</span>
+      </div>
+      <button class="text-neutral-500 hover:text-[#fce003] transition-colors duration-300 scale-95 active:scale-90">
+        <span class="material-symbols-outlined">settings_input_component</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Navigation Drawer (Left Sidebar) -->
+  <aside class="fixed left-0 top-0 z-40 h-full w-72 bg-neutral-950/95 border-r border-white/5 flex flex-col pt-24 justify-between shadow-2xl">
+    <div class="p-6 space-y-6">
+      <div>
+        <h2 class="text-neutral-500 font-black tracking-widest text-[10px] mb-4 uppercase">Navigation</h2>
+        <nav class="flex flex-col gap-1.5">
+          <button onclick="switchTab('viewport')" class="flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left group" id="sidebar-tab-viewport">
+            <span class="material-symbols-outlined text-neutral-400 group-hover:text-[#fce003]">3d_rotation</span>
+            <span>Viewport Stage</span>
+          </button>
+          <button onclick="switchTab('render')" class="flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left group" id="sidebar-tab-render">
+            <span class="material-symbols-outlined text-neutral-400 group-hover:text-[#00fbfe]">photo_camera</span>
+            <span>3D Photo Render</span>
+          </button>
+          <button onclick="switchTab('inventory')" class="flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left group" id="sidebar-tab-inventory">
+            <span class="material-symbols-outlined text-neutral-400 group-hover:text-amber-500">diamond</span>
+            <span>Asset Inventory</span>
+          </button>
+          <button onclick="switchTab('telemetry')" class="flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left group" id="sidebar-tab-telemetry">
+            <span class="material-symbols-outlined text-neutral-400 group-hover:text-red-500">monitoring</span>
+            <span>Hardware Telemetry</span>
+          </button>
+          <button onclick="switchTab('system')" class="flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left group" id="sidebar-tab-system">
+            <span class="material-symbols-outlined text-neutral-400 group-hover:text-purple-500">settings_sharp</span>
+            <span>System Preferences</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Quick stats box -->
+      <div class="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-3">
+        <h3 class="text-neutral-400 text-[9px] font-black tracking-widest uppercase">System Core</h3>
+        <div class="space-y-1.5 text-[10px]">
+          <div class="flex justify-between">
+            <span class="text-neutral-500">GPU Temp:</span>
+            <span class="font-mono font-bold text-[#fce003]">64°C</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-neutral-500">VRAM Load:</span>
+            <span class="font-mono font-bold text-[#00fbfe]">68%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- User credentials footer -->
+    <div class="p-6 border-t border-white/5 flex items-center gap-3 bg-neutral-900/40">
+      <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-black text-xs text-white">
+        D
+      </div>
+      <div>
+        <p class="text-[10px] font-extrabold leading-none text-slate-200">dev@cadonce.com</p>
+        <p class="text-[9px] font-bold text-slate-500 leading-none mt-1">Lead CAD Engineer</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <main class="pl-72 pt-16 h-screen relative bg-neutral-950 overflow-hidden">
+    
+    <!-- ==============================================
+         TAB 1: VIEWPORT VIEW (Default Wireframe Stage)
+         ============================================== -->
+    <div id="view-viewport" class="absolute inset-0 pl-72 pt-16 flex flex-col justify-between p-8 z-10 transition-opacity duration-300">
+      
+      <!-- Stage & Ring Wireframe -->
+      <div class="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none z-0">
+        <div class="relative w-[110%] aspect-square max-w-xl">
+          <div class="absolute inset-0 bg-gradient-to-tr from-[#00fbfe]/15 via-transparent to-[#fce003]/8 blur-[100px]"></div>
+          <img id="wireframe-image" class="w-full h-full object-contain opacity-75 wireframe-glow" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoz148GO692Csrojs_v2Yl1_hgcEPBwuFTmgnP9hCDYHZfr2eX95_JRQEo7gg1v-QpbU-BPlTnxWW-UJXQKIhPYjW0ElS3Ix5z64nnIljphpTbcn5Ukntb7KiXXgbNsrURDhlTP9t-7J6RN9QV6qznGYTlYdKw1usx1H_gViCvGzvPPRpRkQu_mBk7PSfINL33_vBuKyf-ZG9M-VwZE47L0qqb2G6SVpCE3iiZTNpBRyPdssl1wyUKfuN9Xb3CB3hExoMrYQ-fCpc" alt="Art Deco Wireframe Ring"/>
+        </div>
+      </div>
+
+      <!-- Telemetry Info Card Overlay (Top Right) -->
+      <div class="absolute top-8 right-8 z-20">
+        <div class="bg-neutral-900/60 border border-white/5 backdrop-blur-md border-l-2 border-[#fce003] p-4 rounded-r-2xl shadow-2xl w-52 space-y-2">
+          <p class="text-[9px] font-black tracking-widest text-[#fce003]">LIVE TELEMETRY</p>
+          <div class="space-y-1">
+            <div class="flex justify-between text-[10px]">
+              <span class="text-neutral-400 font-semibold">POLYGONS:</span>
+              <span class="font-mono text-white font-bold">1,248,590</span>
+            </div>
+            <div class="flex justify-between text-[10px]">
+              <span class="text-neutral-400 font-semibold">FILE SIZE:</span>
+              <span class="font-mono text-white font-bold">42.5 MB</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inject CAD Data Drop Zone -->
+      <div class="absolute bottom-36 left-1/2 -translate-x-1/2 w-[85%] max-w-sm z-20">
+        <div class="bg-neutral-900/40 backdrop-blur-2xl border border-dashed border-white/10 hover:border-[#fce003]/40 rounded-2xl p-6 flex flex-col items-center justify-center text-center group transition-colors duration-300">
+          <div class="w-10 h-10 bg-[#fce003]/10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <span class="material-symbols-outlined text-[#fce003]">upload_file</span>
+          </div>
+          <h3 class="text-white font-bold text-xs tracking-tight mb-1">INJECT CAD DATA</h3>
+          <p class="text-neutral-500 text-[9px] font-medium tracking-wide mb-3 uppercase">DRAG MASTER FILES HERE</p>
+          <div class="flex gap-1.5">
+            <span class="bg-neutral-950 text-[#00fbfe] px-2 py-0.5 rounded text-[8px] font-black border border-[#00fbfe]/20">.3DM</span>
+            <span class="bg-neutral-950 text-[#00fbfe] px-2 py-0.5 rounded text-[8px] font-black border border-[#00fbfe]/20">.FBX</span>
+            <span class="bg-neutral-950 text-[#00fbfe] px-2 py-0.5 rounded text-[8px] font-black border border-[#00fbfe]/20">.STL</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stage Viewport Toolbar (Orbit, Pan, Zoom) -->
+      <div class="absolute bottom-20 left-1/2 -translate-x-1/2 z-30">
+        <div class="flex items-center gap-2 bg-neutral-900/80 backdrop-blur-xl p-1.5 rounded-full border border-white/5 shadow-2xl">
+          <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 text-neutral-400 hover:text-[#00fbfe] transition-all">
+            <span class="material-symbols-outlined">3d_rotation</span>
+          </button>
+          <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 text-neutral-400 hover:text-[#00fbfe] transition-all">
+            <span class="material-symbols-outlined">pan_tool</span>
+          </button>
+          <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/5 text-neutral-400 hover:text-[#00fbfe] transition-all">
+            <span class="material-symbols-outlined">zoom_in</span>
+          </button>
+          <div class="w-[1px] h-5 bg-white/10 mx-1"></div>
+          <button class="w-10 h-10 flex items-center justify-center rounded-full bg-[#fce003]/10 text-[#fce003]">
+            <span class="material-symbols-outlined">grid_view</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==============================================
+         TAB 2: RENDER VIEW (Interactive 3D Render Studio)
+         ============================================== -->
+    <div id="view-render" class="absolute inset-0 pl-72 pt-16 flex justify-between p-8 z-0 opacity-0 pointer-events-none transition-opacity duration-300">
+      
+      <!-- 3D Interactive Render Stage -->
+      <div class="flex-1 flex flex-col justify-center items-center relative z-0">
+        <!-- Abstract Render Glows representing HDR Environments -->
+        <div id="hdr-glow" class="absolute w-[600px] h-[600px] rounded-full blur-[160px] opacity-40 transition-all duration-700 bg-cyan-500/20"></div>
+
+        <!-- Render Image with 3D Orbit transform -->
+        <div id="ring-render-container" class="relative w-[320px] h-[320px] transition-all duration-300 ease-out select-none cursor-grab active:cursor-grabbing ring-glow">
+          <img 
+            id="ring-render" 
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWLlK3bV_QceB6qLi_qeNqgq0d4uhy7nnaYhI6X8D1P2zqnICm3Kl6bZgwz_JOrZv9pDIz0LZPrdmB4wtIsuytTyxbE7xlhu9dvNOaBBK8e32UMVaJAVJ_86mp8kXDqSDe5E6CzJ9PIiVh7Ump0jjsMokBdI22UCSIJeKNR3hFPz6_Hdg2tDCWEBMEE3KiZI2DZ_g_MCjix_DW7t-qwNMZ6OU7fqVZeFopfGy-DgnnAzm2Jt7jnu74Jb9XczD-FDlgPYJ6UHSXVos" 
+            class="w-full h-full object-contain material-platinum transition-all duration-300"
+            alt="3D Photorealistic Ring Render"
+          />
+        </div>
+
+        <!-- Camera Orbit Slider Control -->
+        <div class="w-full max-w-sm mt-6 bg-neutral-900/60 border border-white/5 rounded-2xl p-4 backdrop-blur-md space-y-2 z-10">
+          <div class="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-neutral-400">
+            <span>Orbit Camera angle</span>
+            <span id="angle-value" class="text-[#00fbfe] font-mono">0°</span>
+          </div>
+          <input 
+            type="range" 
+            id="orbit-slider" 
+            min="-180" 
+            max="180" 
+            value="0" 
+            oninput="rotateRing(this.value)"
+            class="w-full h-1 bg-neutral-800 rounded-lg appearance-none cursor-pointer accent-[#00fbfe]"
+          />
+          <p class="text-[8px] text-center text-neutral-500">Drag to orbit model or swipe image directly</p>
+        </div>
+      </div>
+
+      <!-- Right Panel: Render Studio Controls -->
+      <div class="w-72 bg-neutral-950/70 border-l border-white/5 p-6 space-y-6 overflow-y-auto relative z-10 backdrop-blur-md">
+        
+        <!-- Metal Selector -->
+        <div class="space-y-3">
+          <h3 class="text-neutral-400 text-[10px] font-black tracking-widest uppercase">Metal Alloy</h3>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setMetal('platinum')" id="btn-platinum" class="py-2.5 rounded-xl border border-[#00fbfe]/30 bg-[#00fbfe]/10 text-white font-bold text-[10px] uppercase tracking-wide transition-all shadow-md">
+              Platinum
+            </button>
+            <button onclick="setMetal('gold')" id="btn-gold" class="py-2.5 rounded-xl border border-white/5 bg-white/5 text-neutral-400 hover:text-[#fce003] hover:border-[#fce003]/20 font-bold text-[10px] uppercase tracking-wide transition-all">
+              18K Gold
+            </button>
+            <button onclick="setMetal('rosegold')" id="btn-rosegold" class="py-2.5 rounded-xl border border-white/5 bg-white/5 text-neutral-400 hover:text-[#fce003] hover:border-[#fce003]/20 font-bold text-[10px] uppercase tracking-wide transition-all">
+              Rose Gold
+            </button>
+          </div>
+        </div>
+
+        <!-- Gemstone Selector -->
+        <div class="space-y-3">
+          <h3 class="text-neutral-400 text-[10px] font-black tracking-widest uppercase">Gemstone</h3>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="setGem('diamond')" id="btn-gem-diamond" class="py-2 px-3 flex items-center justify-between rounded-xl border border-[#00fbfe] bg-[#00fbfe]/10 text-white font-bold text-[10px] uppercase tracking-wide transition-all">
+              <span>Diamond</span>
+              <span class="w-2 h-2 rounded-full bg-cyan-200 shadow-md"></span>
+            </button>
+            <button onclick="setGem('emerald')" id="btn-gem-emerald" class="py-2 px-3 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 text-neutral-400 font-bold text-[10px] uppercase tracking-wide transition-all">
+              <span>Emerald</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500 shadow-md"></span>
+            </button>
+            <button onclick="setGem('ruby')" id="btn-gem-ruby" class="py-2 px-3 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 text-neutral-400 font-bold text-[10px] uppercase tracking-wide transition-all">
+              <span>Ruby</span>
+              <span class="w-2 h-2 rounded-full bg-red-600 shadow-md"></span>
+            </button>
+            <button onclick="setGem('sapphire')" id="btn-gem-sapphire" class="py-2 px-3 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 text-neutral-400 font-bold text-[10px] uppercase tracking-wide transition-all">
+              <span>Sapphire</span>
+              <span class="w-2 h-2 rounded-full bg-blue-600 shadow-md"></span>
+            </button>
+          </div>
+        </div>
+
+        <!-- HDR Lighting Presets -->
+        <div class="space-y-3">
+          <h3 class="text-neutral-400 text-[10px] font-black tracking-widest uppercase">HDR environment</h3>
+          <div class="flex flex-col gap-2">
+            <button onclick="setHdr('studio')" id="btn-hdr-studio" class="w-full py-2 px-4 rounded-xl border border-[#00fbfe]/30 bg-neutral-900 text-left text-[10px] font-bold uppercase tracking-wider flex justify-between items-center">
+              <span>White Studio</span>
+              <span class="text-neutral-500">6500K</span>
+            </button>
+            <button onclick="setHdr('sunset')" id="btn-hdr-sunset" class="w-full py-2 px-4 rounded-xl border border-white/5 bg-neutral-900/30 text-left text-[10px] font-bold uppercase tracking-wider flex justify-between items-center text-neutral-400 hover:text-white">
+              <span>Sunset Warm</span>
+              <span class="text-neutral-500">3200K</span>
+            </button>
+            <button onclick="setHdr('neon')" id="btn-hdr-neon" class="w-full py-2 px-4 rounded-xl border border-white/5 bg-neutral-900/30 text-left text-[10px] font-bold uppercase tracking-wider flex justify-between items-center text-neutral-400 hover:text-white">
+              <span>Cyber Neon</span>
+              <span class="text-neutral-500">RGB Glow</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Render Telemetry & Progressive Sampling -->
+        <div class="bg-neutral-900/40 border border-white/5 rounded-2xl p-4 space-y-4">
+          <div class="flex justify-between items-center">
+            <h4 class="text-[9px] font-black tracking-widest text-[#00fbfe] uppercase">Path Tracing</h4>
+            <span class="text-[8px] font-black text-green-500 bg-green-500/10 px-1.5 py-0.5 rounded uppercase">Denoised</span>
+          </div>
+          
+          <div class="space-y-1.5 text-[9px]">
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Trace Core:</span>
+              <span class="font-mono text-white font-bold">NVIDIA OptiX RT</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Samples/Pixel:</span>
+              <span id="render-samples" class="font-mono text-white font-bold">500 / 500</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-neutral-400">Noise Threshold:</span>
+              <span class="font-mono text-white font-bold">0.002</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="space-y-1">
+            <div class="flex justify-between text-[8px] text-neutral-500 uppercase font-black">
+              <span>Render Progress</span>
+              <span id="render-pct">100%</span>
+            </div>
+            <div class="w-full h-1 bg-neutral-800 rounded-full overflow-hidden">
+              <div id="render-bar" class="h-full bg-gradient-to-r from-[#00fbfe] to-[#fce003] w-full transition-all duration-300"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==============================================
+         TAB 3: INVENTORY VIEW (Interactive Parts)
+         ============================================== -->
+    <div id="view-inventory" class="absolute inset-0 pl-72 pt-16 flex flex-col p-8 z-0 opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="max-w-4xl space-y-6">
+        <div>
+          <h2 class="text-lg font-black text-slate-100">CAD PARTS INVENTORY</h2>
+          <p class="text-[10px] text-neutral-500 mt-1">SELECT COMPONENTS TO INJECT INTO THE CURRENT ACTIVE VIEWPORT STAGE</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Item 1 -->
+          <div class="bg-neutral-900/60 border border-white/5 rounded-2xl p-5 space-y-4 hover:border-[#fce003]/30 transition-all cursor-pointer">
+            <div class="w-10 h-10 bg-amber-500/10 rounded-full flex items-center justify-center text-amber-500">
+              <span class="material-symbols-outlined">diamond</span>
+            </div>
+            <div>
+              <h4 class="text-xs font-black uppercase text-white">Center Bezel Diamond</h4>
+              <p class="text-[9px] text-neutral-500 mt-1">EMERALD CUT V1 - 1.25 CARAT</p>
+            </div>
+            <span class="inline-block text-[8px] font-black bg-amber-500/10 border border-amber-500/20 text-amber-500 px-2 py-0.5 rounded uppercase">ACTIVE</span>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="bg-neutral-900/60 border border-white/5 rounded-2xl p-5 space-y-4 hover:border-[#00fbfe]/30 transition-all cursor-pointer">
+            <div class="w-10 h-10 bg-[#00fbfe]/10 rounded-full flex items-center justify-center text-[#00fbfe]">
+              <span class="material-symbols-outlined">grid_view</span>
+            </div>
+            <div>
+              <h4 class="text-xs font-black uppercase text-white">Classic Shank Base</h4>
+              <p class="text-[9px] text-neutral-500 mt-1">PLATINUM SMOOTH V4 - SIZE 6.5</p>
+            </div>
+            <span class="inline-block text-[8px] font-black bg-[#00fbfe]/10 border border-[#00fbfe]/20 text-[#00fbfe] px-2 py-0.5 rounded uppercase">ACTIVE</span>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="bg-neutral-900/30 border border-white/5 rounded-2xl p-5 space-y-4 hover:border-slate-500/30 transition-all cursor-pointer opacity-50">
+            <div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-white">
+              <span class="material-symbols-outlined">settings_input_component</span>
+            </div>
+            <div>
+              <h4 class="text-xs font-black uppercase text-white">Pave Side Accents</h4>
+              <p class="text-[9px] text-neutral-500 mt-1">BRILLIANT ROUND CUT - 0.48 CARAT</p>
+            </div>
+            <span class="inline-block text-[8px] font-black bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded uppercase">INACTIVE</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==============================================
+         TAB 4: TELEMETRY VIEW (Performance logs)
+         ============================================== -->
+    <div id="view-telemetry" class="absolute inset-0 pl-72 pt-16 flex flex-col p-8 z-0 opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="max-w-4xl space-y-6">
+        <div>
+          <h2 class="text-lg font-black text-slate-100">HARDWARE CORE LOAD</h2>
+          <p class="text-[10px] text-neutral-500 mt-1">REAL-TIME WEBGL &amp; PATH TRACING PERFORMANCE MONITORS</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-neutral-900/60 border border-white/5 rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-black uppercase text-white">GPU Core Utilization</h4>
+              <span class="font-mono text-xs font-black text-green-500">68%</span>
+            </div>
+            <div class="w-full h-8 bg-neutral-950 rounded-lg overflow-hidden flex items-end p-1 gap-0.5">
+              <div class="flex-1 h-[40%] bg-green-500/80 rounded-sm"></div>
+              <div class="flex-1 h-[55%] bg-green-500/80 rounded-sm"></div>
+              <div class="flex-1 h-[68%] bg-green-500/80 rounded-sm"></div>
+              <div class="flex-1 h-[62%] bg-green-500/80 rounded-sm"></div>
+              <div class="flex-1 h-[68%] bg-green-500/80 rounded-sm"></div>
+            </div>
+          </div>
+
+          <div class="bg-neutral-900/60 border border-white/5 rounded-2xl p-5 space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="text-xs font-black uppercase text-white">VRAM Allocation</h4>
+              <span class="font-mono text-xs font-black text-[#00fbfe]">5.4 GB / 8.0 GB</span>
+            </div>
+            <div class="w-full h-2 bg-neutral-800 rounded-full overflow-hidden">
+              <div class="h-full bg-[#00fbfe] w-[68%]"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ==============================================
+         TAB 5: SYSTEM VIEW (Preferences/Export)
+         ============================================== -->
+    <div id="view-system" class="absolute inset-0 pl-72 pt-16 flex flex-col p-8 z-0 opacity-0 pointer-events-none transition-opacity duration-300">
+      <div class="max-w-4xl space-y-6">
+        <div>
+          <h2 class="text-lg font-black text-slate-100">SYSTEM PREFERENCES</h2>
+          <p class="text-[10px] text-neutral-500 mt-1">CONFIGURE CAD WORKSPACE EXPORT TARGETS AND VIEWPORT ALIGNMENTS</p>
+        </div>
+
+        <div class="bg-neutral-900/60 border border-white/5 rounded-2xl p-6 space-y-4 w-full max-w-lg">
+          <h4 class="text-xs font-black uppercase text-white">Auto Export Queue</h4>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center py-2 border-b border-white/5">
+              <span class="text-xs text-neutral-400">Standard Grid snap (0.5mm)</span>
+              <span class="text-xs text-[#00fbfe] font-bold uppercase">ENABLED</span>
+            </div>
+            <div class="flex justify-between items-center py-2 border-b border-white/5">
+              <span class="text-xs text-neutral-400">Imperial units conversion (in)</span>
+              <span class="text-xs text-neutral-500 font-bold uppercase">DISABLED</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-xs text-neutral-400">Target Export Profile</span>
+              <span class="text-xs text-[#fce003] font-bold uppercase">OpenSource STL</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BottomNavBar -->
+  <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex justify-around items-center p-3 w-[90%] max-w-xl rounded-2xl border border-white/10 bg-neutral-900/60 backdrop-blur-2xl shadow-[0_0_30px_rgba(252,224,3,0.15)] gap-6 select-none">
+    <button onclick="switchTab('viewport')" id="tab-viewport" class="flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white">
+      <span class="material-symbols-outlined">3d_rotation</span>
+      <span class="font-['Inter'] text-[9px] font-black tracking-widest uppercase">VIEWPORT</span>
+    </button>
+    <button onclick="switchTab('render')" id="tab-render" class="flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white">
+      <span class="material-symbols-outlined">photo_camera</span>
+      <span class="font-['Inter'] text-[9px] font-black tracking-widest uppercase">RENDER</span>
+    </button>
+    <button onclick="switchTab('inventory')" id="tab-inventory" class="flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white">
+      <span class="material-symbols-outlined">diamond</span>
+      <span class="font-['Inter'] text-[9px] font-black tracking-widest uppercase">INVENTORY</span>
+    </button>
+    <button onclick="switchTab('telemetry')" id="tab-telemetry" class="flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white">
+      <span class="material-symbols-outlined">monitoring</span>
+      <span class="font-['Inter'] text-[9px] font-black tracking-widest uppercase">TELEMETRY</span>
+    </button>
+    <button onclick="switchTab('system')" id="tab-system" class="flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white">
+      <span class="material-symbols-outlined">settings_sharp</span>
+      <span class="font-['Inter'] text-[9px] font-black tracking-widest uppercase">SYSTEM</span>
+    </button>
+  </nav>
+
+  <!-- Interactive 3D Orbit & Material script controller -->
+  <script>
+    // Initial tab settings
+    switchTab('viewport');
+
+    // Tab switcher logic
+    function switchTab(tabName) {
+      const tabs = ['viewport', 'render', 'inventory', 'telemetry', 'system'];
+      
+      tabs.forEach(t => {
+        // Toggle view containers
+        const element = document.getElementById(`view-${t}`);
+        if (element) {
+          if (t === tabName) {
+            element.classList.remove('opacity-0', 'pointer-events-none', 'z-0');
+            element.classList.add('opacity-100', 'z-10');
+          } else {
+            element.classList.remove('opacity-100', 'z-10');
+            element.classList.add('opacity-0', 'pointer-events-none', 'z-0');
+          }
+        }
+        
+        // Toggle bottom navigation button styling
+        const btn = document.getElementById(`tab-${t}`);
+        if (btn) {
+          if (t === tabName) {
+            // Apply highlight (Yellow for Viewport, Cyan for Render/Inventory, etc.)
+            let colorClass = 'bg-[#fce003] text-black shadow-[0_0_15px_rgba(252,224,3,0.5)]';
+            if (t === 'render' || t === 'inventory') {
+              colorClass = 'bg-[#00fbfe] text-black shadow-[0_0_15px_rgba(0,251,254,0.5)]';
+            }
+            btn.className = `flex flex-col items-center gap-1 group py-1.5 px-4 rounded-xl transition-all duration-300 ${colorClass}`;
+          } else {
+            btn.className = 'flex flex-col items-center gap-1 group py-1.5 px-3 rounded-xl transition-all duration-300 text-neutral-400 hover:text-white';
+          }
+        }
+
+        // Toggle sidebar links styling
+        const sidebarBtn = document.getElementById(`sidebar-tab-${t}`);
+        if (sidebarBtn) {
+          if (t === tabName) {
+            let activeClass = 'border-l-4 border-[#fce003] bg-[#fce003]/10 text-white font-black';
+            if (t === 'render') activeClass = 'border-l-4 border-[#00fbfe] bg-[#00fbfe]/10 text-white font-black';
+            if (t === 'inventory') activeClass = 'border-l-4 border-amber-500 bg-amber-500/10 text-white font-black';
+            if (t === 'telemetry') activeClass = 'border-l-4 border-red-500 bg-red-500/10 text-white font-black';
+            if (t === 'system') activeClass = 'border-l-4 border-purple-500 bg-purple-500/10 text-white font-black';
+            
+            sidebarBtn.className = `flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left ${activeClass}`;
+          } else {
+            sidebarBtn.className = 'flex items-center gap-3 w-full py-2.5 px-4 font-bold text-xs uppercase rounded-xl transition-all text-left text-neutral-500 hover:bg-neutral-900/60 hover:text-white';
+          }
+        }
+      });
+
+      // Trigger path-tracing simulation if entering Render tab
+      if (tabName === 'render') {
+        simulateRenderProgress();
+      }
+    }
+
+    // Orbit 3D camera rotation simulation
+    function rotateRing(val) {
+      const angleVal = document.getElementById('angle-value');
+      if (angleVal) angleVal.innerText = `${val}°`;
+      
+      const renderContainer = document.getElementById('ring-render-container');
+      if (renderContainer) {
+        // Rotate the ring in perspective!
+        renderContainer.style.transform = `rotateY(${val}deg) rotateX(${val / 6}deg)`;
+      }
+    }
+
+    // Material metal selectors
+    function setMetal(metal) {
+      const metals = ['platinum', 'gold', 'rosegold'];
+      metals.forEach(m => {
+        const btn = document.getElementById(`btn-${m}`);
+        if (btn) {
+          if (m === metal) {
+            btn.className = 'py-2.5 rounded-xl border border-[#00fbfe]/30 bg-[#00fbfe]/10 text-white font-bold text-[10px] uppercase tracking-wide transition-all shadow-md';
+          } else {
+            btn.className = 'py-2.5 rounded-xl border border-white/5 bg-white/5 text-neutral-400 hover:text-[#fce003] hover:border-[#fce003]/20 font-bold text-[10px] uppercase tracking-wide transition-all';
+          }
+        }
+      });
+
+      // Apply CSS materials filters on the render image
+      const ringImg = document.getElementById('ring-render');
+      if (ringImg) {
+        ringImg.className = `w-full h-full object-contain transition-all duration-300 material-${metal}`;
+      }
+
+      // Re-trigger path-tracing progress
+      simulateRenderProgress();
+    }
+
+    // Gemstone material switcher (visual representation)
+    function setGem(gemName) {
+      const gems = ['diamond', 'emerald', 'ruby', 'sapphire'];
+      gems.forEach(g => {
+        const btn = document.getElementById(`btn-gem-${g}`);
+        if (btn) {
+          if (g === gemName) {
+            btn.className = 'py-2 px-3 flex items-center justify-between rounded-xl border border-[#00fbfe] bg-[#00fbfe]/10 text-white font-bold text-[10px] uppercase tracking-wide transition-all';
+          } else {
+            btn.className = 'py-2 px-3 flex items-center justify-between rounded-xl border border-white/5 bg-white/5 text-neutral-400 font-bold text-[10px] uppercase tracking-wide transition-all';
+          }
+        }
+      });
+
+      // Change background glow depending on the gemstone selected
+      const hdrGlow = document.getElementById('hdr-glow');
+      if (hdrGlow) {
+        if (gemName === 'emerald') hdrGlow.className = 'absolute w-[600px] h-[600px] rounded-full blur-[160px] opacity-40 transition-all duration-700 bg-emerald-500/20';
+        if (gemName === 'ruby') hdrGlow.className = 'absolute w-[600px] h-[600px] rounded-full blur-[160px] opacity-40 transition-all duration-700 bg-rose-600/25';
+        if (gemName === 'sapphire') hdrGlow.className = 'absolute w-[600px] h-[600px] rounded-full blur-[160px] opacity-40 transition-all duration-700 bg-blue-600/20';
+        if (gemName === 'diamond') hdrGlow.className = 'absolute w-[600px] h-[600px] rounded-full blur-[160px] opacity-40 transition-all duration-700 bg-cyan-500/20';
+      }
+
+      // Re-trigger path-tracing progress
+      simulateRenderProgress();
+    }
+
+    // HDR Environment preset selections
+    function setHdr(hdrType) {
+      const hdrs = ['studio', 'sunset', 'neon'];
+      hdrs.forEach(h => {
+        const btn = document.getElementById(`btn-hdr-${h}`);
+        if (btn) {
+          if (h === hdrType) {
+            btn.className = 'w-full py-2 px-4 rounded-xl border border-[#00fbfe]/30 bg-neutral-900 text-left text-[10px] font-bold uppercase tracking-wider flex justify-between items-center';
+          } else {
+            btn.className = 'w-full py-2 px-4 rounded-xl border border-white/5 bg-neutral-900/30 text-left text-[10px] font-bold uppercase tracking-wider flex justify-between items-center text-neutral-400 hover:text-white';
+          }
+        }
+      });
+
+      // Change lighting effects in background
+      const hdrGlow = document.getElementById('hdr-glow');
+      if (hdrGlow) {
+        if (hdrType === 'sunset') {
+          hdrGlow.style.backgroundColor = 'rgba(249, 115, 22, 0.25)'; // Amber sunset glow
+        } else if (hdrType === 'neon') {
+          hdrGlow.style.backgroundColor = 'rgba(236, 72, 153, 0.25)'; // Hot pink cyber glow
+        } else {
+          hdrGlow.style.backgroundColor = 'rgba(6, 182, 212, 0.2)'; // Cool studio cyan
+        }
+      }
+
+      // Re-trigger path-tracing progress
+      simulateRenderProgress();
+    }
+
+    // Progressive Path-Tracing progress bar simulation
+    let renderTimer = null;
+    function simulateRenderProgress() {
+      if (renderTimer) clearInterval(renderTimer);
+
+      const renderBar = document.getElementById('render-bar');
+      const renderPct = document.getElementById('render-pct');
+      const renderSamples = document.getElementById('render-samples');
+      const ringContainer = document.getElementById('ring-render-container');
+
+      if (!renderBar || !renderPct || !renderSamples) return;
+
+      // Reset render progress
+      renderBar.style.width = '0%';
+      renderPct.innerText = '0%';
+      renderSamples.innerText = '0 / 500';
+      
+      // Make ring render slightly blurry during path-tracing start
+      if (ringContainer) {
+        ringContainer.style.filter = 'blur(4px)';
+        ringContainer.style.opacity = '0.7';
+      }
+
+      let currentSample = 0;
+      const targetSample = 500;
+      const step = 25;
+
+      renderTimer = setInterval(() => {
+        currentSample += step;
+        if (currentSample >= targetSample) {
+          currentSample = targetSample;
+          clearInterval(renderTimer);
+          
+          // Clear blur once progressive render completes
+          if (ringContainer) {
+            ringContainer.style.filter = 'none';
+            ringContainer.style.opacity = '1';
+          }
+        }
+
+        const percentage = Math.round((currentSample / targetSample) * 100);
+        renderBar.style.width = `${percentage}%`;
+        renderPct.innerText = `${percentage}%`;
+        renderSamples.innerText = `${currentSample} / ${targetSample}`;
+      }, 80);
+    }
+  </script>
+</body>
+</html>

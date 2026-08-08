@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Compose Message - Jewelry CAD Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#002020",
+                        "on-secondary-container": "#cbbd6a",
+                        "on-secondary-fixed-variant": "#514700",
+                        "on-secondary": "#383100",
+                        "on-surface-variant": "#cec7ab",
+                        "tertiary": "#fefffe",
+                        "surface-tint": "#e0c700",
+                        "tertiary-container": "#00fbfe",
+                        "surface-container": "#222014",
+                        "on-surface": "#e9e2cf",
+                        "surface-container-lowest": "#100e05",
+                        "surface-bright": "#3c392c",
+                        "secondary-container": "#564c00",
+                        "tertiary-fixed": "#02fbfe",
+                        "surface-container-highest": "#383528",
+                        "on-secondary-fixed": "#201c00",
+                        "primary-fixed-dim": "#e0c700",
+                        "error-container": "#93000a",
+                        "primary": "#ffffff",
+                        "outline": "#979177",
+                        "surface": "#161308",
+                        "secondary-fixed": "#f4e48c",
+                        "surface-variant": "#383528",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed-variant": "#004f50",
+                        "on-primary-container": "#726500",
+                        "on-primary-fixed-variant": "#514700",
+                        "inverse-on-surface": "#333024",
+                        "surface-dim": "#161308",
+                        "surface-container-low": "#1e1c10",
+                        "secondary-fixed-dim": "#d7c773",
+                        "on-primary-fixed": "#201c00",
+                        "tertiary-fixed-dim": "#00dcdf",
+                        "outline-variant": "#4b4732",
+                        "on-tertiary-container": "#007071",
+                        "inverse-primary": "#6b5f00",
+                        "surface-container-high": "#2d2a1d",
+                        "inverse-surface": "#e9e2cf",
+                        "on-background": "#e9e2cf",
+                        "background": "#161308",
+                        "on-primary": "#383100",
+                        "secondary": "#d7c773",
+                        "on-tertiary": "#003738",
+                        "error": "#ffb4ab",
+                        "primary-fixed": "#ffe311",
+                        "primary-container": "#ffe30c",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-gradient-border {
+            background: linear-gradient(45deg, #fce003, #00fbfe);
+            padding: 1.5px;
+        }
+        .kinetic-input-focus:focus-within {
+            box-shadow: 0 0 12px rgba(252, 224, 3, 0.2);
+            border-color: #fce003 !important;
+        }
+        .glass-shell {
+            backdrop-filter: blur(20px);
+        }
+        .electric-gradient {
+            background: linear-gradient(45deg, #fce003 0%, #00fbfe 100%);
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<header class="fixed top-0 w-full z-50 bg-[#7b7767]/80 backdrop-blur-md dark:bg-[#7b7767]/80 flex justify-between items-center px-6 py-4">
+<div class="flex items-center gap-4">
+<button class="hover:bg-[#fce003]/10 transition-colors p-2 rounded-lg active:scale-95 duration-200">
+<span class="material-symbols-outlined text-[#fce003]" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-[#fce003] text-lg">Compose Message</h1>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-gradient-to-tr from-[#fce003] to-[#00fbfe] text-on-primary px-5 py-2 rounded-lg font-bold text-sm tracking-tight active:scale-95 duration-150 shadow-[0_0_15px_rgba(252,224,3,0.3)]">
+                SEND
+            </button>
+</div>
+</header>
+<main class="pt-24 pb-32 px-4 max-w-2xl mx-auto space-y-6">
+<section class="space-y-6">
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest font-semibold text-secondary-fixed opacity-70 px-1">Recipient</label>
+<div class="relative kinetic-input-focus group rounded-lg bg-surface-container-lowest transition-all">
+<input class="w-full bg-transparent border border-outline-variant/30 rounded-lg py-3 px-4 text-on-surface placeholder:text-outline focus:outline-none focus:ring-0" placeholder="Search team or client..." type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest font-semibold text-secondary-fixed opacity-70 px-1">Subject</label>
+<div class="relative kinetic-input-focus group rounded-lg bg-surface-container-lowest transition-all">
+<input class="w-full bg-transparent border border-outline-variant/30 rounded-lg py-3 px-4 text-on-surface placeholder:text-outline focus:outline-none focus:ring-0" placeholder="Design revisions for the centerpiece..." type="text"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest font-semibold text-secondary-fixed opacity-70 px-1">Project Reference</label>
+<div class="relative group">
+<select class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg py-3 px-4 text-on-surface appearance-none focus:outline-none focus:ring-1 focus:ring-primary-fixed cursor-pointer">
+<option>Emerald Halo Engagement R-42</option>
+<option>Marquise Pendant Prototype B-12</option>
+<option>Custom Wedding Band Set W-09</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</section>
+<section class="space-y-2">
+<label class="text-[10px] uppercase tracking-widest font-semibold text-secondary-fixed opacity-70 px-1">Message Content</label>
+<div class="relative kinetic-input-focus group rounded-lg bg-surface-container transition-all">
+<textarea class="w-full bg-transparent border border-outline-variant/30 rounded-lg py-4 px-4 text-on-surface placeholder:text-outline focus:outline-none focus:ring-0 resize-none" placeholder="Describe the design modifications or technical notes here..." rows="8"></textarea>
+<div class="absolute bottom-3 right-3 flex gap-2">
+<button class="p-2 hover:bg-surface-bright rounded-full text-outline transition-colors">
+<span class="material-symbols-outlined" data-icon="format_bold">format_bold</span>
+</button>
+<button class="p-2 hover:bg-surface-bright rounded-full text-outline transition-colors">
+<span class="material-symbols-outlined" data-icon="format_italic">format_italic</span>
+</button>
+</div>
+</div>
+</section>
+<section class="space-y-3">
+<div class="flex items-center justify-between px-1">
+<label class="text-[10px] uppercase tracking-widest font-semibold text-secondary-fixed opacity-70">Attach CAD Assets</label>
+<span class="text-[10px] text-tertiary-fixed font-mono">MAX 50MB</span>
+</div>
+<div class="flex flex-col gap-3">
+<button class="w-full h-16 flex items-center justify-center gap-3 border-2 border-dashed border-outline-variant/50 rounded-lg hover:border-[#fce003]/50 hover:bg-[#fce003]/5 transition-all group">
+<span class="material-symbols-outlined text-outline group-hover:text-[#fce003]" data-icon="add_circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+<span class="text-xs font-bold text-outline group-hover:text-on-surface tracking-widest">BROWSE FILES</span>
+</button>
+<div class="flex items-center gap-4 bg-surface-container-high rounded-lg p-3 relative group">
+<div class="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
+<img alt="CAD Preview 1" class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqnnbuYGzIwPSNjhZeuDUknke5p1hjM3rq9wqNBsKCKa-lUNmcxMyzqsvPhVJHJgTWF2nWpVvlkRsUQMbzg51b2TYvxiT3OpcZ53iuTcCygEjrSmvytI5RAGLO1SlhKUPv8Cas8kKZCUXY37oJIKbXxrScceCj4KpbR8OxgfkjdS9fqqHsArqlvCc64ySaCS5KCUlhGVWyL_CyHPtTWdS0XhV6Q2oLi60LLl_Vogo4rtmlzN0O7eF7oVsdBSFR5d2DQ56peQrHY7A"/>
+</div>
+<div class="flex flex-col min-w-0 pr-8">
+<span class="text-sm font-mono text-tertiary-fixed truncate font-bold">ring_base_v2.stl</span>
+<span class="text-[10px] text-outline mt-0.5">12.4 MB</span>
+</div>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-black/20 rounded-full text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="close">close</span>
+</button>
+</div>
+<div class="flex items-center gap-4 bg-surface-container-high rounded-lg p-3 relative group">
+<div class="w-16 h-16 rounded-md overflow-hidden flex-shrink-0">
+<img alt="CAD Preview 2" class="w-full h-full object-cover opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK-v-8rk0xaEVHTSM_-5FefS54cfcWldLrvzufyITyhANIcjzdNyJGOHShH_Dw2zHJsHCmxjlRwbIawSWFdTG5hNWjyJqUoCzMJcMJqsn-Bo202J20Ya4rcHH536GtKXFvjOR1N4ewAbzSumrsgwcd1r5BR79UhIT2xDoBcDn4kfu8oGDJaL7W0mBTBsgec8UWUjfVRokO-xYqOiAclY-w4yxfL9oJdR23-UngSeBqph8gu7XMpKbdJchNtPZZQEWilyJ5psjrWpA"/>
+</div>
+<div class="flex flex-col min-w-0 pr-8">
+<span class="text-sm font-mono text-tertiary-fixed truncate font-bold">gem_layout.obj</span>
+<span class="text-[10px] text-outline mt-0.5">8.1 MB</span>
+</div>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-black/20 rounded-full text-outline hover:text-error transition-colors">
+<span class="material-symbols-outlined text-xl" data-icon="close">close</span>
+</button>
+</div>
+</div>
+</section>
+<div class="flex items-center gap-2 bg-secondary-container/20 border border-secondary-container/30 px-3 py-2 rounded-full w-fit">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#fce003] opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-[#fce003]"></span>
+</span>
+<span class="text-[10px] font-bold text-[#fce003] tracking-widest uppercase">Draft Saved 2m ago</span>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 bg-neutral-900/95 backdrop-blur-3xl border-t border-white/5 py-2.5">
+<!-- Home -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Home</span>
+</div>
+<!-- Projects -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Projects</span>
+</div>
+<!-- Team -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Team</span>
+</div>
+<!-- Clients -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">badge</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Clients</span>
+</div>
+<!-- Inbox (Active) -->
+<div class="flex flex-col items-center gap-1 text-on-primary-container electric-gradient rounded-xl px-4 py-1.5 cursor-pointer shadow-lg shadow-yellow-400/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mail</span>
+<span class="text-[9px] uppercase font-extrabold tracking-tighter">Inbox</span>
+</div>
+</nav>
+</body></html>

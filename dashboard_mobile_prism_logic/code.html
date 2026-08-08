@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KINETIC Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#02fbfe",
+                        "outline": "#979177",
+                        "primary-fixed-dim": "#e0c700",
+                        "inverse-surface": "#e9e2cf",
+                        "inverse-on-surface": "#333024",
+                        "surface-tint": "#e0c700",
+                        "surface-bright": "#3c392c",
+                        "background": "#161308",
+                        "on-tertiary-fixed-variant": "#004f50",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#cec7ab",
+                        "tertiary-fixed-dim": "#00dcdf",
+                        "on-primary-fixed-variant": "#514700",
+                        "tertiary-container": "#00fbfe",
+                        "surface-container-high": "#2d2a1d",
+                        "secondary-fixed": "#f4e48c",
+                        "on-tertiary": "#003738",
+                        "secondary": "#d7c773",
+                        "on-primary-fixed": "#201c00",
+                        "on-error-container": "#ffdad6",
+                        "surface-dim": "#161308",
+                        "tertiary": "#fefffe",
+                        "surface-container-lowest": "#100e05",
+                        "error-container": "#93000a",
+                        "surface-container": "#222014",
+                        "surface": "#161308",
+                        "surface-container-low": "#1e1c10",
+                        "on-secondary-container": "#cbbd6a",
+                        "secondary-fixed-dim": "#d7c773",
+                        "secondary-container": "#564c00",
+                        "surface-variant": "#383528",
+                        "on-tertiary-container": "#007071",
+                        "on-background": "#e9e2cf",
+                        "primary-container": "#ffe30c",
+                        "on-surface": "#e9e2cf",
+                        "on-secondary": "#383100",
+                        "on-secondary-fixed": "#201c00",
+                        "on-primary": "#383100",
+                        "primary-fixed": "#ffe311",
+                        "outline-variant": "#4b4732",
+                        "surface-container-highest": "#383528",
+                        "on-tertiary-fixed": "#002020",
+                        "on-error": "#690005",
+                        "on-secondary-fixed-variant": "#514700",
+                        "primary": "#ffffff",
+                        "on-primary-container": "#726500",
+                        "inverse-primary": "#6b5f00"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .kinetic-gradient-border {
+            position: relative;
+            background: theme('colors.surface-container');
+        }
+        .kinetic-gradient-border::before {
+            content: '';
+            position: absolute;
+            inset: -1.5px;
+            border-radius: inherit;
+            background: linear-gradient(45deg, #fce003, #00fbfe);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .kinetic-gradient-border:hover::before {
+            opacity: 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body antialiased min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-16 bg-[#7b7767]/80 dark:bg-zinc-900/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(252,224,3,0.05)]">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#fce003]">grid_view</span>
+<h1 class="font-['Plus_Jakarta_Sans'] font-extrabold tracking-tight uppercase text-[#fce003] text-xl">KINETIC</h1>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant">
+<img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="close-up portrait of a young professional with neutral lighting and minimalist industrial background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC4mdT7rA-QfoSerMwzqO6poYWrW8u3l9TncIFfxQS_X7b9dGEI6Il-wDNaErUPtam4JxbZhXZXMkl5Mz4lp730ni2myrgIzkoBUhg-11ij7HnM51nN23EQYPquHKhqMe14ziX-vzGkYShas0S62Rzbn1zXP92Ii_rlO79PVgkGRRWAlj3WJGizGU2NSgNQ5rlhXGWpaJtZtzfpvuJlzT96CF84MH2b4VBB8epmRm7eHK9nwFc9jzXAOeclQ8vlSogwMOxKP8KNzyI"/>
+</div>
+</header>
+<main class="pt-20 px-6 space-y-6">
+<!-- Welcome Section -->
+<section class="mt-4">
+<h2 class="font-headline text-3xl font-extrabold tracking-tight text-on-surface">Data Overview</h2>
+<p class="text-sm text-on-surface-variant font-medium tracking-wide uppercase mt-1 opacity-70">Strategic Dashboard</p>
+</section>
+<!-- Bento Grid: Key Metrics -->
+<div class="grid grid-cols-2 gap-4">
+<!-- Revenue Card -->
+<div class="col-span-2 md:col-span-1 p-5 rounded-lg bg-surface-container border-l-4 border-[#fce003] shadow-lg relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-6xl">payments</span>
+</div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Revenue</span>
+<span class="flex items-center text-[10px] font-bold bg-[#00fbfe]/10 text-[#00fbfe] px-2 py-0.5 rounded-full">
+<span class="material-symbols-outlined text-xs mr-1">trending_up</span>
+                        +12%
+                    </span>
+</div>
+<div class="text-3xl font-headline font-extrabold text-[#fce003]">$0.00</div>
+<div class="text-[10px] text-on-surface-variant mt-1 font-semibold uppercase">Performance: This Month</div>
+</div>
+<!-- Pending Card -->
+<div class="p-5 rounded-lg bg-surface-container border-l-4 border-[#00fbfe] shadow-lg relative overflow-hidden group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-bold tracking-widest text-on-surface-variant">Pending</span>
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+</div>
+<div class="text-2xl font-headline font-extrabold text-on-surface">$0.00</div>
+<div class="text-[10px] text-error mt-2 font-bold uppercase tracking-tighter">Needs attention</div>
+</div>
+<!-- Costs Card -->
+<div class="p-5 rounded-lg bg-surface-container border-l-4 border-outline shadow-lg relative overflow-hidden group">
+<div class="flex justify-between items-start mb-2">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Costs</span>
+</div>
+<div class="text-2xl font-headline font-extrabold text-on-surface">$0.00</div>
+<div class="text-[10px] text-on-surface-variant mt-2 font-medium uppercase tracking-tighter">Employee spend</div>
+</div>
+</div>
+<!-- Recent Activity: Asymmetric Glass Card -->
+<section class="space-y-3">
+<div class="flex justify-between items-center">
+<h3 class="font-headline font-bold text-lg tracking-tight">Recent Tasks</h3>
+<span class="text-[10px] font-bold text-[#fce003] uppercase tracking-widest">View All</span>
+</div>
+<div class="p-6 rounded-lg bg-surface-container-high relative kinetic-gradient-border shadow-xl">
+<div class="flex items-center gap-4">
+<div class="flex-shrink-0 w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-[#fce003]">
+<span class="material-symbols-outlined text-3xl">architecture</span>
+</div>
+<div class="flex-grow">
+<div class="text-sm font-bold text-on-surface">System architecture review</div>
+<div class="text-[10px] text-on-surface-variant uppercase font-medium mt-0.5">High Priority • Engineering</div>
+</div>
+<div class="flex-shrink-0">
+<span class="material-symbols-outlined text-outline">chevron_right</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Upcoming Deadlines: High-Vis List -->
+<section class="space-y-4">
+<h3 class="font-headline font-bold text-lg tracking-tight">Upcoming Deadlines</h3>
+<div class="space-y-2">
+<!-- Deadline 1 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 rounded-full bg-gradient-to-b from-[#fce003] to-[#00fbfe]"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">Client Onboarding</div>
+<div class="text-[10px] font-bold text-on-surface-variant opacity-60 uppercase tracking-widest">Due in 2 days</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-tertiary-container group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+<!-- Deadline 2 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 rounded-full bg-outline-variant"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">Budget Audit</div>
+<div class="text-[10px] font-bold text-on-surface-variant opacity-60 uppercase tracking-widest">Due in 5 days</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+<!-- Deadline 3 -->
+<div class="flex items-center justify-between p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-1 h-8 rounded-full bg-secondary"></div>
+<div>
+<div class="text-sm font-bold text-on-surface">System Upgrade</div>
+<div class="text-[10px] font-bold text-on-surface-variant opacity-60 uppercase tracking-widest">Due in 1 week</div>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 bg-neutral-900/95 backdrop-blur-3xl border-t border-white/5 py-2.5">
+<!-- Home (Active) -->
+<div class="flex flex-col items-center gap-1 text-on-primary-container electric-gradient rounded-xl px-4 py-1.5 cursor-pointer shadow-lg shadow-yellow-400/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[9px] uppercase font-extrabold tracking-tighter">Home</span>
+</div>
+<!-- Projects -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Projects</span>
+</div>
+<!-- Team -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Team</span>
+</div>
+<!-- Clients -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">badge</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Clients</span>
+</div>
+<!-- Inbox -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">mail</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Inbox</span>
+</div>
+</nav>
+<!-- Contextual FAB - Dashboard primary action -->
+</body></html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Add New Client | Jewellery CAD Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#002020",
+                        "primary-fixed-dim": "#e0c700",
+                        "secondary-fixed": "#f4e48c",
+                        "surface-bright": "#3c392c",
+                        "primary-container": "#ffe30c",
+                        "inverse-primary": "#6b5f00",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#cbbd6a",
+                        "background": "#161308",
+                        "surface-container-low": "#1e1c10",
+                        "primary": "#ffffff",
+                        "outline": "#979177",
+                        "on-tertiary": "#003738",
+                        "tertiary-fixed": "#02fbfe",
+                        "tertiary": "#fefffe",
+                        "on-primary-container": "#726500",
+                        "surface-tint": "#e0c700",
+                        "surface-container-high": "#2d2a1d",
+                        "surface-variant": "#383528",
+                        "on-surface": "#e9e2cf",
+                        "surface-dim": "#161308",
+                        "primary-fixed": "#ffe311",
+                        "on-secondary": "#383100",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed-dim": "#00dcdf",
+                        "on-primary-fixed": "#201c00",
+                        "on-primary": "#383100",
+                        "secondary-container": "#564c00",
+                        "on-background": "#e9e2cf",
+                        "inverse-on-surface": "#333024",
+                        "tertiary-container": "#00fbfe",
+                        "on-tertiary-container": "#007071",
+                        "on-surface-variant": "#cec7ab",
+                        "on-secondary-fixed": "#201c00",
+                        "surface-container-lowest": "#100e05",
+                        "secondary": "#d7c773",
+                        "on-tertiary-fixed-variant": "#004f50",
+                        "surface-container": "#222014",
+                        "surface-container-highest": "#383528",
+                        "inverse-surface": "#e9e2cf",
+                        "surface": "#161308",
+                        "on-secondary-fixed-variant": "#514700",
+                        "secondary-fixed-dim": "#d7c773",
+                        "outline-variant": "#4b4732",
+                        "on-primary-fixed-variant": "#514700",
+                        "on-error-container": "#ffdad6",
+                        "error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .electric-gradient {
+            background: linear-gradient(45deg, #fce003 0%, #00fbfe 100%);
+        }
+        .electric-border-gradient {
+            border: 1.5px solid transparent;
+            background-image: linear-gradient(#1e1c10, #1e1c10), linear-gradient(45deg, #fce003, #00fbfe);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-[#7b7767] dark:bg-neutral-800/80 backdrop-blur-xl docked full-width top-0 sticky z-50 flex justify-between items-center w-full px-6 h-16 shadow-[0_0_15px_rgba(252,224,3,0.12)]">
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transition-transform duration-200 text-[#fce003] hover:bg-neutral-700/50 transition-all duration-300 p-2 rounded-lg">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-lg text-[#fce003]">Add New Client</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="font-['Plus_Jakarta_Sans'] font-bold tracking-tight text-sm text-[#fce003] px-4 py-2 hover:bg-neutral-700/50 transition-all duration-300 active:scale-95">
+                SAVE
+            </button>
+</div>
+</header>
+<main class="max-w-2xl mx-auto px-6 pt-12 space-y-10">
+<!-- Visual Accent Header -->
+<div class="space-y-2">
+<div class="flex items-center gap-3">
+<div class="h-[2px] w-12 electric-gradient"></div>
+<span class="font-label text-[10px] font-bold tracking-[0.2em] text-primary-fixed-dim uppercase">Customer Intelligence</span>
+</div>
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tighter">Onboard New <span class="text-tertiary-container">Partner</span></h2>
+<p class="text-on-surface-variant text-sm max-w-md">Initialize a new client profile within the Electric Kinetic ecosystem. All data is encrypted and synced across CAD nodes.</p>
+</div>
+<!-- Form Section -->
+<div class="bg-surface-container-low p-8 rounded-xl space-y-8 relative overflow-hidden">
+<!-- Decorative Glow -->
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary-fixed/5 blur-[80px] rounded-full"></div>
+<div class="space-y-6">
+<!-- Customer Name -->
+<div class="group">
+<label class="block font-label text-xs font-bold text-on-secondary-container uppercase tracking-widest mb-3">Customer Name</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant focus:border-primary-fixed focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline" placeholder="e.g. Alexander Sterling" type="text"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary-fixed transition-colors">person</span>
+</div>
+</div>
+<!-- Contact Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Email -->
+<div class="group">
+<label class="block font-label text-xs font-bold text-on-secondary-container uppercase tracking-widest mb-3">Email Address</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant focus:border-primary-fixed focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline" placeholder="client@studio.com" type="email"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary-fixed transition-colors">mail</span>
+</div>
+</div>
+<!-- Mobile Number -->
+<div class="group">
+<label class="block font-label text-xs font-bold text-on-secondary-container uppercase tracking-widest mb-3">Mobile Number</label>
+<div class="relative">
+<input class="w-full bg-surface-container-lowest border-outline-variant focus:border-primary-fixed focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline" placeholder="+1 (555) 000-0000" type="tel"/>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary-fixed transition-colors">smartphone</span>
+</div>
+</div>
+</div>
+<!-- Localization & Source -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Country -->
+<div class="group">
+<label class="block font-label text-xs font-bold text-on-secondary-container uppercase tracking-widest mb-3">Country</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border-outline-variant focus:border-primary-fixed focus:ring-0 rounded-lg py-4 px-5 text-on-surface appearance-none transition-all duration-300 group-hover:border-outline">
+<option>United States</option>
+<option>United Kingdom</option>
+<option>United Arab Emirates</option>
+<option>India</option>
+<option>Belgium</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">public</span>
+</div>
+</div>
+<!-- Platform/Source -->
+<div class="group">
+<label class="block font-label text-xs font-bold text-on-secondary-container uppercase tracking-widest mb-3">Platform/Source</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border-outline-variant focus:border-primary-fixed focus:ring-0 rounded-lg py-4 px-5 text-on-surface appearance-none transition-all duration-300 group-hover:border-outline">
+<option>Upwork</option>
+<option>Direct Referral</option>
+<option>LinkedIn</option>
+<option>Instagram</option>
+<option>Fiverr</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">hub</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Primary Action -->
+<div class="pt-4">
+<button class="w-full electric-gradient text-on-primary-fixed font-headline font-bold text-lg py-5 rounded-xl flex items-center justify-center gap-3 hover:shadow-[0_0_25px_rgba(252,224,3,0.4)] active:scale-[0.98] transition-all duration-300">
+<span>SAVE CUSTOMER</span>
+<span class="material-symbols-outlined">bolt</span>
+</button>
+<p class="text-center mt-4 font-label text-[10px] text-outline tracking-widest uppercase">Encryption: AES-256 Enabled</p>
+</div>
+</div>
+<!-- System Status Cards (Bento Style) -->
+<div class="grid grid-cols-2 gap-4 pb-12">
+<div class="bg-surface-container p-4 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden">
+<span class="material-symbols-outlined text-tertiary-container text-xl">verified_user</span>
+<div>
+<div class="text-[10px] font-bold text-outline tracking-wider uppercase">Validation</div>
+<div class="text-on-surface font-headline font-bold">Secure Entry</div>
+</div>
+<div class="absolute -bottom-4 -right-4 w-16 h-16 bg-tertiary-container/5 rounded-full blur-xl"></div>
+</div>
+<div class="bg-surface-container p-4 rounded-xl flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-pulse"></span>
+<span class="text-[10px] font-bold text-primary-fixed-dim uppercase tracking-widest">Active Node</span>
+</div>
+<div>
+<div class="text-[10px] font-bold text-outline tracking-wider uppercase">Sync Status</div>
+<div class="text-on-surface font-headline font-bold">Cloud-Linked</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Refined Organization Style) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 bg-neutral-900/95 backdrop-blur-3xl border-t border-white/5 py-2.5">
+<!-- Home -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Home</span>
+</div>
+<!-- Projects -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Projects</span>
+</div>
+<!-- Team -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Team</span>
+</div>
+<!-- Clients (Active) -->
+<div class="flex flex-col items-center gap-1 text-on-primary-container electric-gradient rounded-xl px-4 py-1.5 cursor-pointer shadow-lg shadow-yellow-400/10 active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">badge</span>
+<span class="text-[9px] uppercase font-extrabold tracking-tighter">Clients</span>
+</div>
+<!-- Inbox -->
+<div class="flex flex-col items-center gap-1 text-neutral-500 cursor-pointer transition-all">
+<span class="material-symbols-outlined">mail</span>
+<span class="text-[9px] uppercase font-bold tracking-tighter">Inbox</span>
+</div></nav>
+</body></html>
