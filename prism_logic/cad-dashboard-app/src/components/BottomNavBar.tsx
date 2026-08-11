@@ -67,11 +67,13 @@ export const BottomNavBar: React.FC = () => {
   const navItems: { label: string; icon: string; href?: string; onClick?: () => void; }[] = isDesigner ? [
     { label: 'Workstation', icon: 'dashboard', href: '/designer' },
     { label: 'Projects', icon: 'precision_manufacturing', href: '/projects' },
+    { label: 'Explore', icon: 'explore', href: '/explore' },
     { label: 'Profile', icon: 'account_circle', href: '/designer/profile' },
     { label: 'Menu', icon: 'menu', onClick: () => setIsMobileMenuOpen(true) },
   ] : [
     { label: 'Home', icon: 'home', href: '/' },
     { label: 'Projects', icon: 'precision_manufacturing', href: '/projects' },
+    { label: 'Explore', icon: 'explore', href: '/explore' },
     { label: 'Team', icon: 'groups', href: '/team' },
     { label: 'Menu', icon: 'menu', onClick: () => setIsMobileMenuOpen(true) },
   ];
@@ -85,7 +87,7 @@ export const BottomNavBar: React.FC = () => {
     <>
       <nav className={`fixed bottom-0 w-full z-[200] flex justify-around items-center px-2 bg-[#1f1f21]/95 backdrop-blur-3xl border-t border-white/5 py-2.5 transition-opacity duration-300 md:hidden ${isReady ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         {navItems.map((item) => {
-          const isActive = 'href' in item && item.href ? (pathname === item.href || (item.href === '/projects' && pathname.startsWith('/projects/'))) : false;
+          const isActive = 'href' in item && item.href ? (item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)) : false;
           const content = (
             <>
               <span className={`material-symbols-outlined ${isActive ? 'fill-1' : ''}`} style={isActive ? { fontVariationSettings: "'FILL' 1" } : {}}>
