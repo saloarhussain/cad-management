@@ -725,8 +725,8 @@ export default function DashboardContent({
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Jobs Still Pending</p>
-                  <h3 className="text-3xl font-headline font-black text-[#fce003] tracking-tighter leading-none">
+                  <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Jobs Still Pending</p>
+                  <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
                     {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
                   </h3>
                 </div>
