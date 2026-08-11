@@ -737,13 +737,11 @@ export default function DashboardContent({
           <section className="space-y-4">
             <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Pending Jobs</h3>
-              <Link href="/projects" className="text-[10px] font-bold text-[#fce003] uppercase tracking-widest cursor-pointer">View All</Link>
             </div>
             
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
-                  <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Jobs Still Pending</p>
                   <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
                     {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
                   </h3>
@@ -825,7 +823,6 @@ export default function DashboardContent({
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
-                  <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Active Deadlines</p>
                   <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
                     {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? 'Deadline' : 'Deadlines'}
                   </h3>
