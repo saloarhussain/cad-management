@@ -44,6 +44,23 @@ export default function DashboardContent({
   const { user } = useAuth();
   const isFounder = user?.email === PLATFORM_CONFIG.FOUNDER_EMAIL;
 
+  const activeProjectsList = (allProjects || []).filter((p: any) => {
+    const s = p.status?.toLowerCase() || '';
+    return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
+  });
+
+  const activeClientsCount = new Set(
+    activeProjectsList
+      .map((p: any) => p.client)
+      .filter((c: any) => c && c.trim() !== '')
+  ).size;
+
+  const activeDesignersCount = new Set(
+    activeProjectsList
+      .map((p: any) => p.designer)
+      .filter((d: any) => d && d.trim() !== '')
+  ).size;
+
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
@@ -303,13 +320,13 @@ export default function DashboardContent({
                 <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
                   <span className="material-symbols-outlined text-xs text-[#fce003]">person</span>
                   <span className="text-[9px] font-black uppercase tracking-wider text-white">
-                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span>
+                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span> <span className="text-[#fce003] font-bold">({activeClientsCount} Active)</span>
                   </span>
                 </div>
                 <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
                   <span className="material-symbols-outlined text-xs text-[#00fbfe]">groups</span>
                   <span className="text-[9px] font-black uppercase tracking-wider text-white">
-                    {stats.totalDesigners} <span className="text-on-surface-variant opacity-60">Team</span>
+                    {stats.totalDesigners} <span className="text-on-surface-variant opacity-60">Team</span> <span className="text-[#00fbfe] font-bold">({activeDesignersCount} Active)</span>
                   </span>
                 </div>
               </div>
