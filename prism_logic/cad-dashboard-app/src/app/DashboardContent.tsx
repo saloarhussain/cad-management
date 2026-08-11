@@ -293,9 +293,26 @@ export default function DashboardContent({
         {/* Welcome Section */}
         <section className="mt-6 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
-            <div>
-              <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
-              <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1.5 opacity-60">Strategic Dashboard</p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
+              <div>
+                <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
+                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1.5 opacity-60">Strategic Dashboard</p>
+              </div>
+              {/* Clients and Team Counts */}
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xs text-[#fce003]">person</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-white">
+                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span>
+                  </span>
+                </div>
+                <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
+                  <span className="material-symbols-outlined text-xs text-[#00fbfe]">groups</span>
+                  <span className="text-[9px] font-black uppercase tracking-wider text-white">
+                    {stats.totalDesigners} <span className="text-on-surface-variant opacity-60">Team</span>
+                  </span>
+                </div>
+              </div>
             </div>
             <div className="flex items-center gap-2 w-full sm:w-auto h-10">
               {/* Export Button */}
