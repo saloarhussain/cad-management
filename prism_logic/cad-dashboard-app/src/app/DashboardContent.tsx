@@ -985,11 +985,7 @@ export default function DashboardContent({
           </section>
 
         </div>
-        {/* Rendering Indicator Floating Pill */}
-        <div className="fixed left-6 bottom-24 z-[150] px-4 py-2 rounded-full glass-panel border border-white/5 shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom-4 duration-500">
-          <span className="w-2 h-2 rounded-full bg-[#e9e2cf] animate-pulse shadow-[0_0_10px_rgba(233,226,207,0.5)]"></span>
-          <span className="text-[10px] font-black text-on-surface uppercase tracking-widest opacity-80">Rendering...</span>
-        </div>
+
       </div>
     </AuthGuard>
   );
