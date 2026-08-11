@@ -714,16 +714,16 @@ export default function DashboardContent({
         </div>
 
         {/* Main Grid: Pending Jobs, Deadlines & Earn CADONCE Points */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
           {/* Column 1: Pending Jobs Count Card */}
-          <section className="space-y-4 flex flex-col h-full">
+          <section className="space-y-4">
             <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Pending Jobs</h3>
               <Link href="/projects" className="text-[10px] font-bold text-[#fce003] uppercase tracking-widest cursor-pointer">View All</Link>
             </div>
             
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px]">
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
                   <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Jobs Still Pending</p>
@@ -744,7 +744,7 @@ export default function DashboardContent({
 
               {/* Collapsible Panel */}
               {isPendingJobsExpanded && (
-                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full flex-1">
+                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {(() => {
                     const pendingProjects = (allProjects || []).filter((p: any) => {
                       const s = p.status?.toLowerCase() || '';
@@ -803,9 +803,9 @@ export default function DashboardContent({
           </section>
 
           {/* Column 2: Upcoming Deadlines */}
-          <section className="space-y-4 flex flex-col h-full">
+          <section className="space-y-4">
             <h3 className="font-headline font-bold text-lg tracking-tight px-2 shrink-0">Deadlines</h3>
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px]">
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
                   <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Active Deadlines</p>
@@ -826,7 +826,7 @@ export default function DashboardContent({
 
               {/* Collapsible Panel */}
               {isDeadlinesExpanded && (
-                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full flex-1">
+                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {upcomingDeadlines.length === 0 ? (
                     <div className="text-center py-4 text-[10px] font-black text-white/20 uppercase tracking-widest w-full">
                       No immediate deadlines
@@ -862,7 +862,7 @@ export default function DashboardContent({
           </section>
 
           {/* Column 3: Earn CADONCE Points */}
-          <section className="space-y-4 flex flex-col h-full">
+          <section className="space-y-4">
             <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Earn Points</h3>
               {isFounder && (
@@ -875,7 +875,7 @@ export default function DashboardContent({
               )}
             </div>
 
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4 flex-1 flex flex-col justify-center min-h-[96px] overflow-hidden">
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4 overflow-hidden">
               {showLinkInput && (
                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 w-full shrink-0">
                   <div className="relative">
