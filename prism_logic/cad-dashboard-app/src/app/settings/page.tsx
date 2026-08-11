@@ -15,6 +15,7 @@ import {
 import AuthGuard from '@/components/AuthGuard';
 import { CountrySearch } from '@/components/CountrySearch';
 import { GLOBAL_CURRENCIES } from '@/lib/config';
+import { getTaxIdLabel } from '@/lib/tax';
 
 const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
@@ -80,7 +81,7 @@ export default function SettingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [countryCode, setCountryCode] = useState('US'); // Default
-  const [activeTab, setActiveTab] = useState<'user' | 'email' | 'payment' | 'wallet'>('user');
+  const [activeTab, setActiveTab] = useState<'user' | 'email' | 'alerts' | 'payment' | 'wallet'>('user');
   const [designerData, setDesignerData] = useState<any>(null);
   const [designerFullName, setDesignerFullName] = useState('');
   const [designerSpecialty, setDesignerSpecialty] = useState('');
@@ -96,7 +97,25 @@ export default function SettingsPage() {
   const [whatsapp, setWhatsapp] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [pointsBalance, setPointsBalance] = useState(0);
+  const [pointsBalance, setPointsBalance] = useState<number>(0);
+  
+  // Organization Invoice Details
+  const [orgTaxId, setOrgTaxId] = useState('');
+  const [orgAddress, setOrgAddress] = useState('');
+  const [orgCity, setOrgCity] = useState('');
+  const [orgPincode, setOrgPincode] = useState('');
+  const [orgState, setOrgState] = useState('');
+  const [orgCountry, setOrgCountry] = useState('');
+
+  // External Alerts & Integrations
+  const [freelanceEmail, setFreelanceEmail] = useState('');
+  const [freelanceAppPassword, setFreelanceAppPassword] = useState('');
+  const [binanceApiKey, setBinanceApiKey] = useState('');
+  const [binanceApiSecret, setBinanceApiSecret] = useState('');
+  const [twilioAccountSid, setTwilioAccountSid] = useState('');
+  const [twilioAuthToken, setTwilioAuthToken] = useState('');
+  const [twilioPhoneFrom, setTwilioPhoneFrom] = useState('');
+  const [twilioPhoneTo, setTwilioPhoneTo] = useState('');
 
   // Wallet State
   const [transferEmail, setTransferEmail] = useState('');
@@ -167,7 +186,23 @@ export default function SettingsPage() {
         setSmtpHost(systemConfig.smtpHost || s.smtpHost || 'smtp.gmail.com');
         setSmtpPort(systemConfig.smtpPort?.toString() || s.smtpPort?.toString() || '465');
         setSmtpSecure(systemConfig.smtpSecure !== undefined ? systemConfig.smtpSecure : (s.smtpSecure !== undefined ? s.smtpSecure : true));
+        setOrgTaxId(systemConfig.orgTaxId || s.orgTaxId || '');
+        setOrgAddress(systemConfig.orgAddress || s.orgAddress || '');
+        setOrgCity(systemConfig.orgCity || s.orgCity || '');
+        setOrgPincode(systemConfig.orgPincode || s.orgPincode || '');
+        setOrgState(systemConfig.orgState || s.orgState || '');
+        setOrgCountry(systemConfig.orgCountry || s.orgCountry || '');
         setPaymentMethods(paymentData.filter((m: any) => m.id !== 'system_config'));
+
+        // Alert Integrations
+        setFreelanceEmail(systemConfig.freelanceEmail || s.freelanceEmail || '');
+        setFreelanceAppPassword(systemConfig.freelanceAppPassword || s.freelanceAppPassword || '');
+        setBinanceApiKey(systemConfig.binanceApiKey || s.binanceApiKey || '');
+        setBinanceApiSecret(systemConfig.binanceApiSecret || s.binanceApiSecret || '');
+        setTwilioAccountSid(systemConfig.twilioAccountSid || s.twilioAccountSid || '');
+        setTwilioAuthToken(systemConfig.twilioAuthToken || s.twilioAuthToken || '');
+        setTwilioPhoneFrom(systemConfig.twilioPhoneFrom || s.twilioPhoneFrom || '');
+        setTwilioPhoneTo(systemConfig.twilioPhoneTo || s.twilioPhoneTo || '');
 
         // 2. Process Designer Profile if applicable
         if (isDesigner && designerRes.designer) {
@@ -297,12 +332,28 @@ export default function SettingsPage() {
         formData.append('smtpHost', smtpHost);
         formData.append('smtpPort', smtpPort);
         formData.append('smtpSecure', smtpSecure.toString());
+        formData.append('orgTaxId', orgTaxId);
+        formData.append('orgAddress', orgAddress);
+        formData.append('orgCity', orgCity);
+        formData.append('orgPincode', orgPincode);
+        formData.append('orgState', orgState);
+        formData.append('orgCountry', orgCountry);
         formData.append('organizationName', organizationTitle);
         formData.append('ownerName', ownerName);
         formData.append('whatsapp', whatsapp);
         formData.append('avatarUrl', avatarUrl);
         formData.append('country', designerCountry);
         formData.append('pointsBalance', pointsBalance.toString());
+        
+        // Alert Integrations
+        formData.append('freelanceEmail', freelanceEmail);
+        formData.append('freelanceAppPassword', freelanceAppPassword);
+        formData.append('binanceApiKey', binanceApiKey);
+        formData.append('binanceApiSecret', binanceApiSecret);
+        formData.append('twilioAccountSid', twilioAccountSid);
+        formData.append('twilioAuthToken', twilioAuthToken);
+        formData.append('twilioPhoneFrom', twilioPhoneFrom);
+        formData.append('twilioPhoneTo', twilioPhoneTo);
 
         const res = await saveAllSettings(formData, paymentMethods);
 
@@ -424,6 +475,8 @@ export default function SettingsPage() {
                 {[
                   { id: 'user', label: 'User Setting', icon: 'person', desc: 'Profile & Global Preferences' },
                   { id: 'payment', label: 'Payment Method', icon: 'payments', desc: 'Billing Gateways & Addresses' },
+                  { id: 'email', label: 'Notification', icon: 'notifications_active', desc: 'Email Protocols & Alerts' },
+                  { id: 'alerts', label: 'Alert Integrations', icon: 'webhook', desc: 'Fiverr, Upwork, Phone Calls' },
                   { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet', desc: 'Ledger, Escrow & Withdrawals' }
                 ].map((tab) => (
                   <button
@@ -574,6 +627,67 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
+                  
+                  {!isDesigner && (
+                    <div className="relative z-10 pt-8 mt-8 border-t border-zinc-800/50">
+                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6">Organization Invoice Details</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Country</label>
+                            <CountrySearch 
+                              name="orgCountry"
+                              defaultValue={orgCountry} 
+                              onChange={(val) => setOrgCountry(val)} 
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">{getTaxIdLabel(orgCountry).toUpperCase()}</label>
+                            <input
+                              value={orgTaxId}
+                              onChange={(e) => setOrgTaxId(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder={`Enter ${getTaxIdLabel(orgCountry)}`}
+                            />
+                          </div>
+                          <div className="space-y-1.5 md:col-span-2">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Address</label>
+                            <input
+                              value={orgAddress}
+                              onChange={(e) => setOrgAddress(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="123 Business St"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">City</label>
+                            <input
+                              value={orgCity}
+                              onChange={(e) => setOrgCity(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="City"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">State / Province</label>
+                            <input
+                              value={orgState}
+                              onChange={(e) => setOrgState(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="State"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Pincode / Zip</label>
+                            <input
+                              value={orgPincode}
+                              onChange={(e) => setOrgPincode(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="Zip Code"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                  )}
 
                   {isDesigner && (
                     <div className="mt-6 pt-6 border-t border-white/5">
@@ -733,6 +847,210 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'email' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                {/* SMTP / Notification Protocol Card */}
+                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group shadow-xl">
+                  <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400">
+                    <span className="material-symbols-outlined text-7xl">notifications_active</span>
+                  </div>
+
+                  <div className="relative z-20">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">Notification Protocol</h3>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Configure your email gateway for client and designer alerts</p>
+
+                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="col-span-2 md:col-span-1 space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">SMTP Host</label>
+                        <input
+                          value={smtpHost}
+                          onChange={(e) => setSmtpHost(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="smtp.gmail.com"
+                        />
+                      </div>
+                      <div className="col-span-2 md:col-span-1 grid grid-cols-2 gap-6">
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">SMTP Port</label>
+                          <input
+                            value={smtpPort}
+                            onChange={(e) => setSmtpPort(e.target.value)}
+                            className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                            placeholder="465"
+                          />
+                        </div>
+                        <div className="space-y-1.5 flex flex-col justify-end">
+                          <label className="flex items-center gap-2 cursor-pointer h-[46px] bg-black/40 border border-zinc-800 rounded-lg px-4 text-sm text-white font-semibold hover:border-yellow-400/50 transition-all">
+                            <input 
+                              type="checkbox" 
+                              checked={smtpSecure}
+                              onChange={(e) => setSmtpSecure(e.target.checked)}
+                              className="accent-yellow-400 w-4 h-4"
+                            />
+                            <span className="text-[10px] uppercase tracking-widest mt-0.5">Secure SSL</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="col-span-2 space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Sender Name (Alias)</label>
+                        <input
+                          value={senderName}
+                          onChange={(e) => setSenderName(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="My CAD Organization"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Email Address</label>
+                        <input
+                          type="email"
+                          value={gmailUser}
+                          onChange={(e) => setGmailUser(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="alerts@domain.com"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">App Password / Secret</label>
+                        <input
+                          type="password"
+                          value={gmailAppPassword}
+                          onChange={(e) => setGmailAppPassword(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="••••••••••••••••"
+                        />
+                      </div>
+                      <div className="col-span-2 mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">Google API Integration</p>
+                          <p className="text-[9px] text-zinc-600 font-medium">Connect via OAuth to read inbox and auto-send transfer links</p>
+                        </div>
+                        <a
+                          href="/api/gmail/auth"
+                          className="px-6 py-2.5 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-lg hover:brightness-90 transition-all flex items-center gap-2"
+                        >
+                          <span className="material-symbols-outlined text-sm">link</span>
+                          Connect Google Account
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'alerts' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group shadow-xl">
+                  <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400">
+                    <span className="material-symbols-outlined text-7xl">webhook</span>
+                  </div>
+
+                  <div className="relative z-20">
+                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">External Alert Integrations</h3>
+                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Connect Fiverr, Upwork, Binance P2P and Phone Call Alerts</p>
+
+                    <div className="mt-8 space-y-10">
+                      
+                      {/* Fiverr & Upwork */}
+                      <div className="space-y-6 border-b border-white/5 pb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
+                            <span className="material-symbols-outlined text-sm">mail</span>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Freelance Platforms (Fiverr/Upwork)</h4>
+                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Connect your email to parse incoming order notifications automatically</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Email ID</label>
+                            <input
+                              type="email"
+                              value={freelanceEmail}
+                              onChange={(e) => setFreelanceEmail(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="freelance@domain.com"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Email App Password</label>
+                            <input
+                              type="password"
+                              value={freelanceAppPassword}
+                              onChange={(e) => setFreelanceAppPassword(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="••••••••••••••••"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Binance P2P */}
+                      <div className="space-y-6 border-b border-white/5 pb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400">
+                            <span className="material-symbols-outlined text-sm">currency_bitcoin</span>
+                          </div>
+                          <h4 className="text-sm font-black text-white uppercase tracking-widest">Binance P2P Notifications</h4>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Binance API Key</label>
+                            <input
+                              value={binanceApiKey}
+                              onChange={(e) => setBinanceApiKey(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="Key..."
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Binance API Secret</label>
+                            <input
+                              type="password"
+                              value={binanceApiSecret}
+                              onChange={(e) => setBinanceApiSecret(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="Secret..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Phone Call Alerts (Twilio) */}
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
+                            <span className="material-symbols-outlined text-sm">call</span>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Phone Call Alerts</h4>
+                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Receive automated calls from the platform when urgent alerts trigger</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-1.5 md:col-span-2 max-w-xl">
+                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Your Phone Number (To Receive Calls)</label>
+                            <input
+                              value={twilioPhoneTo}
+                              onChange={(e) => setTwilioPhoneTo(e.target.value)}
+                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              placeholder="+1987654321"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -74,9 +74,37 @@
   --color-on-primary-container: #726500;
   --color-inverse-primary: #6b5f00;
 
-  --font-headline: "Plus Jakarta Sans", sans-serif;
-  --font-body: "Inter", sans-serif;
-  --font-label: "Inter", sans-serif;
+  /* Custom mockup design tokens */
+  --color-accent-lime: #FCE003;
+  --color-accent-cyan: #26D1FF;
+  --color-surface-base: #0C0A04;
+  --color-stroke-glass: rgba(255, 255, 255, 0.12);
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: rgba(255, 255, 255, 0.7);
+
+  --font-label-sm: "Inter", sans-serif;
+  --font-label-md: "Inter", sans-serif;
+  --font-body-lg: "Inter", sans-serif;
+  --font-headline-xl: "Plus Jakarta Sans", sans-serif;
+  --font-headline-xl-mobile: "Plus Jakarta Sans", sans-serif;
+  --font-headline-md: "Plus Jakarta Sans", sans-serif;
+  --font-body-md: "Inter", sans-serif;
+  --font-headline-lg: "Plus Jakarta Sans", sans-serif;
+
+  --font-size-label-sm: 12px;
+  --font-size-label-md: 14px;
+  --font-size-body-lg: 18px;
+  --font-size-headline-xl: 64px;
+  --font-size-headline-xl-mobile: 40px;
+  --font-size-headline-md: 24px;
+  --font-size-body-md: 16px;
+  --font-size-headline-lg: 32px;
+
+  --spacing-container-max: 1440px;
+  --spacing-unit: 8px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 20px;
+  --spacing-margin-desktop: 64px;
 
   --radius-DEFAULT: 0.25rem;
   --radius-lg: 0.5rem;
@@ -211,8 +239,9 @@ body {
 }
 
 .glass-panel {
+  background: rgba(22, 24, 29, 0.7);
   backdrop-filter: blur(20px);
-  background: rgba(34, 32, 20, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .pulse-dot {

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { getDb } from '@/app/actions';
+import { getDb, saveFavoriteClients } from '@/app/actions';
 import Avatar from '@/components/Avatar';
 import AuthGuard from '@/components/AuthGuard';
 import { utils, writeFile } from 'xlsx';
@@ -32,6 +32,19 @@ const countryMap: Record<string, { flag: string; code: string }> = {
   'TR': { flag: '🇹🇷', code: 'TUR' },
   'Vietnam': { flag: '🇻🇳', code: 'VNM' },
   'VN': { flag: '🇻🇳', code: 'VNM' },
+  'Europe': { flag: '🇪🇺', code: 'EUR' },
+  'EU': { flag: '🇪🇺', code: 'EUR' },
+  'Germany': { flag: '🇩🇪', code: 'DEU' },
+  'DE': { flag: '🇩🇪', code: 'DEU' },
+  'Spain': { flag: '🇪🇸', code: 'ESP' },
+  'Italy': { flag: '🇮🇹', code: 'ITA' },
+  'Japan': { flag: '🇯🇵', code: 'JPN' },
+  'South Korea': { flag: '🇰🇷', code: 'KOR' },
+  'Brazil': { flag: '🇧🇷', code: 'BRA' },
+  'Mexico': { flag: '🇲🇽', code: 'MEX' },
+  'Singapore': { flag: '🇸🇬', code: 'SGP' },
+  'Monaco': { flag: '🇲🇨', code: 'MCO' },
+  'MC': { flag: '🇲🇨', code: 'MCO' },
   'GLOBAL': { flag: '🌐', code: 'GLB' }
 };
 
@@ -45,10 +58,49 @@ export default function ClientsPage() {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [earningBracket, setEarningBracket] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  useEffect(() => {
+    const savedFavs = localStorage.getItem('cadonce_favorite_clients');
+    if (savedFavs) {
+      try {
+        setFavorites(JSON.parse(savedFavs));
+      } catch (e) {}
+    }
+  }, []);
+
+  const toggleFavorite = (e: React.MouseEvent, clientId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newFavs = favorites.includes(clientId) 
+      ? favorites.filter(id => id !== clientId)
+      : [...favorites, clientId];
+      
+    setFavorites(newFavs);
+    localStorage.setItem('cadonce_favorite_clients', JSON.stringify(newFavs));
+    
+    saveFavoriteClients(newFavs).catch(err => {
+      console.error('Failed to sync favorites to DB:', err);
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
+      
+      let liveRates: Record<string, number> = {};
+      try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rates) liveRates = data.rates;
+        }
+      } catch (err) {
+        console.error('Failed to fetch live exchange rates', err);
+      }
+
       const db = await getDb();
       if (db.clients) {
         const projects = db.projects || [];
@@ -73,9 +125,40 @@ export default function ClientsPage() {
             p.client === personName
           );
 
-          const doneCount = clientProjects.filter((p: any) => p.status === 'Approved').length;
+          const doneCount = clientProjects.filter((p: any) => ['Approved', 'Completed', 'Complete'].includes(p.status)).length;
           const liveCount = clientProjects.length - doneCount;
-          const totalEarnings = clientProjects.reduce((sum: number, p: any) => sum + (parseFloat(p.revenue) || 0), 0);
+          const totalEarnings = clientProjects.reduce((sum: number, p: any) => {
+            let amount = parseFloat(p.revenue) || 0;
+            let code = 'USD';
+            
+            if (p.revenueCurrency === '£' || p.revenueCurrency === 'GBP') code = 'GBP';
+            else if (p.revenueCurrency === '€' || p.revenueCurrency === 'EUR') code = 'EUR';
+            else if (p.revenueCurrency === '₹' || p.revenueCurrency === 'INR') code = 'INR';
+            else if (p.revenueCurrency === 'A$' || p.revenueCurrency === 'AUD') code = 'AUD';
+            else if (p.revenueCurrency === 'C$' || p.revenueCurrency === 'CAD') code = 'CAD';
+            else if (p.revenueCurrency && p.revenueCurrency.length === 3 && p.revenueCurrency !== 'USD') {
+              code = p.revenueCurrency.toUpperCase();
+            } else if (!p.revenueCurrency || p.revenueCurrency === '$') {
+              // Infer currency based on client country if not explicitly set to USD
+              if (cInfo.code === 'GBR') code = 'GBP';
+              else if (['FRA', 'DEU', 'ITA', 'ESP', 'BEL'].includes(cInfo.code)) code = 'EUR';
+              else if (cInfo.code === 'IND') code = 'INR';
+              else if (cInfo.code === 'AUS') code = 'AUD';
+              else if (cInfo.code === 'CAN') code = 'CAD';
+            }
+            
+            if (code !== 'USD') {
+              if (liveRates[code]) {
+                amount = amount / liveRates[code]; // Rates are relative to USD (e.g., 1 USD = 0.79 GBP)
+              } else {
+                // Fallbacks if API fails
+                if (code === 'GBP') amount *= 1.27;
+                else if (code === 'EUR') amount *= 1.08;
+                else if (code === 'INR') amount *= 0.012;
+              }
+            }
+            return sum + amount;
+          }, 0);
 
           return {
             ...c,
@@ -84,7 +167,7 @@ export default function ClientsPage() {
             location: cInfo.code,
             flag: cInfo.flag,
             earningsValue: totalEarnings,
-            earnings: `$${totalEarnings.toLocaleString()}`,
+            earnings: `$${totalEarnings.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
             done: doneCount,
             live: liveCount,
             icon: 'person',
@@ -94,6 +177,12 @@ export default function ClientsPage() {
         });
         setRealClients(formatted);
       }
+      
+      if (db.settings?.favorite_clients) {
+        setFavorites(db.settings.favorite_clients);
+        localStorage.setItem('cadonce_favorite_clients', JSON.stringify(db.settings.favorite_clients));
+      }
+
       setIsLoading(false);
     };
     fetchData();
@@ -111,18 +200,25 @@ export default function ClientsPage() {
       const matchesCountry = selectedCountry === 'All' || client.location === selectedCountry;
       const matchesEarnings = earningBracket === 'All' || 
                             (earningBracket === '>$100k' ? client.earningsValue >= 100000 : client.earningsValue < 100000);
+      const matchesFavorites = showFavoritesOnly ? favorites.includes(client.id) : true;
       
-      return matchesSearch && matchesCountry && matchesEarnings;
+      return matchesSearch && matchesCountry && matchesEarnings && matchesFavorites;
     });
 
-    if (sortOrder === 'earnings') {
+    if (sortOrder === 'favorites') {
+      result.sort((a, b) => {
+        const aFav = favorites.includes(a.id) ? 1 : 0;
+        const bFav = favorites.includes(b.id) ? 1 : 0;
+        return bFav - aFav;
+      });
+    } else if (sortOrder === 'earnings') {
       result.sort((a, b) => b.earningsValue - a.earningsValue);
     } else if (sortOrder === 'projects') {
       result.sort((a, b) => (b.done + b.live) - (a.done + a.live));
     }
 
     return result;
-  }, [allClients, searchQuery, sortOrder, selectedCountry, earningBracket]);
+  }, [allClients, searchQuery, sortOrder, selectedCountry, earningBracket, favorites, showFavoritesOnly]);
 
   const handleExport = () => {
     const dataToExport = filteredClients.map(client => ({
@@ -186,11 +282,11 @@ export default function ClientsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full md:w-auto">
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
                 <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Total Partners</p>
-                <p className="text-sm font-black text-white">{allClients.length}</p>
+                <p className="text-sm font-black text-white">{filteredClients.length}</p>
               </div>
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
                 <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Active Value</p>
-                <p className="text-sm font-black text-[#fce003]">${allClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
+                <p className="text-sm font-black text-[#fce003]">${filteredClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
               </div>
               <div className="hidden sm:block px-4 py-2 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
                 <p className="text-[7px] font-black text-yellow-400 uppercase tracking-widest mb-0.5">Status</p>
@@ -209,28 +305,36 @@ export default function ClientsPage() {
               <input 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#fce003]/50 outline-none transition-all" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#fce003]/50 outline-none transition-all" 
                 placeholder="Search by company, name, or location..." 
                 type="text"
               />
             </div>
-            <div className="grid grid-cols-2 md:flex md:flex-row gap-2">
+            <div className="grid grid-cols-3 md:flex md:flex-row gap-2">
+              <button 
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${showFavoritesOnly ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 shadow-lg shadow-yellow-400/10' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                title="Show Favorites Only"
+              >
+                <span className={`material-symbols-outlined text-sm ${showFavoritesOnly ? 'fill-1' : ''}`} style={showFavoritesOnly ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
+                <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Favs</span>
+              </button>
               <button 
                 onClick={() => setShowFilters(true)}
-                className={`w-full px-2 md:px-6 py-4 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
               >
                 <span className="material-symbols-outlined text-sm">tune</span>
                 <span className="text-[10px] font-black uppercase tracking-widest">Filters</span>
               </button>
               <button 
                 onClick={handleExport}
-                className="w-full px-2 md:px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-white/60 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full px-2 md:px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-white/60 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
                 title="Export to Excel"
               >
                 <span className="material-symbols-outlined text-sm">download</span>
                 <span className="text-[10px] font-black uppercase tracking-widest">Export</span>
               </button>
-              <Link href="/clients/new" className="col-span-2 md:col-span-1 w-full electric-gradient text-black px-4 md:px-6 py-4 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-xl uppercase tracking-widest shadow-yellow-400/20 hover:brightness-110">
+              <Link href="/clients/new" className="col-span-3 md:col-span-1 w-full electric-gradient text-black px-4 md:px-6 py-3 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-xl uppercase tracking-widest shadow-yellow-400/20 hover:brightness-110 whitespace-nowrap">
                 <span className="material-symbols-outlined text-sm">person_add</span>
                 ADD CLIENT
               </Link>
@@ -250,7 +354,7 @@ export default function ClientsPage() {
 
                 <div className="flex justify-between items-start mb-6 relative z-20">
                   <div className="flex gap-4 items-center">
-                    <div className="w-14 h-14 rounded-2xl overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
+                    <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
                       <Avatar
                         email={client.email}
                         name={client.name}
@@ -270,8 +374,16 @@ export default function ClientsPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all">
-                    <span className="material-symbols-outlined text-sm">arrow_outward</span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => toggleFavorite(e, client.id)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${favorites.includes(client.id) ? 'bg-yellow-400/20 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.2)]' : 'bg-white/5 text-white/20 hover:text-yellow-400 hover:bg-yellow-400/10'}`}
+                    >
+                      <span className="material-symbols-outlined text-sm" style={favorites.includes(client.id) ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
+                    </button>
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all">
+                      <span className="material-symbols-outlined text-sm">arrow_outward</span>
+                    </div>
                   </div>
                 </div>
 
@@ -283,7 +395,7 @@ export default function ClientsPage() {
                   </div>
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#fce003]/10 transition-colors flex justify-between items-center">
                     <div>
-                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Queue</p>
+                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Task</p>
                       <div className="flex items-center gap-3">
                         <div className="text-center">
                           <p className="text-xs font-black text-white leading-none">{client.done}</p>
@@ -359,8 +471,8 @@ export default function ClientsPage() {
                 {/* Sort Order */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block text-left">Hierarchy</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['none', 'earnings', 'projects'].map(opt => (
+                  <div className="grid grid-cols-4 gap-2">
+                    {['none', 'favorites', 'earnings', 'projects'].map(opt => (
                       <button 
                         key={opt}
                         onClick={() => setSortOrder(opt)}

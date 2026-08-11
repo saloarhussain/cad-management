@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import md5 from 'md5';
 
 interface AvatarProps {
+  src?: string;
   email?: string;
   name?: string;
   website?: string;
@@ -11,7 +12,7 @@ interface AvatarProps {
   ring?: boolean;
 }
 
-export default function Avatar({ email, name, website, size = 64, className = '', ring = false }: AvatarProps) {
+export default function Avatar({ src, email, name, website, size = 64, className = '', ring = false }: AvatarProps) {
   const hash = email ? md5(email.trim().toLowerCase()) : '';
   const gravatarUrl = email ? `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404` : '';
   
@@ -28,17 +29,28 @@ export default function Avatar({ email, name, website, size = 64, className = ''
   }
   
   // We use unavatar.io which aggregates from Twitter, Google Favicons, etc.
-  const unavatarUrl = domain ? `https://unavatar.io/${domain}?fallback=false` : '';
+  const unavatarDomainUrl = domain ? `https://unavatar.io/${domain}?fallback=false` : '';
+  const unavatarEmailUrl = email ? `https://unavatar.io/${email}?fallback=false` : '';
   
-  // 0 = Try Unavatar (Website)
-  // 1 = Try Gravatar (Email)
-  // 2 = Show Initials
-  const [imgState, setImgState] = useState(domain ? 0 : (email ? 1 : 2));
+  // 0 = Try Explicit Src
+  // 1 = Try Unavatar (Website)
+  // 2 = Try Unavatar (Email)
+  // 3 = Try Gravatar (Email)
+  // 4 = Show Initials
+  
+  const getInitialState = () => {
+    if (src) return 0;
+    if (domain) return 1;
+    if (email) return 2;
+    return 4;
+  };
+
+  const [imgState, setImgState] = useState(getInitialState());
 
   // Reset state if props change
   useEffect(() => {
-    setImgState(domain ? 0 : (email ? 1 : 2));
-  }, [domain, email]);
+    setImgState(getInitialState());
+  }, [src, domain, email]);
 
   const getInitials = () => {
     const text = name || email || '?';
@@ -50,14 +62,18 @@ export default function Avatar({ email, name, website, size = 64, className = ''
   };
 
   const handleError = () => {
-    if (imgState === 0 && email) {
-      setImgState(1); // Unavatar failed, try Gravatar
+    if (imgState === 0) {
+      setImgState(domain ? 1 : (email ? 2 : 4));
+    } else if (imgState === 1 && email) {
+      setImgState(2); // Unavatar domain failed, try Unavatar email
+    } else if (imgState === 2 && email) {
+      setImgState(3); // Unavatar email failed, try Gravatar
     } else {
-      setImgState(2); // Everything failed, show Initials
+      setImgState(4); // Everything failed, show Initials
     }
   };
 
-  if (imgState === 2) {
+  if (imgState === 4) {
     return (
       <div 
         style={{ width: size, height: size }}
@@ -68,9 +84,15 @@ export default function Avatar({ email, name, website, size = 64, className = ''
     );
   }
 
+  const currentSrc = 
+    imgState === 0 ? src :
+    imgState === 1 ? unavatarDomainUrl :
+    imgState === 2 ? unavatarEmailUrl :
+    gravatarUrl;
+
   return (
     <img
-      src={imgState === 0 ? unavatarUrl : gravatarUrl}
+      src={currentSrc}
       alt={name || email || 'Avatar'}
       width={size}
       height={size}

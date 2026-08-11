@@ -5,12 +5,12 @@ import { useAuth } from '@/components/AuthProvider';
 import { saveClient } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
 import { CountrySearch } from '@/components/CountrySearch';
+import { getTaxIdLabel } from '@/lib/tax';
 
 export default function NewClientPage() {
   const { isAuthenticated } = useAuth();
   const [saving, setSaving] = React.useState(false);
-
-
+  const [country, setCountry] = React.useState('');
 
   const handleSubmit = async (formData: FormData) => {
     if (!isAuthenticated) return;
@@ -133,7 +133,7 @@ export default function NewClientPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="group">
                   <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Country</label>
-                  <CountrySearch name="country" required />
+                  <CountrySearch name="country" required onChange={(val) => setCountry(val)} />
                 </div>
 
                 <div className="group">
@@ -148,6 +148,68 @@ export default function NewClientPage() {
                       <option>Fiverr</option>
                     </select>
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-neutral-500 pointer-events-none">hub</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Billing & Address */}
+            <div className="pt-6 mt-6 border-t border-white/10 text-left">
+              <h4 className="font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6">Billing & Address Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="group">
+                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">{getTaxIdLabel(country).toUpperCase()}</label>
+                  <div className="relative">
+                    <input
+                      name="taxId"
+                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
+                      placeholder={`Enter ${getTaxIdLabel(country)}`}
+                      type="text"
+                    />
+                  </div>
+                </div>
+                <div className="group md:col-span-2">
+                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Address</label>
+                  <div className="relative">
+                    <input
+                      name="address"
+                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
+                      placeholder="Street Address"
+                      type="text"
+                    />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">City</label>
+                  <div className="relative">
+                    <input
+                      name="city"
+                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
+                      placeholder="City"
+                      type="text"
+                    />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">State / Province</label>
+                  <div className="relative">
+                    <input
+                      name="state"
+                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
+                      placeholder="State"
+                      type="text"
+                    />
+                  </div>
+                </div>
+                <div className="group">
+                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Zip Code</label>
+                  <div className="relative">
+                    <input
+                      name="pincode"
+                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
+                      placeholder="Zip Code"
+                      type="text"
+                    />
                   </div>
                 </div>
               </div>

@@ -8,6 +8,15 @@ import CadFileUpload from '@/components/viewport/CadFileUpload';
 import AuthGuard from '@/components/AuthGuard';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
 
+const normalizeCurrency = (curr: string) => {
+  if (curr === '$') return 'USD';
+  if (curr === '€') return 'EUR';
+  if (curr === '£') return 'GBP';
+  if (curr === '¥') return 'JPY';
+  if (curr === '₹') return 'INR';
+  return curr;
+};
+
 const DatePickerFacade = ({ label, isDeadline, name, initialValue }: { label: string, isDeadline?: boolean, name?: string, initialValue?: string }) => {
   const [date, setDate] = useState(initialValue || "");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -375,7 +384,7 @@ export default function EditProjectPage() {
                       
                       <div className="space-y-2">
                         <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Order ID</label>
-                        <input name="orderId" required defaultValue={project.orderId} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white" type="text" />
+                        <input name="orderId" defaultValue={project.orderId} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white" type="text" />
                       </div>
 
                       <div className="space-y-4">
@@ -488,14 +497,14 @@ export default function EditProjectPage() {
                           <div className="relative">
                             <select 
                               name="revenueCurrency" 
-                              defaultValue={project.revenueCurrency || "$"}
+                              defaultValue={normalizeCurrency(project.revenueCurrency) || "USD"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-[#fce003] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
+                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
+                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
+                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
+                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
+                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#fce003] scale-75">expand_more</span>
                           </div>
@@ -508,18 +517,42 @@ export default function EditProjectPage() {
                           <div className="relative">
                             <select 
                               name="expenseCurrency" 
-                              defaultValue={project.expenseCurrency || "₹"}
+                              defaultValue={normalizeCurrency(project.expenseCurrency) || "INR"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-error font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
+                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
+                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
+                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
+                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
+                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-error scale-75">expand_more</span>
                           </div>
                           <input name="expense" required defaultValue={project.expense} className="w-full bg-transparent border-none p-3 text-white focus:ring-0" type="number" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 pt-5 border-t border-white/5">
+                      <div className="space-y-2">
+                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Client Payment Status</label>
+                        <div className="relative group">
+                          <select name="paymentStatus" defaultValue={project.paymentStatus || "UNPAID"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
+                            <option value="UNPAID">UNPAID</option>
+                            <option value="ADVANCE">ADVANCE PAID</option>
+                            <option value="PAID">PAID (FULL)</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Designer Payout Status</label>
+                        <div className="relative group">
+                          <select name="payoutStatus" defaultValue={project.payoutStatus || "PENDING"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
+                            <option value="PENDING">PENDING</option>
+                            <option value="PAID">PAID</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
                         </div>
                       </div>
                     </div>

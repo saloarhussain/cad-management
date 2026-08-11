@@ -42,14 +42,15 @@ export default function DashboardPage() {
   }, []);
 
     useEffect(() => {
-      if (hasMounted && !authLoading && isAuthenticated && isDesigner) {
-        router.replace('/designer');
-      }
       // Redirect to login if not authenticated (ONLY if not an invitation)
-      if (hasMounted && !authLoading && !isAuthenticated) {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has('email')) {
-          router.replace('/auth/login');
+      if (hasMounted && !authLoading) {
+        if (!isAuthenticated) {
+          const params = new URLSearchParams(window.location.search);
+          if (!params.has('email')) {
+            router.replace('/auth/login');
+          }
+        } else if (isDesigner) {
+          router.replace('/designer');
         }
       }
     }, [isAuthenticated, isDesigner, authLoading, hasMounted, router]);
@@ -84,7 +85,7 @@ export default function DashboardPage() {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || authLoading || isDesigner || !hasMounted) {
+    if (!isAuthenticated || authLoading || isDesigner || !hasMounted || !ratesLoaded) {
       return;
     }
 
@@ -106,18 +107,17 @@ export default function DashboardPage() {
         const clients = db.clients || [];
         const designers = db.designers || [];
 
-        // Helper to convert to display currency
         const convert = (amount: number, fromSymbol: string) => {
-          const fromCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === fromSymbol)?.code || 'USD';
-          const targetCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === displayCurrency)?.code || 'INR';
+          const fromCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === fromSymbol || c.code === fromSymbol)?.code || 'USD';
+          const targetCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === displayCurrency || c.code === displayCurrency)?.code || 'INR';
 
-          if (fromCurrency === targetCurrency) return amount;
+          if (fromCurrency === targetCurrency) return Math.round(amount);
           
           const rateFrom = allRates[fromCurrency] || 1;
           const rateTarget = allRates[targetCurrency] || 1;
 
           // Convert source to USD first, then to target
-          return (amount / rateFrom) * rateTarget;
+          return Math.round((amount / rateFrom) * rateTarget);
         };
 
         const filtered = projects.filter((p: any) => {
@@ -149,8 +149,10 @@ export default function DashboardPage() {
         const totalRevenue = filtered.reduce((sum: number, p: any) => 
           sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
         
-        const totalExpense = filtered.reduce((sum: number, p: any) => 
-          sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
+        const totalExpense = filtered
+          .filter((p: any) => p.designer && p.designer.trim() !== '')
+          .reduce((sum: number, p: any) => 
+            sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
         
         const pendingRevenue = projects
           .filter((p: any) => {
@@ -168,7 +170,7 @@ export default function DashboardPage() {
         const payoutsDueProjects = projects.filter((p: any) => {
           const s = p.status?.toLowerCase() || '';
           const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-          return isComplete && p.paymentStatus !== 'Paid';
+          return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
         });
 
         const payoutsDue = payoutsDueProjects.reduce((sum: number, p: any) => 

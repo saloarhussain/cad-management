@@ -14,8 +14,10 @@ export const TopAppBar: React.FC = () => {
   const [points, setPoints] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState('');
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasMounted(true);
     if (isAuthenticated) {
       const fetchPoints = async () => {
@@ -57,12 +59,19 @@ export const TopAppBar: React.FC = () => {
         )}
 
         <div className="md:hidden flex items-center gap-1.5 sm:gap-3">
-          <Link href={isDesigner ? "/designer" : "/"} className="flex items-center gap-3 active:scale-95 transition-transform">
+          <Link href={isDesigner ? "/designer" : "/"} className="flex items-center gap-2.5 active:scale-95 transition-transform">
             {(!isAuthenticated || pathname === '/' || pathname === '/designer') && (
-              <span className="material-symbols-outlined text-[#fce003]">grid_view</span>
+              <div className="size-9 bg-[#fce003] rounded-[10px] flex items-center justify-center text-black shadow-[0_0_15px_rgba(252,224,3,0.3)] shrink-0">
+                <span className="material-symbols-outlined text-black font-black text-lg leading-none">architecture</span>
+              </div>
             )}
-            <div className="flex flex-col -gap-1">
-              <h1 className="font-headline font-extrabold tracking-tight uppercase text-[#fce003] text-lg sm:text-xl leading-none">CADONCE</h1>
+            <div className="flex flex-col">
+              <h1 className="font-headline font-black tracking-tighter uppercase text-white text-sm sm:text-base italic leading-none">
+                CAD<span className="text-[#fce003]">ONCE</span>
+              </h1>
+              <p className="text-[#fce003] text-[8px] font-bold mt-0.5 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)] leading-none">
+                {isDesigner ? 'For Designers' : 'For Organizations'}
+              </p>
             </div>
           </Link>
         </div>
@@ -119,25 +128,68 @@ export const TopAppBar: React.FC = () => {
           <div className="flex items-center gap-1.5">
             <NotificationCenter />
             
-            <Link href={isDesigner ? "/designer/profile" : "/settings"} className="size-8 rounded-xl overflow-hidden border border-white/10 hover:border-[#fce003] transition-all cursor-pointer active:scale-95 group shrink-0">
-              <img 
-                alt="User Profile Avatar" 
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
-                src={avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${user?.email || 'CADONCE'}`}
-              />
-            </Link>
-            
-            <button 
-              onClick={async () => {
-                const { signOut } = await import('@/app/actions');
-                await signOut();
-                window.location.href = '/auth/login';
-              }}
-              className="size-8 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/30 transition-all flex items-center justify-center active:scale-90 shrink-0"
-              title="Sign Out"
-            >
-              <span className="material-symbols-outlined text-sm">logout</span>
-            </button>
+            <div className="relative flex items-center">
+              <button 
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="size-8 rounded-xl overflow-hidden border border-white/10 hover:border-[#fce003] transition-all cursor-pointer active:scale-95 group shrink-0"
+                title="User Profile Menu"
+              >
+                <img 
+                  alt="User Profile Avatar" 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
+                  src={avatarUrl || `https://api.dicebear.com/7.x/shapes/svg?seed=${user?.email || 'CADONCE'}`}
+                />
+              </button>
+
+              {isUserMenuOpen && (
+                <>
+                  {/* Invisible backdrop helper for click-outside-to-close */}
+                  <div 
+                    className="fixed inset-0 z-40 cursor-default" 
+                    onClick={() => setIsUserMenuOpen(false)}
+                  />
+                  
+                  {/* Premium User Menu Dropdown */}
+                  <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-[#0c0a04]/95 border border-white/10 p-2 shadow-2xl z-50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col gap-1">
+                    
+                    {/* User profile metadata */}
+                    <div className="px-3 py-2.5 border-b border-white/5 flex flex-col gap-0.5">
+                      <p className="text-[10px] font-black text-white uppercase tracking-tighter truncate">
+                        {isDesigner ? (user?.user_metadata?.fullName || 'Active Designer') : (organizationName || 'Organization')}
+                      </p>
+                      <p className="text-[8px] font-bold text-neutral-400 truncate">
+                        {user?.email}
+                      </p>
+                    </div>
+
+                    {/* Navigation Link inside dropdown */}
+                    <Link 
+                      href={isDesigner ? "/designer/profile" : "/settings"} 
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-neutral-300 hover:text-[#fce003] hover:bg-white/5 transition-all text-xs font-bold"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">person</span>
+                      <span>{isDesigner ? "Profile Workstation" : "Dashboard Settings"}</span>
+                    </Link>
+
+                    {/* Sign out button */}
+                    <button 
+                      onClick={async () => {
+                        setIsUserMenuOpen(false);
+                        const { signOut } = await import('@/app/actions');
+                        await signOut();
+                        window.location.href = '/auth/login';
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all text-xs font-bold text-left"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">logout</span>
+                      <span>Sign Out</span>
+                    </button>
+                    
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getDb } from '@/app/actions';
+import { getCurrencySymbol } from '@/lib/config';
 import AuthGuard from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -29,32 +30,44 @@ const formatDate = (dateStr: string) => {
 const DeadlineSection = ({ createdAt, deadlineDate }: { createdAt: string, deadlineDate: string }) => {
   const [timeLeft, setTimeLeft] = useState("00D 00H 00M 00S");
   const [progress, setProgress] = useState(0);
+  const [isLate, setIsLate] = useState(false);
 
   useEffect(() => {
     const calculate = () => {
+      if (!deadlineDate) return;
       const now = new Date();
       const end = new Date(deadlineDate);
       const diff = end.getTime() - now.getTime();
+      const start = createdAt ? new Date(createdAt) : now;
+      const totalDuration = end.getTime() - start.getTime();
 
       if (diff <= 0) {
-        setTimeLeft("00D 00H 00M 00S");
+        setIsLate(true);
+        // Calculate negative time
+        const absDiff = Math.abs(diff);
+        const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+
+        setTimeLeft(
+          `-${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
+        );
         setProgress(100);
-        return;
+      } else {
+        setIsLate(false);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setTimeLeft(
+          `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
+        );
+        
+        const elapsed = now.getTime() - start.getTime();
+        setProgress(Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)));
       }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft(
-        `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
-      );
-
-      const start = new Date(createdAt || now);
-      const totalDuration = end.getTime() - start.getTime();
-      const elapsed = now.getTime() - start.getTime();
-      setProgress(Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)));
     };
     calculate();
     const timer = setInterval(calculate, 1000);
@@ -65,14 +78,16 @@ const DeadlineSection = ({ createdAt, deadlineDate }: { createdAt: string, deadl
     <div className="group">
       <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Deadline Timer</label>
       <div className="flex items-center gap-1.5 text-white text-left">
-        <span className="material-symbols-outlined text-yellow-400 text-[10px] animate-pulse">timer</span>
+        <span className={`material-symbols-outlined text-[10px] animate-pulse ${isLate ? 'text-red-500' : 'text-yellow-400'}`}>timer</span>
         <div className="flex items-baseline gap-1">
-          <span className="font-mono text-sm font-black text-yellow-400">{timeLeft}</span>
-          <span className="font-mono text-[7px] font-bold text-stone-500 uppercase tracking-tighter">Remaining</span>
+          <span className={`font-mono text-sm font-black ${isLate ? 'text-red-500' : 'text-yellow-400'}`}>{timeLeft}</span>
+          <span className="font-mono text-[7px] font-bold text-stone-500 uppercase tracking-tighter">
+            {isLate ? 'LATE' : 'Remaining'}
+          </span>
         </div>
       </div>
       <div className="mt-1.5 h-1 bg-stone-800 rounded-full overflow-hidden">
-        <div className="h-full electric-gradient" style={{ width: `${progress}%` }}></div>
+        <div className={`h-full ${isLate ? 'bg-red-500' : 'electric-gradient'}`} style={{ width: `${progress}%` }}></div>
       </div>
     </div>
   );
@@ -233,11 +248,10 @@ export default function ProjectsPage() {
                           )}
                           {project.useEscrow && project.paymentStatus === 'Paid' && (
                             <span className="text-[7px] font-black px-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white uppercase tracking-widest shadow-[0_0_10_rgba(34,197,94,0.5)] border border-green-400/20 h-5 flex items-center">
-                              FUNDS RELEASED ({project.expenseCurrency || '₹'}{project.expense})
+                              FUNDS RELEASED ({getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense})
                             </span>
                           )}
 
-                          {/* Rating Badge */}
                           {(() => {
                             const description = project.description || '';
                             const lines = description.split('\n');
@@ -270,21 +284,38 @@ export default function ProjectsPage() {
                         </div>
                       </div>
 
-                      {/* Financials (HIDDEN FOR DESIGNERS) */}
                       {!isDesigner && (
                         <div className="grid grid-cols-2 gap-4 text-left border-t border-white/5 pt-3">
-                          <div className={`p-2 rounded border ${project.revenueCurrency === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.revenueCurrency || 'USD') === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Revenue</label>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-headline font-black text-white">{project.revenueCurrency || '$'}{project.revenue}</span>
-                              <span className="material-symbols-outlined text-green-400 text-[12px]">trending_up</span>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-headline font-black text-white">{getCurrencySymbol(project.revenueCurrency || 'USD')}{project.revenue}</span>
+                                <span className="material-symbols-outlined text-green-400 text-[12px]">trending_up</span>
+                              </div>
+                                <span className={`text-[7px] font-bold py-0.5 px-1.5 rounded tracking-wide ${
+                                  project.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
+                                }`}>
+                                  {project.paymentStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                   project.paymentStatus?.toLowerCase() === 'pending' ? 'Pending' : 
+                                   'Unpaid'}
+                                </span>
                             </div>
                           </div>
-                          <div className={`p-2 rounded border ${project.expenseCurrency === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.expenseCurrency || 'INR') === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Expense</label>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-headline font-black text-white">{project.expenseCurrency || '₹'}{project.expense}</span>
-                              <span className="material-symbols-outlined text-red-400/70 text-[12px]">trending_down</span>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-headline font-black text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense}</span>
+                                <span className="material-symbols-outlined text-red-400/70 text-[12px]">trending_down</span>
+                              </div>
+                                <span className={`text-[7px] font-bold py-0.5 px-1.5 rounded tracking-wide ${
+                                  project.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
+                                }`}>
+                                  {project.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                   project.payoutStatus?.toLowerCase() === 'pending' ? 'Pending' : 
+                                   'Unpaid'}
+                                </span>
                             </div>
                           </div>
                         </div>

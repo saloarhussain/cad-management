@@ -20,13 +20,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     if (isAuthenticated && !loading && hasMounted) {
       const pathname = window.location.pathname;
       
-      // If Designer is on Organization Home, redirect to Designer Workstation
-      if (isDesigner && pathname === '/') {
-        window.location.href = '/designer';
-      }
-      
-      // If Organization Owner is on Designer Workstation, redirect to Organization Home
-      if (!isDesigner && pathname === '/designer') {
+      // Since Designer role is removed, redirect anyone trying to access /designer to /
+      if (pathname === '/designer') {
         window.location.href = '/';
       }
     } else if (!isAuthenticated && !loading && hasMounted) {
