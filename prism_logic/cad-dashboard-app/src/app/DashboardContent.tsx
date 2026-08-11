@@ -47,6 +47,7 @@ export default function DashboardContent({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [isPendingJobsExpanded, setIsPendingJobsExpanded] = useState(false);
 
   const handleCardClick = (metric: string) => {
     setSelectedMetric(metric);
@@ -719,16 +720,83 @@ export default function DashboardContent({
               <h3 className="font-headline font-bold text-lg tracking-tight">Pending Jobs</h3>
               <Link href="/projects" className="text-[10px] font-bold text-[#fce003] uppercase tracking-widest cursor-pointer">View All</Link>
             </div>
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-6 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Jobs Still Pending</p>
-                <h3 className="text-3xl font-headline font-black text-[#fce003] tracking-tighter leading-none">
-                  {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
-                </h3>
+            
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
+              <div className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Jobs Still Pending</p>
+                  <h3 className="text-3xl font-headline font-black text-[#fce003] tracking-tighter leading-none">
+                    {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setIsPendingJobsExpanded(!isPendingJobsExpanded)}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#fce003]/30 rounded-lg text-[10px] font-black text-[#fce003] uppercase tracking-widest hover:bg-[#fce003]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                >
+                  <span>{isPendingJobsExpanded ? 'Hide Details' : 'Show Details'}</span>
+                  <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isPendingJobsExpanded ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
               </div>
-              <Link href="/projects" className="text-[10px] font-black text-[#fce003] uppercase tracking-widest border border-[#fce003]/30 px-4 py-2 rounded-lg hover:bg-[#fce003]/10 transition-colors">
-                View List
-              </Link>
+
+              {/* Collapsible Panel */}
+              {isPendingJobsExpanded && (
+                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300">
+                  {(() => {
+                    const pendingProjects = (allProjects || []).filter((p: any) => {
+                      const s = p.status?.toLowerCase() || '';
+                      return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
+                    });
+                    
+                    if (pendingProjects.length === 0) {
+                      return (
+                        <div className="text-center py-4 text-[10px] font-black text-[#cec7ab] uppercase tracking-widest">
+                          No pending jobs found
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                        {pendingProjects.map((p: any) => {
+                          const projectImage = p.images?.split(',')[0] || p.imageUrl;
+                          return (
+                            <div key={p.id} className="py-3 flex items-center justify-between gap-4 group">
+                              <div className="flex items-center gap-4 min-w-0">
+                                {/* Thumbnail or Icon */}
+                                <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                  {projectImage ? (
+                                    <img src={projectImage} className="w-full h-full object-cover" alt="" />
+                                  ) : (
+                                    <span className="material-symbols-outlined text-[#fce003] text-xl">precision_manufacturing</span>
+                                  )}
+                                </div>
+                                
+                                <div className="min-w-0">
+                                  <h4 className="text-xs font-black text-white uppercase truncate tracking-tight">{p.title}</h4>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[8px] font-black text-white/30 uppercase tracking-wider">#{p.orderId || 'N/A'}</span>
+                                    <span className="w-1 h-1 rounded-full bg-white/10" />
+                                    <span className="text-[8px] font-black text-[#00fbfe] uppercase tracking-wider">{p.status || 'Pending'}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <Link 
+                                href={`/projects/${p.id}`}
+                                className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#fce003]/30 hover:bg-[#fce003]/10 hover:text-[#fce003] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
+                              >
+                                Workspace
+                              </Link>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </section>
 
