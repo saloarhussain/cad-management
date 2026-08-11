@@ -713,17 +713,17 @@ export default function DashboardContent({
         </div>
 
         {/* Main Grid: Pending Jobs, Deadlines & Earn CADONCE Points */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           
           {/* Column 1: Pending Jobs Count Card */}
-          <section className="space-y-4">
-            <div className="flex justify-between items-center px-2">
+          <section className="space-y-4 flex flex-col h-full">
+            <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Pending Jobs</h3>
               <Link href="/projects" className="text-[10px] font-bold text-[#fce003] uppercase tracking-widest cursor-pointer">View All</Link>
             </div>
             
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
-              <div className="p-6 flex items-center justify-between">
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px]">
+              <div className="p-6 flex items-center justify-between w-full">
                 <div>
                   <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Jobs Still Pending</p>
                   <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
@@ -743,7 +743,7 @@ export default function DashboardContent({
 
               {/* Collapsible Panel */}
               {isPendingJobsExpanded && (
-                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300">
+                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full flex-1">
                   {(() => {
                     const pendingProjects = (allProjects || []).filter((p: any) => {
                       const s = p.status?.toLowerCase() || '';
@@ -752,18 +752,18 @@ export default function DashboardContent({
                     
                     if (pendingProjects.length === 0) {
                       return (
-                        <div className="text-center py-4 text-[10px] font-black text-[#cec7ab] uppercase tracking-widest">
+                        <div className="text-center py-4 text-[10px] font-black text-[#cec7ab] uppercase tracking-widest w-full">
                           No pending jobs found
                         </div>
                       );
                     }
                     
                     return (
-                      <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
+                      <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar w-full">
                         {pendingProjects.map((p: any) => {
                           const projectImage = p.images?.split(',')[0] || p.imageUrl;
                           return (
-                            <div key={p.id} className="py-3 flex items-center justify-between gap-4 group">
+                            <div key={p.id} className="py-3 flex items-center justify-between gap-4 group w-full">
                               <div className="flex items-center gap-4 min-w-0">
                                 {/* Thumbnail or Icon */}
                                 <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
@@ -802,37 +802,43 @@ export default function DashboardContent({
           </section>
 
           {/* Column 2: Upcoming Deadlines */}
-          <section className="space-y-4">
-            <h3 className="font-headline font-bold text-lg tracking-tight">Deadlines</h3>
-            <div className="space-y-2">
+          <section className="space-y-4 flex flex-col h-full">
+            <h3 className="font-headline font-bold text-lg tracking-tight px-2 shrink-0">Deadlines</h3>
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px] p-6">
               {upcomingDeadlines.length > 0 ? (
-                upcomingDeadlines.map((p: any, idx: number) => {
-                  const colors = ['from-[#fce003] to-orange-500', 'bg-outline-variant', 'bg-secondary'];
-                  const colorClass = colors[idx % colors.length];
-                  return (
-                    <div key={p.id} className="flex items-center justify-between p-4 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors group cursor-pointer border border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-1 h-8 rounded-full ${colorClass.startsWith('bg-') ? colorClass : `bg-gradient-to-b ${colorClass.replace('to-orange-500', 'to-[#e9e2cf]')}`}`}></div>
-                        <div>
-                          <div className="text-sm font-bold text-on-surface">{p.title}</div>
-                          <div className="text-[10px] font-bold text-on-surface-variant opacity-60 uppercase tracking-widest">{p.deadlineDate}</div>
+                <div className="space-y-2.5 w-full">
+                  {upcomingDeadlines.map((p: any, idx: number) => {
+                    const colors = ['from-[#fce003] to-[#FF8A00]', 'bg-outline-variant', 'bg-secondary'];
+                    const colorClass = colors[idx % colors.length];
+                    return (
+                      <Link
+                        href={`/projects/${p.id}`}
+                        key={p.id}
+                        className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-[#fce003]/5 hover:text-[#fce003] border border-white/5 transition-all group cursor-pointer w-full"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`w-1 h-8 rounded-full shrink-0 ${colorClass.startsWith('bg-') ? colorClass : `bg-gradient-to-b ${colorClass}`}`}></div>
+                          <div className="min-w-0">
+                            <div className="text-xs font-black uppercase text-white truncate group-hover:text-[#fce003] transition-colors">{p.title}</div>
+                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{p.deadlineDate}</div>
+                          </div>
                         </div>
-                      </div>
-                      <span className="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                    </div>
-                  )
-                })
+                        <span className="material-symbols-outlined text-white/30 group-hover:translate-x-1 group-hover:text-[#fce003] transition-all text-sm shrink-0">arrow_forward</span>
+                      </Link>
+                    )
+                  })}
+                </div>
               ) : (
-                <div className="p-4 rounded-lg bg-surface-container-low text-center border border-dashed border-white/10">
-                  <span className="text-white/20 text-[10px] font-black uppercase tracking-widest">No immediate deadlines</span>
+                <div className="text-center py-4 text-[10px] font-black text-white/20 uppercase tracking-widest w-full">
+                  No immediate deadlines
                 </div>
               )}
             </div>
           </section>
 
           {/* Column 3: Earn CADONCE Points */}
-          <section className="space-y-4">
-            <div className="flex justify-between items-center px-2">
+          <section className="space-y-4 flex flex-col h-full">
+            <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Earn Points</h3>
               {isFounder && (
                 <button
@@ -844,9 +850,9 @@ export default function DashboardContent({
               )}
             </div>
 
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4">
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4 flex-1 flex flex-col justify-center min-h-[96px] overflow-hidden">
               {showLinkInput && (
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 w-full shrink-0">
                   <div className="relative">
                     <input
                       type="text"
@@ -866,7 +872,7 @@ export default function DashboardContent({
                 </div>
               )}
 
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 min-h-[160px]">
+              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 min-h-[160px] w-full flex-1">
                 {isLoadingProducts ? (
                   <div className="flex items-center justify-center w-full py-10 opacity-30 animate-pulse">
                     <span className="text-[10px] font-black uppercase tracking-[0.3em]">Synchronizing...</span>
