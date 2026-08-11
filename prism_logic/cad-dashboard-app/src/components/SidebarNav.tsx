@@ -20,6 +20,7 @@ export const SidebarNav: React.FC = () => {
   const navItems = isDesigner ? [
     { label: 'Workstation', icon: 'dashboard', href: '/designer' },
     { label: 'Projects', icon: 'precision_manufacturing', href: '/projects' },
+    { label: 'Explore', icon: 'explore', href: '/explore' },
     { label: 'Inbox', icon: 'mail', href: '/inbox' },
     { label: 'Transfers', icon: 'cloud_upload', href: '/transfer' },
     { label: 'Settings', icon: 'settings', href: '/settings' },
@@ -27,6 +28,7 @@ export const SidebarNav: React.FC = () => {
   ] : [
     { label: 'Home', icon: 'home', href: '/' },
     { label: 'Projects', icon: 'precision_manufacturing', href: '/projects' },
+    { label: 'Explore', icon: 'explore', href: '/explore' },
     { label: 'Team', icon: 'groups', href: '/team' },
     { label: 'Clients', icon: 'badge', href: '/clients' },
     { label: 'Inbox', icon: 'mail', href: '/inbox' },

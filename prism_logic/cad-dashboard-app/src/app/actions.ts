@@ -4707,3 +4707,50 @@ export async function closeSupportTicket(ticketId: string, formData?: FormData) 
     return { success: false, error: err.message };
   }
 }
+
+export async function getExploreItems() {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // 1. Fetch all portfolio items
+    const { data: items, error: itemsError } = await adminSupabase
+      .from('designer_portfolio_items')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (itemsError) throw itemsError;
+
+    // 2. Fetch all designers to map their details
+    const { data: profiles, error: profilesError } = await adminSupabase
+      .from('designers')
+      .select('*');
+
+    if (profilesError) throw profilesError;
+
+    // 3. Map portfolio items with designer profiles
+    const mappedItems = (items || []).map(item => {
+      const designerProfile = (profiles || []).find(p => p.user_id === item.designer_id || p.id === item.designer_id);
+      return {
+        ...item,
+        designer: designerProfile ? {
+          fullName: designerProfile.fullName,
+          avatarUrl: designerProfile.avatarUrl,
+          specialty: designerProfile.specialty || 'CAD Designer',
+          email: designerProfile.email
+        } : {
+          fullName: 'Anonymous Designer',
+          avatarUrl: null,
+          specialty: 'CAD Designer',
+          email: ''
+        }
+      };
+    });
+
+    return { success: true, data: mappedItems };
+  } catch (err: any) {
+    console.error('[getExploreItems] Error:', err.message || err);
+    return { success: false, error: err.message || err.toString() };
+  }
+}
+

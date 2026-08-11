@@ -1,18 +1,35 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getDb, sendMessage } from '@/app/actions';
 
 export default function ComposeMessagePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <ComposeMessageContent />
+    </Suspense>
+  );
+}
+
+function ComposeMessageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const toParam = searchParams.get('to');
+  const subjectParam = searchParams.get('subject');
+
   const [projects, setProjects] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
   // Form State
-  const [recipient, setRecipient] = useState('');
-  const [subject, setSubject] = useState('');
+  const [recipient, setRecipient] = useState(toParam || '');
+  const [subject, setSubject] = useState(subjectParam || '');
   const [projectRef, setProjectRef] = useState('');
   const [content, setContent] = useState('');
 
@@ -201,3 +218,4 @@ export default function ComposeMessagePage() {
     </div>
   );
 }
+
