@@ -48,6 +48,7 @@ export default function DashboardContent({
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [isPendingJobsExpanded, setIsPendingJobsExpanded] = useState(false);
+  const [isDeadlinesExpanded, setIsDeadlinesExpanded] = useState(false);
 
   const handleCardClick = (metric: string) => {
     setSelectedMetric(metric);
@@ -804,33 +805,57 @@ export default function DashboardContent({
           {/* Column 2: Upcoming Deadlines */}
           <section className="space-y-4 flex flex-col h-full">
             <h3 className="font-headline font-bold text-lg tracking-tight px-2 shrink-0">Deadlines</h3>
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px] p-6">
-              {upcomingDeadlines.length > 0 ? (
-                <div className="space-y-2.5 w-full">
-                  {upcomingDeadlines.map((p: any, idx: number) => {
-                    const colors = ['from-[#fce003] to-[#FF8A00]', 'bg-outline-variant', 'bg-secondary'];
-                    const colorClass = colors[idx % colors.length];
-                    return (
-                      <Link
-                        href={`/projects/${p.id}`}
-                        key={p.id}
-                        className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 hover:bg-[#fce003]/5 hover:text-[#fce003] border border-white/5 transition-all group cursor-pointer w-full"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-1 h-8 rounded-full shrink-0 ${colorClass.startsWith('bg-') ? colorClass : `bg-gradient-to-b ${colorClass}`}`}></div>
-                          <div className="min-w-0">
-                            <div className="text-xs font-black uppercase text-white truncate group-hover:text-[#fce003] transition-colors">{p.title}</div>
-                            <div className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{p.deadlineDate}</div>
-                          </div>
-                        </div>
-                        <span className="material-symbols-outlined text-white/30 group-hover:translate-x-1 group-hover:text-[#fce003] transition-all text-sm shrink-0">arrow_forward</span>
-                      </Link>
-                    )
-                  })}
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300 flex-1 flex flex-col justify-center min-h-[96px]">
+              <div className="p-6 flex items-center justify-between w-full">
+                <div>
+                  <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1.5 opacity-60">Active Deadlines</p>
+                  <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
+                    {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? 'Deadline' : 'Deadlines'}
+                  </h3>
                 </div>
-              ) : (
-                <div className="text-center py-4 text-[10px] font-black text-white/20 uppercase tracking-widest w-full">
-                  No immediate deadlines
+                <button 
+                  onClick={() => setIsDeadlinesExpanded(!isDeadlinesExpanded)}
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#fce003]/30 rounded-lg text-[10px] font-black text-[#fce003] uppercase tracking-widest hover:bg-[#fce003]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                >
+                  <span>{isDeadlinesExpanded ? 'Hide Details' : 'Show Details'}</span>
+                  <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isDeadlinesExpanded ? 'rotate-180' : ''}`}>
+                    expand_more
+                  </span>
+                </button>
+              </div>
+
+              {/* Collapsible Panel */}
+              {isDeadlinesExpanded && (
+                <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full flex-1">
+                  {upcomingDeadlines.length === 0 ? (
+                    <div className="text-center py-4 text-[10px] font-black text-white/20 uppercase tracking-widest w-full">
+                      No immediate deadlines
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar w-full">
+                      {upcomingDeadlines.map((p: any, idx: number) => {
+                        const colors = ['from-[#fce003] to-[#FF8A00]', 'bg-outline-variant', 'bg-secondary'];
+                        const colorClass = colors[idx % colors.length];
+                        return (
+                          <div key={p.id} className="py-3 flex items-center justify-between gap-4 group w-full">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className={`w-1 h-8 rounded-full shrink-0 ${colorClass.startsWith('bg-') ? colorClass : `bg-gradient-to-b ${colorClass}`}`}></div>
+                              <div className="min-w-0">
+                                <h4 className="text-xs font-black uppercase text-white truncate">{p.title}</h4>
+                                <p className="text-[8px] font-bold text-white/40 uppercase tracking-widest mt-0.5">{p.deadlineDate}</p>
+                              </div>
+                            </div>
+                            <Link 
+                              href={`/projects/${p.id}`}
+                              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#fce003]/30 hover:bg-[#fce003]/10 hover:text-[#fce003] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
+                            >
+                              Workspace
+                            </Link>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
