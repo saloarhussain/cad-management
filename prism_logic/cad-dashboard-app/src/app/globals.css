@@ -2,10 +2,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 @import "tailwindcss";
 
-@source "./src/app/**/*.{js,ts,jsx,tsx,mdx}";
-@source "./src/components/**/*.{js,ts,jsx,tsx,mdx}";
-@source "./prism_logic/cad-dashboard-app/src/app/**/*.{js,ts,jsx,tsx,mdx}";
-@source "./prism_logic/cad-dashboard-app/src/components/**/*.{js,ts,jsx,tsx,mdx}";
+@source "./src/app";
+@source "./src/components";
+@source "./prism_logic/cad-dashboard-app/src/app";
+@source "./prism_logic/cad-dashboard-app/src/components";
+
 
 
 /* Theme Update: Orange Secondary & Red Gradient - 2026-04-23 */
