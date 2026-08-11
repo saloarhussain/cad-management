@@ -131,7 +131,7 @@ export default function RenderStudioPage() {
   return (
     <AuthGuard>
       {/* Main Container - Light Theme, styled exactly like ijewel Playground */}
-      <div className={`h-screen bg-white text-neutral-900 font-body flex overflow-hidden w-full select-none ${isAuthenticated ? 'pt-16' : ''}`}>
+      <div className="h-screen bg-white text-neutral-900 font-body flex overflow-hidden w-full select-none">
         
         {/* ========================================================
              LEFT CONFIGURATION PANEL (Tabs + Settings panel)

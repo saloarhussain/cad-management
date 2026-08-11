@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.0",
     "@supabase/ssr": "^0.10.2",
@@ -18,9 +17,7 @@
     "@types/nodemailer": "^8.0.0",
     "@types/three": "^0.184.0",
     "framer-motion": "^12.38.0",
-    "imap-simple": "^5.1.0",
     "jszip": "^3.10.1",
-    "mailparser": "^3.9.10",
     "md5": "^2.3.0",
     "next": "16.2.4",
     "nodemailer": "^8.0.5",
@@ -31,13 +28,10 @@
     "stripe": "^22.1.1",
     "three": "^0.184.0",
     "three-stdlib": "^2.36.1",
-    "twilio": "^6.0.2",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/imap-simple": "^4.2.10",
-    "@types/mailparser": "^3.4.6",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

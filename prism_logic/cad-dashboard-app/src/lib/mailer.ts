@@ -60,203 +60,90 @@ export async function sendEmail({ to, subject, html, text, credentials }: SendEm
 
 // --- Email Templates ---
 
-import { getTaxIdLabel } from './tax';
-
-export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
-  const revenue = parseFloat(project.revenue || '0').toLocaleString('en-US');
-  const paidAmount = parseFloat(project.paidAmount || '0').toLocaleString('en-US');
-  
-  // Format Date (e.g., 15 January 2026)
-  const dateObj = new Date();
-  const invoiceDate = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const invoiceNo = project.orderId || `M${project.id ? project.id.toString().slice(0, 5).padStart(5, '0') : '10001'}`;
-
-  // Client Details
-  const cName = client?.name || project.client || 'Client';
-  const cCompany = client?.companyName || client?.name || 'N/A';
-  const cEmail = client?.email || project.client_email || 'N/A';
-  const cCountry = client?.country || 'N/A';
-  const cTaxId = client?.taxId || client?.abn || 'N/A';
-  const cPhone = client?.mobile || client?.phone || 'N/A';
-  const cAddress = client?.address || 'N/A';
-  const cCity = client?.city || 'N/A';
-  const cZip = client?.pincode || client?.zipCode || client?.zip || 'N/A';
-  
-  const taxIdLabel = getTaxIdLabel(cCountry);
-  
-  // Organization Details
-  const orgName = orgSettings?.ownerName || orgSettings?.owner_name || 'Saloar Hussain Anwar Ali Shaikh';
-  const orgCompany = orgSettings?.organizationName || orgSettings?.organization_name || 'Minecom';
-  const orgEmail = orgSettings?.registeredEmail || orgSettings?.email || orgSettings?.freelanceEmail || 'saloarhussain@icloud.com';
-  const orgPhone = orgSettings?.whatsapp || '+91 9975788318';
-  
-  const orgCountry = orgSettings?.orgCountry || 'India';
-  const orgTaxId = orgSettings?.orgTaxId || '27JIQPS4070B2ZU';
-  const orgAddress = orgSettings?.orgAddress || '301 Ashiyana Lake View';
-  const orgCity = orgSettings?.orgCity || 'Palghar';
-  const orgState = orgSettings?.orgState || 'Maharashtra';
-  const orgPincode = orgSettings?.orgPincode || '401203';
-  
-  const orgTaxIdLabel = getTaxIdLabel(orgCountry);
+export function invoiceTemplate(project: any, clientName: string) {
+  const revenue = parseFloat(project.revenue || '0').toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+  const paidAmount = parseFloat(project.paidAmount || '0').toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
+  const balance = (parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
 
   return `
   <!DOCTYPE html>
   <html>
   <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
-      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #fff; color: #000; margin: 0; padding: 0; }
-      .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 40px; box-sizing: border-box; }
-      
-      /* Header */
-      .header-container { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
-      .header-left { flex: 1; }
-      .header-title { font-size: 36px; font-weight: bold; margin: 0 0 40px 0; text-align: center; }
-      .invoice-meta { font-size: 16px; font-weight: bold; line-height: 1.5; margin-bottom: 5px; }
-      .header-right { text-align: right; }
-      .logo { display: inline-flex; align-items: center; font-size: 28px; font-weight: 900; color: #f29c1f; letter-spacing: 1px; }
-      .logo-icon { display: inline-flex; justify-content: center; align-items: center; width: 36px; height: 36px; background-color: #f29c1f; color: white; border-radius: 50%; font-size: 24px; margin-right: 10px; font-weight: bold; line-height: 1; }
-
-      /* Two Columns (From / To) */
-      .address-container { display: flex; border: 1px solid #e0e0e0; margin-bottom: 30px; }
-      .col { flex: 1; border-right: 1px solid #e0e0e0; }
-      .col:last-child { border-right: none; }
-      .col-header { background-color: #fcae3f; color: white; padding: 10px 20px; font-weight: bold; font-size: 18px; }
-      .col-body { padding: 20px; font-size: 14px; line-height: 1.8; }
-      .col-body div { margin-bottom: 4px; }
-      .label-bold { font-weight: bold; }
-
-      /* Responsive Rules */
-      @media (max-width: 600px) {
-        .container { padding: 15px; }
-        .header-container { flex-direction: column; gap: 15px; }
-        .header-right { text-align: left; }
-        .address-container { flex-direction: column; }
-        .col { border-right: none; border-bottom: 1px solid #e0e0e0; }
-        .col:last-child { border-bottom: none; }
-        .col-header { padding: 8px 15px; font-size: 16px; }
-        .col-body { padding: 15px; font-size: 12px; }
-        th, td { padding: 8px 10px !important; font-size: 11px !important; }
-        .payment-info { font-size: 12px !important; }
-      }
-
-      /* Items Table */
-      table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-      th { background-color: #fcae3f; color: white; text-align: left; padding: 10px 15px; font-weight: bold; font-size: 15px; border-right: 1px solid white; }
-      th:last-child { border-right: none; }
-      td { padding: 12px 15px; border: 1px solid #e0e0e0; font-size: 14px; }
-      td.no-border-x { border-left: none; border-right: none; }
-      
-      /* Totals */
-      .bg-orange { background-color: #fcae3f; color: white; font-weight: bold; }
-      .bold-td { font-weight: bold; }
-      
-      /* Payment Info */
-      .payment-info { margin-top: 40px; font-size: 14px; line-height: 1.8; }
-      .payment-title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; }
+      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #111; color: #f0f0f0; margin: 0; padding: 0; }
+      .container { max-width: 620px; margin: 40px auto; background: #1a1a17; border-radius: 12px; overflow: hidden; border: 1px solid #2a2a22; }
+      .header { background: linear-gradient(135deg, #fce003, #FF2626); padding: 32px 40px; }
+      .header h1 { margin: 0; color: #000; font-size: 28px; font-weight: 900; letter-spacing: -1px; }
+      .header p { margin: 4px 0 0; color: #1a1a00; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 2px; }
+      .body { padding: 40px; }
+      .greeting { font-size: 16px; color: #c0c0b0; margin-bottom: 24px; }
+      .invoice-box { background: #222218; border: 1px solid #333325; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+      .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #2a2a22; }
+      .row:last-child { border-bottom: none; }
+      .label { color: #888878; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+      .value { color: #f0f0d0; font-weight: 700; font-size: 14px; }
+      .total-row { background: #fce003; border-radius: 6px; padding: 12px 16px; display: flex; justify-content: space-between; margin-top: 12px; }
+      .total-label { color: #000; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+      .total-value { color: #000; font-size: 18px; font-weight: 900; }
+      .footer { padding: 24px 40px; border-top: 1px solid #2a2a22; font-size: 11px; color: #555545; text-align: center; }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1 class="header-title">Invoice</h1>
-      
-      <div class="header-container">
-        <div class="header-left">
-          <div class="invoice-meta">INVOICE NO - ${invoiceNo}</div>
-          <div class="invoice-meta">INVOICE DATE - ${invoiceDate}</div>
-        </div>
-        <div class="header-right">
-          <div class="logo">
-            <div class="logo-icon">M</div> MINECOM
-          </div>
-        </div>
+      <div class="header">
+        <h1>INVOICE</h1>
+        <p>CADONCE Studio</p>
       </div>
+      <div class="body">
+        <p class="greeting">Dear ${clientName},</p>
+        <p class="greeting">Please find your invoice details for project <strong style="color:#fce003">"${project.title}"</strong> below.</p>
+        
+        <div class="invoice-box">
+          <div class="row">
+            <span class="label">Order ID</span>
+            <span class="value">${project.orderId || 'N/A'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Project</span>
+            <span class="value">${project.title}</span>
+          </div>
+          <div class="row">
+            <span class="label">Order Date</span>
+            <span class="value">${project.orderDate || 'N/A'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Payment Status</span>
+            <span class="value">${project.paymentStatus || 'Unpaid'}</span>
+          </div>
+          <div class="row">
+            <span class="label">Total Amount</span>
+            <span class="value">${revenue}</span>
+          </div>
+          <div class="row">
+            <span class="label">Amount Paid</span>
+            <span class="value">${paidAmount}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">Balance Due</span>
+            <span class="total-value">${balance}</span>
+          </div>
+        </div>
 
-      <div class="address-container">
-        <div class="col">
-          <div class="col-header">From</div>
-          <div class="col-body">
-            <div><span class="label-bold">Country</span> - ${orgCountry}</div>
-            <div><span class="label-bold">Name</span> - ${orgName}</div>
-            <div><span class="label-bold">Company</span> - ${orgCompany}</div>
-            <div><span class="label-bold">${orgTaxIdLabel}</span> - ${orgTaxId}</div>
-            <div><span class="label-bold">Email</span> - ${orgEmail}</div>
-            <div><span class="label-bold">Ph No</span> - ${orgPhone}</div>
-            <div><span class="label-bold">Address</span> - ${orgAddress}</div>
-            <div><span class="label-bold">City</span> - ${orgCity}</div>
-            <div><span class="label-bold">Pincode</span> - ${orgPincode}</div>
-            <div><span class="label-bold">State</span> - ${orgState}</div>
-          </div>
-        </div>
-        <div class="col">
-          <div class="col-header">To</div>
-          <div class="col-body">
-            <div><span class="label-bold">Country</span> - ${cCountry}</div>
-            <div><span class="label-bold">Name</span> - ${cName}</div>
-            <div><span class="label-bold">Company</span> - ${cCompany}</div>
-            <div><span class="label-bold">${taxIdLabel}</span> - ${cTaxId}</div>
-            <div><span class="label-bold">Email</span> - ${cEmail}</div>
-            <div><span class="label-bold">Ph No</span> - ${cPhone}</div>
-            <div><span class="label-bold">Address</span> - ${cAddress}</div>
-            <div><span class="label-bold">City</span> - ${cCity}</div>
-            <div><span class="label-bold">Zip code</span> - ${cZip}</div>
-          </div>
-        </div>
+        <p style="color:#888878; font-size:13px;">Please make payment at your earliest convenience. If you have any questions, reply to this email and we'll be happy to help.</p>
+        <p style="color:#888878; font-size:13px;">Thank you for your business!</p>
       </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 40%">Description</th>
-            <th>SAC Code</th>
-            <th>Qty</th>
-            <th>Rate (AUD)</th>
-            <th>Total (AUD)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border-left: none;">3D Jewellery CAD Design Work - ${project.title}</td>
-            <td>998391</td>
-            <td>1</td>
-            <td>$${revenue}</td>
-            <td style="border-right: none;">$${revenue}</td>
-          </tr>
-          <tr>
-            <td class="bold-td" style="border-left: none;">Subtotal</td>
-            <td class="no-border-x"></td>
-            <td class="no-border-x"></td>
-            <td class="no-border-x"></td>
-            <td class="bold-td" style="border-right: none;">$${revenue} AUD</td>
-          </tr>
-          <tr>
-            <td class="bold-td" style="border-left: none;">GST (0% - Export)</td>
-            <td class="no-border-x"></td>
-            <td class="no-border-x"></td>
-            <td class="no-border-x"></td>
-            <td class="bold-td" style="border-right: none;">$0</td>
-          </tr>
-          <tr>
-            <td class="bold-td" style="border-left: none; border-bottom: none;">Total Amount</td>
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
-            <td style="border: none;"></td>
-            <td class="bg-orange" style="border-right: none; border-bottom: none;">$${revenue} AUD</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="payment-info">
-        <div class="payment-title">PAYMENT INFORMATION:</div>
-        <div><span class="label-bold">Bank Name :</span> Monoova Payments Pty Ltd</div>
-        <div><span class="label-bold">Bank Location :</span> AUSTRALIA</div>
-        <div><span class="label-bold">Account Holder’s Name :</span> SALOAR HUSSAIN ANWAR ALI SHAIKH</div>
-        <div><span class="label-bold">Account Type :</span> Current</div>
-        <div><span class="label-bold">BIC :</span> CUSCAU2SXXX</div>
-        <div><span class="label-bold">Bank State Branch Code (BSB) :</span> 802985</div>
-        <div><span class="label-bold">Bank Account Number :</span> 416552962</div>
-        <div><span class="label-bold">Bank Address :</span> Level 11, Darling Park Tower 1, 201 Sussex Street, Sydney NSW 2000, Australia</div>
+      <div class="footer">
+        CADONCE Studio &bull; This is an automated invoice email.
       </div>
     </div>
   </body>
@@ -573,8 +460,8 @@ export function projectAssignmentTemplate(project: any, organizationName: string
           <span class="label">Order Reference</span>
           <span class="value">#${project.orderId || project.id.slice(-6)}</span>
           
-          <span class="label">Organization</span>
-          <span class="value">${organizationName || 'CADONCE'}</span>
+          <span class="label">Client</span>
+          <span class="value">${project.client || 'Independent Partner'}</span>
         </div>
 
         <a href="${magicLink}" class="cta-button">View Project Details</a>

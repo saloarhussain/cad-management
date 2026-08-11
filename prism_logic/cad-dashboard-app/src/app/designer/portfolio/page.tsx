@@ -68,7 +68,7 @@ export default function DesignerPortfolio() {
             <div>
               <Link href="/designer" className="text-[10px] font-black text-yellow-400 uppercase tracking-widest flex items-center gap-1 hover:text-yellow-300 transition-colors mb-2">
                 <span className="material-symbols-outlined text-sm">arrow_back</span>
-                Back to Dashboard
+                Back to Workstation
               </Link>
               <h1 className="text-3xl font-black text-white uppercase tracking-tight">My Portfolio</h1>
               <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-0.5">Showcase your work and performance</p>
@@ -126,10 +126,10 @@ export default function DesignerPortfolio() {
                 <span className="material-symbols-outlined text-yellow-400">imagesmode</span>
                 Featured Work
               </h2>
-              <Link href="/designer/portfolio/new" className="px-4 py-2 bg-yellow-400 text-black font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg shadow-yellow-400/10 active:scale-95 transition-all flex items-center gap-2">
+              <button className="px-4 py-2 bg-yellow-400 text-black font-black uppercase tracking-widest text-[9px] rounded-xl shadow-lg shadow-yellow-400/10 active:scale-95 transition-all flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">add</span>
                 Add Item
-              </Link>
+              </button>
             </div>
 
             {portfolioItems.length === 0 ? (

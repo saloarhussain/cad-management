@@ -474,7 +474,7 @@ export async function saveProject(formData: FormData) {
     const newProject = {
       id: Date.now().toString(),
       title: formData.get('title'),
-      orderId: formData.get('orderId') || `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      orderId: formData.get('orderId'),
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -498,16 +498,7 @@ export async function saveProject(formData: FormData) {
       paidAmount: formData.get('paidAmount') || '0',
       useEscrow: formData.get('useEscrow') === 'on',
       status: 'High Priority',
-      createdAt: new Date().toISOString(),
-      tags: (() => {
-        const val = formData.get('tags');
-        if (!val) return [];
-        try {
-          return JSON.parse(val as string);
-        } catch {
-          return (val as string).split(',').map(s => s.trim()).filter(Boolean);
-        }
-      })()
+      createdAt: new Date().toISOString()
     };
 
     await insertRecord('projects', newProject, user.id, supabase);
@@ -722,7 +713,7 @@ export async function updateProjectAction(formData: FormData) {
 
     const updatedData: any = {
       title: formData.get('title'),
-      orderId: formData.get('orderId') || `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      orderId: formData.get('orderId'),
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -743,18 +734,8 @@ export async function updateProjectAction(formData: FormData) {
       })(),
       cadFile: formData.get('cadFile'),
       paymentStatus: formData.get('paymentStatus'),
-      payoutStatus: formData.get('payoutStatus'),
       paidAmount: formData.get('paidAmount'),
-      updatedAt: new Date().toISOString(),
-      tags: (() => {
-        const val = formData.get('tags');
-        if (!val) return undefined;
-        try {
-          return JSON.parse(val as string);
-        } catch {
-          return (val as string).split(',').map(s => s.trim()).filter(Boolean);
-        }
-      })()
+      updatedAt: new Date().toISOString()
     };
 
     // Auto-detect if this is a delivery update by status change or designer action
@@ -925,11 +906,6 @@ export async function saveClient(formData: FormData) {
       website: formData.get('website'),
       platform: formData.get('platform'),
       priority: formData.get('priority'),
-      taxId: formData.get('taxId'),
-      address: formData.get('address'),
-      city: formData.get('city'),
-      state: formData.get('state'),
-      pincode: formData.get('pincode'),
       createdAt: new Date().toISOString()
     };
 
@@ -1029,9 +1005,8 @@ export async function deleteClient(id: string) {
 
 export async function createNotification(userId: string, type: string, title: string, content: string, link: string) {
   try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase.from('notifications').insert({
+    const supabase = await createClient();
+    const { error } = await supabase.from('notifications').insert({
       user_id: userId,
       type,
       title,
@@ -1164,22 +1139,7 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
       whatsapp: formData.get('whatsapp') as string,
       avatar_url: formData.get('avatarUrl') as string,
       country: formData.get('country') as string,
-      orgTaxId: formData.get('orgTaxId') as string,
-      orgAddress: formData.get('orgAddress') as string,
-      orgCity: formData.get('orgCity') as string,
-      orgPincode: formData.get('orgPincode') as string,
-      orgState: formData.get('orgState') as string,
-      orgCountry: formData.get('orgCountry') as string,
       pointsBalance: parseInt(formData.get('pointsBalance') as string || '0'),
-      // Alert Notification Integrations
-      freelanceEmail: formData.get('freelanceEmail') as string,
-      freelanceAppPassword: formData.get('freelanceAppPassword') as string,
-      binanceApiKey: formData.get('binanceApiKey') as string,
-      binanceApiSecret: formData.get('binanceApiSecret') as string,
-      twilioAccountSid: formData.get('twilioAccountSid') as string,
-      twilioAuthToken: formData.get('twilioAuthToken') as string,
-      twilioPhoneFrom: formData.get('twilioPhoneFrom') as string,
-      twilioPhoneTo: formData.get('twilioPhoneTo') as string,
     };
 
     const enrichedMethods = [
@@ -1296,16 +1256,6 @@ export async function getMySettings() {
         data.avatarUrl = config.avatar_url || config.avatarUrl;
         data.country = config.country;
         data.pointsBalance = config.points_balance || config.pointsBalance || 0;
-        
-        // Alert Notification Integrations
-        data.freelanceEmail = config.freelanceEmail;
-        data.freelanceAppPassword = config.freelanceAppPassword;
-        data.binanceApiKey = config.binanceApiKey;
-        data.binanceApiSecret = config.binanceApiSecret;
-        data.twilioAccountSid = config.twilioAccountSid;
-        data.twilioAuthToken = config.twilioAuthToken;
-        data.twilioPhoneFrom = config.twilioPhoneFrom;
-        data.twilioPhoneTo = config.twilioPhoneTo;
       }
     }
 
@@ -1411,22 +1361,15 @@ export async function sendInvoice(projectId: string) {
 
     const { data: settings } = await adminSupabase.from('settings').select('*').eq('user_id', user.id).maybeSingle();
     const credentials = getMailCredentials(settings);
-    
-    const methods = settings?.payment_methods || [];
-    const parsedMethods = typeof methods === 'string' ? JSON.parse(methods) : methods;
-    const systemConfig = Array.isArray(parsedMethods) ? parsedMethods.find((m: any) => m.id === 'system_config') : {};
 
     const { sendEmail, invoiceTemplate } = await import('@/lib/mailer');
     await sendEmail({
       to: email,
       subject: `Invoice for Project: ${project.title}`,
-      html: invoiceTemplate(project, client, systemConfig),
+      html: invoiceTemplate(project, clientName),
       text: `Invoice for ${project.title}. Total: $${project.revenue}. Balance: $${parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')}`,
       credentials,
     });
-
-    // Mark invoice as sent in the database
-    await adminSupabase.from('projects').update({ invoiceSent: true }).eq('id', projectId);
 
     return {
       success: true,
@@ -1906,51 +1849,46 @@ export async function getDesignerStatus() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) {
-      return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
-      };
-    }
+    if (!user?.email) return { isDesigner: false, organizations: [] };
 
-    // Rely on Auth User Metadata role as the source of truth to differentiate designer vs organization
-    const isDesignerRole = user.user_metadata?.role === 'designer';
-    if (!isDesignerRole) {
-      return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
-      };
-    }
-
+    // Use Admin Client to bypass RLS for role verification
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    const { data: designers } = await adminSupabase
+    // 1. Fetch designer records and their settings in as few round trips as possible
+    const { data: designerRecords, error: designerError } = await adminSupabase
       .from('designers')
-      .select('*')
+      .select('user_id')
       .ilike('email', user.email);
 
-    if (!designers || designers.length === 0) {
+    if (designerError || !designerRecords || designerRecords.length === 0) {
+      return { isDesigner: false, organizations: [] };
+    }
+
+    const ownerIds = designerRecords.map(r => r.user_id);
+
+    // Fetch organization names for all hiring owners
+    const { data: settings } = await adminSupabase
+      .from('settings')
+      .select('user_id, organizationName')
+      .in('user_id', ownerIds);
+
+    // Map records to organizations with fallbacks
+    const organizations = await Promise.all(designerRecords.map(async (record) => {
+      const setting = settings?.find(s => s.user_id === record.user_id);
+      let name = setting?.organizationName;
+      
+      // Fallback: Check User Metadata if settings are empty
+      if (!name) {
+        const { data: { user: owner } } = await adminSupabase.auth.admin.getUserById(record.user_id);
+        name = owner?.user_metadata?.organization_name;
+      }
+
       return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
+        id: record.user_id,
+        name: name || 'Organization Partner'
       };
-    }
-
-    const orgUserIds = Array.from(new Set(designers.map(d => d.user_id).filter(Boolean)));
-
-    let organizations: { id: string; name: string }[] = [];
-    if (orgUserIds.length > 0) {
-      const { data: settingsList } = await adminSupabase
-        .from('settings')
-        .select('user_id, organizationName')
-        .in('user_id', orgUserIds);
-
-      organizations = (settingsList || []).map(s => ({
-        id: s.user_id,
-        name: s.organizationName || 'Unnamed Organization'
-      }));
-    }
+    }));
 
     return {
       isDesigner: true,
@@ -1958,10 +1896,7 @@ export async function getDesignerStatus() {
     };
   } catch (err) {
     console.error('[getDesignerStatus] Error:', err);
-    return {
-      isDesigner: false,
-      organizations: [] as { id: string; name: string }[]
-    };
+    return { isDesigner: false, organizations: [] };
   }
 }
 
@@ -2003,29 +1938,7 @@ export async function getDb() {
     // when unauthenticated users hit protected pages behind AuthGuard
     return { projects: [], clients: [], designers: [], settings: {} };
   }
-  const db = await readDb(user.id, supabase);
-  db.settings = db.settings || {};
-  db.settings.favorite_clients = user.user_metadata?.favorite_clients || [];
-  return db;
-}
-
-export async function saveFavoriteClients(clientIds: string[]) {
-  try {
-    const { user } = await getAuthenticatedUser();
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    
-    await adminSupabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        ...user.user_metadata,
-        favorite_clients: clientIds
-      }
-    });
-    return { success: true };
-  } catch (err: any) {
-    console.error('[saveFavoriteClients] Error:', err.message);
-    return { success: false, error: err.message };
-  }
+  return readDb(user.id, supabase);
 }
 
 export async function getViewportProject(projectId: string) {
@@ -4005,7 +3918,6 @@ export async function releaseProjectEscrow(projectId: string) {
       .from('projects')
       .update({
         paymentStatus: 'Paid',
-        payoutStatus: 'Paid',
         status: 'Completed',
         updatedAt: new Date().toISOString()
       })
@@ -4534,176 +4446,6 @@ export async function getProjectTimeLogs(projectId: string) {
     };
   } catch (err: any) {
     console.error('[getProjectTimeLogs] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-// ==========================================
-// SUPPORT SYSTEM ACTIONS
-// ==========================================
-
-export async function createSupportTicket(formData: FormData) {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const subject = formData.get('subject') as string;
-    const description = formData.get('description') as string;
-    const priority = formData.get('priority') as string || 'medium';
-
-    if (!subject || !description) throw new Error('Subject and description are required');
-
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .insert({
-        user_id: user.id,
-        subject,
-        description,
-        priority,
-        status: 'open'
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    revalidatePath('/support');
-    return { success: true, ticket: data };
-  } catch (err: any) {
-    console.error('[createSupportTicket] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function getUserSupportTickets() {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { success: true, tickets: data };
-  } catch (err: any) {
-    console.error('[getUserSupportTickets] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function getAllSupportTickets() {
-  try {
-    // Only fetch if admin
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { success: true, tickets: data };
-  } catch (err: any) {
-    console.error('[getAllSupportTickets] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function getSupportTicketDetails(ticketId: string) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data: ticket, error: ticketErr } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .eq('id', ticketId)
-      .single();
-
-    if (ticketErr) throw ticketErr;
-
-    const { data: replies, error: repliesErr } = await adminSupabase
-      .from('support_replies')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
-
-    if (repliesErr) throw repliesErr;
-
-    return { success: true, ticket, replies };
-  } catch (err: any) {
-    console.error('[getSupportTicketDetails] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function addSupportReply(formData: FormData) {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const ticketId = formData.get('ticketId') as string;
-    const message = formData.get('message') as string;
-    const isAdminReply = formData.get('isAdminReply') === 'true';
-
-    if (!ticketId || !message) throw new Error('Ticket ID and message are required');
-
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
-      .from('support_replies')
-      .insert({
-        ticket_id: ticketId,
-        sender_id: user.id,
-        message,
-        is_admin_reply: isAdminReply
-      });
-
-    if (error) throw error;
-
-    // Update ticket status to answered if admin, or open if user
-    await adminSupabase
-      .from('support_tickets')
-      .update({ 
-        status: isAdminReply ? 'answered' : 'open',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', ticketId);
-
-    revalidatePath(`/support/${ticketId}`);
-    revalidatePath(`/admin/support/${ticketId}`);
-    return { success: true };
-  } catch (err: any) {
-    console.error('[addSupportReply] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function closeSupportTicket(ticketId: string, formData?: FormData) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
-      .from('support_tickets')
-      .update({ status: 'closed', updated_at: new Date().toISOString() })
-      .eq('id', ticketId);
-
-    if (error) throw error;
-    
-    revalidatePath('/support');
-    revalidatePath('/admin/support');
-    return { success: true };
-  } catch (err: any) {
-    console.error('[closeSupportTicket] Error:', err.message);
     return { success: false, error: err.message };
   }
 }

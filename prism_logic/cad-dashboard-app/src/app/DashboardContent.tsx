@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { searchProducts, Product, Platform } from '@/lib/productSearchMock';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useAuth } from '@/components/AuthProvider';
-import { PLATFORM_CONFIG, getCurrencySymbol } from '@/lib/config';
+import { PLATFORM_CONFIG } from '@/lib/config';
 
 interface DashboardContentProps {
   stats: any;
@@ -56,12 +56,8 @@ export default function DashboardContent({
   const getProjectsForMetric = () => {
     if (!selectedMetric) return [];
     
-    if (selectedMetric === 'Total Revenue') {
+    if (selectedMetric === 'Total Revenue' || selectedMetric === 'Expenses') {
       return filteredProjects;
-    }
-
-    if (selectedMetric === 'Expenses') {
-      return filteredProjects.filter((p: any) => p.designer && p.designer.trim() !== '');
     }
     
     if (selectedMetric === 'Pending') {
@@ -75,7 +71,7 @@ export default function DashboardContent({
       return (allProjects || []).filter((p: any) => {
         const s = p.status?.toLowerCase() || '';
         const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-        return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
+        return isComplete && p.paymentStatus !== 'Paid';
       });
     }
     
@@ -232,8 +228,8 @@ export default function DashboardContent({
         Client: p.client,
         Designer: p.designer || 'Unassigned',
         Status: p.status,
-        Revenue: `${getCurrencySymbol(p.revenueCurrency || 'USD')}${p.revenue}`,
-        Expense: `${getCurrencySymbol(p.expenseCurrency || 'INR')}${p.expense}`,
+        Revenue: `${p.revenueCurrency || '$'}${p.revenue}`,
+        Expense: `${p.expenseCurrency || '₹'}${p.expense}`,
         PaymentStatus: p.paymentStatus || 'Unpaid',
         PayoutStatus: p.payoutStatus || 'Pending',
         CreatedAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A',
@@ -493,87 +489,44 @@ export default function DashboardContent({
               <div className="space-y-3 overflow-y-auto no-scrollbar flex-1">
                 {getProjectsForMetric().length > 0 ? (
                   getProjectsForMetric().map((p: any) => (
-                    <Link key={p.id} href={`/projects/${p.id}`} className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex flex-col gap-2 hover:border-[#fce003]/50 hover:bg-zinc-800/50 transition-all cursor-pointer group">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center">
-                          <p className="text-[4.5px] font-black text-on-surface-variant tracking-widest opacity-60">Order ID: {p.id}</p>
-                          <p className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">
-                            {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Expense' : 'Revenue'}
-                          </p>
+                    <div key={p.id} className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0 flex-1 mr-2">
+                          <p className="text-[8px] font-black text-[#fce003] uppercase tracking-widest mb-0.5">Order ID: {p.id}</p>
+                          <h4 className="font-headline font-extrabold text-on-surface text-xs leading-tight truncate" title={p.title}>{p.title}</h4>
                         </div>
-                        <div className="flex justify-between items-center gap-2">
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-headline font-extrabold text-on-surface text-sm leading-tight truncate group-hover:text-[#fce003] transition-colors" title={p.title}>
-                              {p.title}
-                            </h4>
-                            <p className="text-[10px] text-on-surface-variant font-medium mt-1 truncate">
-                              <span className="opacity-50">{selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Designer: ' : 'Client: '}</span>
-                              <span className="font-bold text-on-surface-variant">{selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.designer || 'Unassigned') : p.client}</span>
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                            <div className={`font-headline font-extrabold px-2.5 py-1 rounded border text-xs ${
-                              selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'border-zinc-500 text-white' : 'border-[#fce003] text-[#fce003]'
-                            }`}>
-                              {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? getCurrencySymbol(p.expenseCurrency || 'INR') : getCurrencySymbol(p.revenueCurrency || 'USD')}
-                              {parseFloat(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.expense || '0') : (p.revenue || '0')).toLocaleString()}
-                            </div>
-                            {(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due') && (
-                              <span className={`text-[8px] font-black py-0.5 px-2 rounded tracking-wider shadow-sm inline-block ${
-                                p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
-                                'bg-zinc-700 text-white'
-                              }`}>
-                                {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
-                              </span>
-                            )}
+                        <div className="text-right">
+                          <p className="text-[7px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">
+                            {selectedMetric === 'Expenses' ? 'Expense' : 'Revenue'}
+                          </p>
+                          <div className={`font-headline font-extrabold px-2 py-0.5 rounded border inline-block mt-0.5 text-[10px] ${
+                            selectedMetric === 'Expenses' ? 'border-zinc-500 text-white' : 'border-[#fce003] text-[#fce003]'
+                          }`}>
+                            {selectedMetric === 'Expenses' ? (p.expenseCurrency || '₹') : (p.revenueCurrency || '$')}
+                            {parseFloat(selectedMetric === 'Expenses' ? (p.expense || '0') : (p.revenue || '0')).toLocaleString()}
                           </div>
                         </div>
                       </div>
                       
-                      {selectedMetric !== 'Expenses' && selectedMetric !== 'Payouts Due' && (
-                        <div className="flex justify-between items-center pt-2 border-t border-white/5 gap-4">
-                          <div className="flex-1 bg-zinc-950/40 p-2 rounded-lg border border-white/5 flex flex-col gap-1 sm:bg-transparent sm:p-0 sm:border-none sm:text-left">
-                            <span className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">Client Status</span>
-                            <div className="sm:flex sm:justify-start">
-                              <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm ${
-                                p.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
-                                p.paymentStatus?.toLowerCase().includes('advance') ? 'bg-sky-500 text-white' : 
-                                'bg-[#e9e2cf] text-zinc-950'
-                              }`}>
-                                {p.paymentStatus?.toLowerCase() === 'paid' ? 'Paid' : 
-                                 p.paymentStatus?.toLowerCase() === 'unpaid' ? 'Unpaid' : 
-                                 p.paymentStatus?.toLowerCase() === 'pending' ? 'Pending' : 
-                                 (p.paymentStatus || 'Unpaid')}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex-1 bg-zinc-950/40 p-2 rounded-lg border border-white/5 flex flex-col gap-1 sm:bg-transparent sm:p-0 sm:border-none sm:text-right">
-                            <span className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">
-                              {selectedMetric === 'Pending' ? 'Project Progress' : 'Designer Payout'}
+                      <div className="grid grid-cols-2 gap-3 pt-1.5 border-t border-white/5">
+                        <div>
+                          <p className="text-[7px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60 mb-0.5">Client</p>
+                          <div className="font-headline font-extrabold text-on-surface text-[10px] truncate">{p.client}</div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[7px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60 mb-0.5">Status</p>
+                          <div className="flex justify-end mt-0.5">
+                            <span className={`text-[7px] font-black py-0.5 px-1 rounded uppercase tracking-tighter inline-block ${
+                              p.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
+                              p.paymentStatus?.toLowerCase().includes('advance') ? 'bg-sky-500 text-white' : 
+                              'bg-[#e9e2cf] text-zinc-950'
+                            }`}>
+                              {p.paymentStatus || 'UNPAID'}
                             </span>
-                            <div className="sm:flex sm:justify-end">
-                              {selectedMetric === 'Pending' ? (
-                                <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm border ${
-                                  p.status?.toLowerCase().includes('urgent') || p.status?.toLowerCase().includes('high') ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                  p.status?.toLowerCase().includes('complete') || p.status?.toLowerCase().includes('approve') || p.status?.toLowerCase().includes('done') || p.status?.toLowerCase().includes('delivered') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                                  p.status?.toLowerCase().includes('pending') || p.status?.toLowerCase().includes('review') || p.status?.toLowerCase().includes('await') ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                                  'bg-sky-500/20 text-sky-400 border-sky-500/30'
-                                }`}>
-                                  {p.status || 'In Progress'}
-                                </span>
-                              ) : (
-                                <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm ${
-                                  p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
-                                  'bg-zinc-700 text-white'
-                                }`}>
-                                  {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
-                                </span>
-                              )}
-                            </div>
                           </div>
                         </div>
-                      )}
-                    </Link>
+                      </div>
+                    </div>
                   ))
                 ) : (
                   <div className="text-center py-10 opacity-50">
@@ -590,19 +543,8 @@ export default function DashboardContent({
           {/* Revenue Card */}
           <div onClick={() => handleCardClick('Total Revenue')} className="col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-[#fce003]/20 to-transparent shadow-2xl group active:scale-[0.98] transition-all cursor-pointer">
             <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 lg:p-6 border border-white/5 relative overflow-hidden">
-              {/* Info Tooltip */}
-              <div 
-                className="absolute top-3 right-3 z-30 group/tooltip"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
-                  info
-                </span>
-                <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
-                  <p className="text-[10px] leading-relaxed text-zinc-300 font-medium normal-case tracking-normal text-left font-sans">
-                    Total revenue earned from projects created in this period (both paid and unpaid by clients).
-                  </p>
-                </div>
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <span className="material-symbols-outlined text-5xl">payments</span>
               </div>
               <div className="relative z-10">
                 <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-2 opacity-60">Total Revenue</p>
@@ -625,24 +567,8 @@ export default function DashboardContent({
           {/* Pending Card */}
           <div onClick={() => handleCardClick('Pending')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-orange-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
             <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
-              {/* Info Tooltip */}
-              <div 
-                className="absolute top-3 right-3 z-30 group/tooltip"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
-                  info
-                </span>
-                <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
-                  <p className="text-[10px] leading-relaxed text-zinc-300 font-medium normal-case tracking-normal text-left font-sans">
-                    Total revenue from active, in-progress projects (representing your upcoming pipeline).
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5 mb-1 opacity-60">
-                <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Pending</p>
-                <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
-              </div>
+              <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
+              <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Pending</p>
               <h3 className="text-lg sm:text-xl font-headline font-black text-[#fce003] tracking-tight truncate">
                 {stats.currency}{stats.pendingRevenue.toLocaleString()}
               </h3>
@@ -653,20 +579,6 @@ export default function DashboardContent({
           {/* Costs Card */}
           <div onClick={() => handleCardClick('Expenses')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-zinc-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
             <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
-              {/* Info Tooltip */}
-              <div 
-                className="absolute top-3 right-3 z-30 group/tooltip"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
-                  info
-                </span>
-                <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
-                  <p className="text-[10px] leading-relaxed text-zinc-300 font-medium normal-case tracking-normal text-left font-sans">
-                    Total designer payouts for projects in this period (both paid and pending/unpaid).
-                  </p>
-                </div>
-              </div>
               <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Expenses</p>
               <h3 className="text-lg sm:text-xl font-headline font-black text-white tracking-tight truncate">
                 {stats.currency}{stats.totalExpense.toLocaleString()}
@@ -677,35 +589,18 @@ export default function DashboardContent({
 
           {/* Payouts Due Card */}
           <div onClick={() => handleCardClick('Payouts Due')} className={`col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br ${stats.payoutsDue > 0 ? 'from-red-500/30 to-transparent' : 'from-zinc-700/20 to-transparent'} shadow-2xl group active:scale-[0.98] transition-all cursor-pointer`}>
-            <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
-              {/* Info Tooltip */}
-              <div 
-                className="absolute top-3 right-3 z-30 group/tooltip"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
-                  info
-                </span>
-                <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
-                  <p className="text-[10px] leading-relaxed text-zinc-300 font-medium normal-case tracking-normal text-left font-sans">
-                    Total outstanding payouts due to designers for all completed/delivered projects.
-                  </p>
-                </div>
-              </div>
+            <div className={`h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden flex items-center justify-between`}>
               <div className="relative z-10">
-                <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Payouts Due</p>
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className={`text-lg sm:text-xl font-headline font-black tracking-tight ${stats.payoutsDue > 0 ? 'text-red-500' : 'text-white'} truncate`}>
-                    {stats.currency}{stats.payoutsDue.toLocaleString()}
-                  </h3>
-                  <div className="flex-shrink-0">
-                    <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border ${stats.payoutsDue > 0 ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-white/5 border-white/10 text-on-surface-variant'}`}>
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">{stats.payoutsDueCount} {stats.payoutsDueCount === 1 ? 'Pending' : 'Pending'}</span>
-                      {stats.payoutsDue > 0 && <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
-                    </div>
-                  </div>
+                <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Payouts Due</p>
+                <h3 className={`text-xl sm:text-2xl font-headline font-black tracking-tighter ${stats.payoutsDue > 0 ? 'text-red-500' : 'text-white'}`}>
+                  {stats.currency}{stats.payoutsDue.toLocaleString()}
+                </h3>
+              </div>
+              <div className="text-right">
+                <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border ${stats.payoutsDue > 0 ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-white/5 border-white/10 text-on-surface-variant'}`}>
+                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">{stats.payoutsDueCount} {stats.payoutsDueCount === 1 ? 'Pending' : 'Pending'}</span>
+                  {stats.payoutsDue > 0 && <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
                 </div>
-                <p className="text-[7px] font-black uppercase tracking-widest text-on-surface-variant mt-2 opacity-40">Outstanding Payouts</p>
               </div>
             </div>
           </div>

@@ -48,6 +48,7 @@ export const GLOBAL_CURRENCIES = [
   { label: 'Malaysian Ringgit', code: 'MYR', symbol: 'RM' },
   { label: 'Philippine Peso', code: 'PHP', symbol: '₱' },
   { label: 'Thai Baht', code: 'THB', symbol: '฿' },
+  { label: 'Vietnamese Dong', code: 'VND', symbol: '₫' }
 ];
 
 export function getCurrencySymbol(code: string): string {
@@ -72,3 +73,4 @@ export function getCurrencySymbol(code: string): string {
   };
   return mapping[upper] || code;
 }
+

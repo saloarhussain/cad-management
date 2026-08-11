@@ -74,7 +74,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
       case '18k Gold': return 0.0155;
       case 'Platinum': return 0.02105;
       case '925 Silver': return 0.01036;
-      case 'Brass': return 0.0085;
       default: return 0.0155;
     }
   };
@@ -460,7 +459,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
                         <option value="18k Gold">18k Gold</option>
                         <option value="Platinum">950 Platinum</option>
                         <option value="925 Silver">925 Silver</option>
-                        <option value="Brass">Brass</option>
                       </select>
                     </div>
                     <div className="text-right">

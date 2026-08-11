@@ -15,13 +15,12 @@ export default function TransferPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [requirePayment, setRequirePayment] = useState(false);
-  const [applyWatermark, setApplyWatermark] = useState(true);
   const [price, setPrice] = useState<string>('');
   const { isAuthenticated, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadStartTimeRef = useRef<number>(0);
 
-  const [recipients, setRecipients] = useState<{ id: string; name: string; type: 'client' | 'team'; email?: string }[]>([]);
+  const [recipients, setRecipients] = useState<{ id: string; name: string; type: 'client' | 'team' }[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<string>('General Link');
 
   React.useEffect(() => {
@@ -31,23 +30,23 @@ export default function TransferPage() {
         
         const { data: clientsData } = await supabase
           .from('clients')
-          .select('id, name, email')
+          .select('id, name')
           .order('name');
           
         if (clientsData && clientsData.length > 0) {
           clientsData.forEach((c: any) => {
-            list.push({ id: c.id, name: c.name, type: 'client', email: c.email });
+            list.push({ id: c.id, name: c.name, type: 'client' });
           });
         }
         
         const { data: designersData } = await supabase
           .from('designers')
-          .select('id, fullName, email')
+          .select('id, fullName')
           .order('fullName');
           
         if (designersData && designersData.length > 0) {
           designersData.forEach((d: any) => {
-            list.push({ id: d.id, name: d.fullName, type: 'team', email: d.email });
+            list.push({ id: d.id, name: d.fullName, type: 'team' });
           });
         }
         
@@ -173,15 +172,6 @@ export default function TransferPage() {
         fileExt = files[0].name.split('.').pop() || '';
       }
 
-      if (applyWatermark) {
-        if (finalFileName.includes('.')) {
-          const nameWithoutExt = finalFileName.substring(0, finalFileName.lastIndexOf('.'));
-          finalFileName = `${nameWithoutExt} [WATERMARKED].${fileExt}`;
-        } else {
-          finalFileName = `${finalFileName} [WATERMARKED]`;
-        }
-      }
-
       const randomName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `transfers/${randomName}`;
 
@@ -191,10 +181,7 @@ export default function TransferPage() {
       xhr.open('POST', url);
       
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || key;
-      
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${key}`);
       xhr.setRequestHeader('apikey', key);
       xhr.setRequestHeader('Content-Type', fileToUpload.type || 'application/octet-stream');
 
@@ -249,50 +236,9 @@ export default function TransferPage() {
       if (dbError) throw dbError;
       console.log('Database record created successfully:', dbData);
 
-      const finalShareLink = `${window.location.origin}/transfer/${dbData[0].id}`;
-      setShareLink(finalShareLink);
-      
-      // Auto-send email if recipient is assigned
-      if (selectedRecipient !== 'General Link') {
-        const recipientObj = recipients.find(r => r.name === selectedRecipient);
-        if (recipientObj) {
-          if (!recipientObj.email) {
-            alert(`Link generated, but we couldn't send an email because ${recipientObj.name} does not have an email address on file.`);
-          } else {
-            try {
-              console.log(`Sending email via Gmail API to ${recipientObj.email}...`);
-              const emailRes = await fetch('/api/gmail/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  toEmail: recipientObj.email,
-                  toName: recipientObj.name,
-                  shareLink: finalShareLink,
-                  fileName: finalFileName,
-                  requirePayment,
-                  price
-                })
-              });
-              const emailData = await emailRes.json();
-              if (!emailRes.ok || !emailData.success) {
-                if (emailData.code === 'NO_GMAIL') {
-                  alert(`Link generated! However, we couldn't auto-send the email because you haven't connected your Gmail account in the Settings yet.`);
-                } else {
-                  alert(`Link generated, but email sending failed: ${emailData.error}`);
-                  console.error('Failed to send email:', emailData.error);
-                }
-              } else {
-                alert(`Link generated and email successfully sent to ${recipientObj.name}!`);
-                console.log('Email sent successfully:', emailData);
-              }
-            } catch (err) {
-              alert(`Link generated, but a network error occurred while sending the email.`);
-              console.error('Network error sending email:', err);
-            }
-          }
-        }
-      }
-
+      const transferId = dbData[0].id;
+      const link = `${window.location.origin}/transfer/${transferId}`;
+      setShareLink(link);
       setReloadTrigger(prev => prev + 1);
 
     } catch (err: any) {
@@ -502,7 +448,6 @@ export default function TransferPage() {
                 type="file" 
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                onClick={(e) => e.stopPropagation()}
                 className="hidden"
                 multiple
               />
@@ -587,20 +532,6 @@ export default function TransferPage() {
               </select>
             </div>
 
-            {/* Watermark Options */}
-            <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-white font-bold text-sm">Apply Watermark</h4>
-                  <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Protect media with CADONCE watermark</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={applyWatermark} onChange={(e) => setApplyWatermark(e.target.checked)} />
-                  <div className="w-11 h-6 bg-[#333535] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ffe311]"></div>
-                </label>
-              </div>
-            </div>
-
             {/* Payment Options */}
             <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all">
               <div className="flex items-center justify-between">
@@ -643,45 +574,44 @@ export default function TransferPage() {
               )}
             </div>
 
-            {/* Action Area */}
-            {shareLink ? (
-              <div className="flex flex-col gap-3 w-full animate-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 p-3 bg-[#1a1c1c] border border-[#ffe311]/50 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.15)]">
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-[10px] text-[#ffe311] font-bold uppercase tracking-widest mb-1">Shareable Link Ready</p>
-                    <p className="text-white text-sm truncate font-mono">{shareLink}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(shareLink);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-lg tracking-widest uppercase transition-all active:scale-[0.98] ${copied ? 'bg-white text-black shadow-[0_10px_40px_rgba(255,255,255,0.3)]' : 'bg-[#ffe311] text-[#383100] shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)]'}`}
-                >
-                  {copied ? 'COPIED TO CLIPBOARD!' : 'COPY LINK'}
-                </button>
-                <button 
-                  onClick={() => setShareLink('')} 
-                  className="w-full h-12 bg-[#1a1c1c] border border-[#4b4732]/50 hover:border-[#ffe311]/50 rounded-lg text-[#979177] hover:text-[#ffe311] text-xs uppercase tracking-widest font-bold mt-1 transition-all active:scale-[0.98]"
-                >
-                  Generate New Link
-                </button>
-              </div>
-            ) : (
-              <button 
-                onClick={generateLink}
-                disabled={uploading || files.length === 0}
-                className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-[#383100] text-lg tracking-widest uppercase shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)] transition-all active:scale-[0.98] ${uploading || files.length === 0 ? 'opacity-50 cursor-not-allowed bg-[#ffe311]/50' : 'bg-[#ffe311]'}`}
-              >
-                {uploading ? 'UPLOADING...' : 'GENERATE LINK'}
-              </button>
-            )}
+            {/* Action Button */}
+            <button 
+              onClick={generateLink}
+              disabled={uploading || files.length === 0}
+              className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-[#383100] text-lg tracking-widest uppercase shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)] transition-all active:scale-[0.98] ${uploading || files.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {uploading ? 'UPLOADING...' : 'GENERATE LINK'}
+            </button>
 
             {error && (
               <div className="mt-4 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-center text-sm font-bold">
                 {error}
+              </div>
+            )}
+
+            {shareLink && (
+              <div className="mt-4 p-4 bg-[#1a1c1c] rounded-lg border border-[#4b4732]/30 flex flex-col items-center gap-3">
+                <p className="text-sm text-[#979177]">
+                  Shareable Link {selectedRecipient !== 'General Link' ? `for ${selectedRecipient}` : ''}:
+                </p>
+                <div className="flex items-center gap-3 w-full max-w-full">
+                  <a href={shareLink} className="text-[#ffe311] break-all hover:underline flex-1 text-sm font-medium" target="_blank" rel="noopener noreferrer">
+                    {shareLink}
+                  </a>
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareLink);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="shrink-0 size-10 rounded-lg bg-[#ffe311]/10 border border-[#ffe311]/20 text-[#ffe311] hover:bg-[#ffe311]/20 transition-all flex items-center justify-center active:scale-95"
+                    title="Copy Link"
+                  >
+                    <span className="material-symbols-outlined text-lg">
+                      {copied ? 'check' : 'content_copy'}
+                    </span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

@@ -69,7 +69,7 @@ export default function TeamPage() {
               ),
               performance: d.performance || 90, 
               tags: d.skills || [d.specialty || 'CAD', 'Designer'],
-              avatar: d.avatar || d.avatar_url || null,
+              avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB0u8M2vSRdnjPNptfjInHTEY5TvkihgUF6SKjJ87EvcwfpbMSr_W5LvRDBdPFG-DgM_oTOxLkPAbIa5nvfGQIY55GbGySSmpBXcIdTR87BgFcBudRfHn_VIHpz5uKc2MuH0KDF3TTALBR_1qbPPXzyzRwAlLqEJ8DaMzjXeMYcWoUXx1Gw2x224dJRZ9aafiAtvylny_16Qz0R_wSTJkDAXrlWeemFmEuq6Q9eUJRfZbrmOM2YDhJLvkm-9dWqk89MIS2fG8MMYwg',
               flag: cInfo.flag,
               location: cInfo.code
             };
@@ -227,50 +227,49 @@ export default function TeamPage() {
         {/* Strategic Team Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDesigners.map((designer, idx) => (
-            <div key={designer.id || idx} className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 hover:bg-white/[0.05] hover:border-[#fce003]/30 transition-all duration-500 overflow-hidden shadow-2xl">
+            <div key={designer.id || idx} className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-[#fce003]/30 transition-all duration-500 overflow-hidden shadow-2xl">
               <Link href={`/team/${designer.id}`} className="absolute inset-0 z-10"></Link>
               
               {/* Visual Accent */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#fce003]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#fce003]/10 transition-colors" />
 
-              <div className="flex justify-between items-start mb-4 relative z-20">
-                <div className="flex gap-3 sm:gap-4 items-center sm:items-start">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
+              <div className="flex justify-between items-start mb-6 relative z-20">
+                <div className="flex gap-4 items-center">
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
                     <Avatar
-                      src={designer.avatar}
                       email={designer.email}
                       name={designer.name}
                       size={64}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="text-left flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-headline font-black text-white text-base sm:text-lg leading-tight group-hover:text-[#fce003] transition-colors truncate">{designer.name}</h3>
-                      <div className="flex shrink-0 items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-headline font-black text-white text-lg leading-tight group-hover:text-[#fce003] transition-colors">{designer.name}</h3>
+                      <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                         <span className="text-[10px] leading-none">{designer.flag}</span>
                         <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{designer.location}</span>
                       </div>
                     </div>
-                    <p className="text-[#fce003]/60 text-[8px] font-black capitalize tracking-[0.2em] mt-1.5 truncate">{designer.role}</p>
+                    <p className="text-[#fce003]/60 text-[8px] font-black uppercase tracking-[0.2em] mt-1">{designer.role}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <p className="text-white/20 text-[7px] font-bold capitalize tracking-widest shrink-0">{designer.experience}</p>
-                      <span className="w-1 h-1 bg-white/10 rounded-full shrink-0" />
-                      <span className={`text-[7px] font-black capitalize tracking-widest truncate ${designer.employmentType === 'In-House' ? 'text-white/40' : 'text-[#fce003]'}`}>
+                      <p className="text-white/20 text-[7px] font-bold uppercase tracking-widest">{designer.experience}</p>
+                      <span className="w-1 h-1 bg-white/10 rounded-full" />
+                      <span className={`text-[7px] font-black uppercase tracking-widest ${designer.employmentType === 'In-House' ? 'text-white/40' : 'text-[#fce003]'}`}>
                         {designer.employmentType || 'Freelancer'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="w-8 h-8 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all ml-2">
+                <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all">
                   <span className="material-symbols-outlined text-sm">badge</span>
                 </div>
               </div>
 
               {/* Performance Indicator */}
-              <div className="mb-4 relative z-20">
+              <div className="mb-6 relative z-20">
                 <div className="flex justify-between items-end mb-2">
-                   <p className="text-[8px] font-black text-neutral-500 capitalize tracking-widest">Performance Protocol</p>
+                   <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Performance Protocol</p>
                    <p className="text-xs font-black text-[#fce003]">{designer.performance}%</p>
                 </div>
                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
@@ -282,9 +281,9 @@ export default function TeamPage() {
               </div>
 
               {/* Specialization Tags */}
-              <div className="flex flex-wrap gap-2 mb-4 relative z-20">
+              <div className="flex flex-wrap gap-2 mb-6 relative z-20">
                 {designer.tags?.map((tag: string) => (
-                  <span key={tag} className="px-3 py-1 bg-white/5 rounded-lg text-[7px] font-black text-white/40 capitalize tracking-widest border border-white/5 group-hover:border-[#fce003]/20 transition-colors">
+                  <span key={tag} className="px-3 py-1 bg-white/5 rounded-lg text-[7px] font-black text-white/40 uppercase tracking-widest border border-white/5 group-hover:border-[#fce003]/20 transition-colors">
                     {tag}
                   </span>
                 ))}
@@ -292,9 +291,23 @@ export default function TeamPage() {
 
               <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-20">
                  <div className="flex items-center gap-3">
+                   {designer.lastJob ? (
+                      <div className="flex items-center gap-2">
+                         <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+                         <p className="text-[7px] font-black text-orange-500 uppercase tracking-widest truncate max-w-[140px]">
+                            Last Job: {designer.lastJob.title}
+                         </p>
+                      </div>
+                   ) : (
+                      <div className="flex items-center gap-2">
+                         <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                         <p className="text-[7px] font-black text-green-400 uppercase tracking-widest">Available for Deploy</p>
+                      </div>
+                   )}
+                   
                    {/* Mini Contact Icons */}
                    {(designer.mobile || designer.email) && (
-                     <div className="flex items-center gap-3 h-4">
+                     <div className="flex items-center gap-3 border-l border-white/10 pl-3 h-4">
                        {designer.mobile && (
                          <a href={`https://wa.me/${designer.mobile.replace(/[^a-zA-Z0-9+]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[#25D366] hover:scale-125 hover:brightness-110 transition-all flex items-center" onClick={(e) => e.stopPropagation()} title="WhatsApp">
                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[16px] h-[16px]">

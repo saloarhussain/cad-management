@@ -79,8 +79,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
-export default function PublicPortfolio({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
+export default function PublicPortfolio({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const [orgCount, setOrgCount] = useState(0);
   const [projects, setProjects] = useState<any[]>([]);
@@ -111,9 +110,9 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
 
   useEffect(() => {
     const loadData = async () => {
-      if (id) {
+      if (params.id) {
         const { readDb } = await import('@/lib/db');
-        const db = await readDb(id);
+        const db = await readDb(params.id);
         if (db.products && db.products.length > 0) {
           setProducts(db.products.map((p: any) => ({
             ...p,
@@ -138,7 +137,7 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
       }
     };
     loadData();
-  }, [id]);
+  }, [params.id]);
 
   const [activeTab, setActiveTab] = useState<'portfolio' | 'shop'>('portfolio');
 
@@ -261,7 +260,7 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-3">
                     <div className="flex gap-2">
-                      {user && user.id === id && (
+                      {user && user.id === params.id && (
                         <Link href="/settings" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
                           Edit profile
                         </Link>
@@ -327,7 +326,7 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
                 {/* Header with Add Product Button */}
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffe30c]">Shop</h3>
-                  {user && user.id === id && (
+                  {user && user.id === params.id && (
                     <button 
                       onClick={() => {
                         setIsEditing(false);
@@ -389,7 +388,7 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
-                              {user && user.id === id && (
+                              {user && user.id === params.id && (
                                 <button 
                                   onClick={() => {
                                     setIsEditing(true);
@@ -490,7 +489,7 @@ export default function PublicPortfolio({ params }: { params: Promise<{ id: stri
               {/* Action Buttons */}
               <div className="flex flex-col gap-3">
                 <div className="flex gap-2">
-                  {user && user.id === id && (
+                  {user && user.id === params.id && (
                     <Link href="/settings" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
                       Edit profile
                     </Link>

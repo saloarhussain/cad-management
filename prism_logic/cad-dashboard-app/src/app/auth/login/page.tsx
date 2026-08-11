@@ -25,7 +25,12 @@ function LoginForm() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // If already logged in, check if we were invited to join something
-        router.replace('/');
+        const invited = searchParams.get('invited') === 'true';
+        if (invited) {
+          router.replace('/designer?joined=true');
+        } else {
+          router.replace('/');
+        }
       } else if (isSetup) {
         setVerifying(true);
         // Fallback for slower connections
@@ -77,7 +82,7 @@ function LoginForm() {
         // 3. Update the user's password
         const { error: updateError } = await supabase.auth.updateUser({
           password,
-          data: { role: 'organization' }
+          data: { role: 'designer' }
         });
         
         if (updateError) throw updateError;
@@ -91,7 +96,15 @@ function LoginForm() {
         if (loginError) throw loginError;
 
         if (data.user) {
-          window.location.href = '/';
+          // [HARDENED] Use Server-Side Role Check to bypass RLS issues
+          const { getDesignerStatus } = await import('@/app/actions');
+          const status = await getDesignerStatus();
+
+          if (status.isDesigner) {
+            window.location.href = '/designer';
+          } else {
+            window.location.href = '/';
+          }
         }
       }
     } catch (err: any) {
@@ -124,10 +137,10 @@ function LoginForm() {
           Your secure workstation access has been initialized successfully. You are now ready to access your professional portal.
         </p>
         <button 
-          onClick={() => window.location.href = '/'}
+          onClick={() => window.location.href = '/designer'}
           className="electric-gradient text-black px-8 py-4 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-yellow-400/20"
         >
-          Enter Dashboard
+          Enter Workstation
         </button>
       </div>
     );
