@@ -288,7 +288,7 @@ export default function DashboardContent({
 
   return (
     <AuthGuard>
-      <div className="pt-6 px-6 space-y-6 pb-10 relative">
+      <div className="pt-20 px-6 space-y-6 pb-10 relative">
         {/* Payout Alert Notification */}
         {stats.payoutsDue > 0 && (
           <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-3 group animate-in slide-in-from-top-4 duration-500">
