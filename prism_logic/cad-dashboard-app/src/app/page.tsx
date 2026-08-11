@@ -212,8 +212,8 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-[#161308] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+          <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
         </div>
       </div>
     );
@@ -244,3 +244,4 @@ export default function DashboardPage() {
   );
 
 }
+

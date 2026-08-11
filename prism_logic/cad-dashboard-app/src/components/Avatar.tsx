@@ -77,7 +77,7 @@ export default function Avatar({ src, email, name, website, size = 64, className
     return (
       <div 
         style={{ width: size, height: size }}
-        className={`flex items-center justify-center bg-gradient-to-br from-[#333] to-[#111] text-[#fce003] font-bold tracking-widest rounded-full flex-shrink-0 ${ring ? 'ring-2 ring-yellow-400/30 hover:ring-yellow-400 transition-all' : ''} ${className}`}
+        className={`flex items-center justify-center bg-gradient-to-br from-[#333] to-[#111] text-[#F59E0B] font-bold tracking-widest rounded-full flex-shrink-0 ${ring ? 'ring-2 ring-yellow-400/30 hover:ring-yellow-400 transition-all' : ''} ${className}`}
       >
         {getInitials()}
       </div>
@@ -101,3 +101,4 @@ export default function Avatar({ src, email, name, website, size = 64, className
     />
   );
 }
+

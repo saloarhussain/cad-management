@@ -9,10 +9,10 @@ import dynamic from 'next/dynamic';
 const ViewportCanvas = dynamic(() => import('@/components/viewport/ViewportCanvas'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-[400px] flex items-center justify-center bg-[#0c0a04] text-[#fce003] rounded-2xl border border-white/5">
+    <div className="w-full h-[400px] flex items-center justify-center bg-[#0c0a04] text-[#F59E0B] rounded-2xl border border-white/5">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-        <div className="text-[#fce003] font-headline font-black text-[10px] tracking-widest uppercase animate-pulse">
+        <div className="w-10 h-10 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-[#F59E0B] font-headline font-black text-[10px] tracking-widest uppercase animate-pulse">
           Initializing 3D Viewport...
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function ExplorePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export default function ExplorePage() {
       <header className="max-w-6xl mx-auto px-6 pt-24 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5">
         <div>
           <h1 className="text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#fce003] text-3xl">explore</span>
+            <span className="material-symbols-outlined text-[#F59E0B] text-3xl">explore</span>
             Explore Designs
           </h1>
           <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">
@@ -126,7 +126,7 @@ export default function ExplorePage() {
         {isDesigner && (
           <Link
             href="/designer/portfolio/new"
-            className="px-5 py-3 bg-[#fce003] text-black font-headline font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-[#fce003]/10 active:scale-95 transition-all flex items-center gap-2 hover:brightness-110"
+            className="px-5 py-3 bg-[#F59E0B] text-black font-headline font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-[#F59E0B]/10 active:scale-95 transition-all flex items-center gap-2 hover:brightness-110"
           >
             <span className="material-symbols-outlined text-sm">share</span>
             Share Your Talent
@@ -147,7 +147,7 @@ export default function ExplorePage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${
                   selectedCategory === cat 
-                    ? 'bg-[#fce003] border-[#fce003] text-black shadow-lg shadow-[#fce003]/10' 
+                    ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-[#F59E0B]/10' 
                     : 'bg-white/5 border-white/5 text-white/60 hover:text-white hover:bg-white/10'
                 }`}
               >
@@ -158,7 +158,7 @@ export default function ExplorePage() {
 
           {/* Search Input */}
           <div className="relative w-full md:w-80 group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-lg group-focus-within:text-[#fce003] transition-colors">
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-lg group-focus-within:text-[#F59E0B] transition-colors">
               search
             </span>
             <input
@@ -166,7 +166,7 @@ export default function ExplorePage() {
               placeholder="Search designs, software, designers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 rounded-full pl-11 pr-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-[#fce003] transition-all"
+              className="w-full bg-white/5 border border-white/5 rounded-full pl-11 pr-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B] transition-all"
             />
           </div>
         </div>
@@ -187,7 +187,7 @@ export default function ExplorePage() {
                 <div 
                   key={item.id}
                   onClick={() => handleCardClick(item)}
-                  className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden group hover:border-[#fce003]/20 hover:bg-white/[0.05] transition-all duration-300 cursor-pointer shadow-xl"
+                  className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden group hover:border-[#F59E0B]/20 hover:bg-white/[0.05] transition-all duration-300 cursor-pointer shadow-xl"
                 >
                   {/* Thumbnail */}
                   <div className="aspect-[4/3] bg-black/40 overflow-hidden relative">
@@ -220,11 +220,11 @@ export default function ExplorePage() {
                   <div className="p-5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3 min-w-0">
                       {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-[#fce003]/10 border border-[#fce003]/20 flex items-center justify-center shrink-0 overflow-hidden">
+                      <div className="w-8 h-8 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center shrink-0 overflow-hidden">
                         {item.designer?.avatarUrl ? (
                           <img src={item.designer.avatarUrl} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-[10px] font-black text-[#fce003]">
+                          <span className="text-[10px] font-black text-[#F59E0B]">
                             {item.designer?.fullName?.charAt(0).toUpperCase() || 'D'}
                           </span>
                         )}
@@ -232,13 +232,13 @@ export default function ExplorePage() {
                       
                       <div className="min-w-0">
                         <h3 className="text-[11px] font-black text-white uppercase truncate">{item.title}</h3>
-                        <p className="text-[9px] text-[#fce003] font-bold uppercase tracking-tight truncate">
+                        <p className="text-[9px] text-[#F59E0B] font-bold uppercase tracking-tight truncate">
                           {item.designer?.fullName || 'Anonymous Designer'}
                         </p>
                       </div>
                     </div>
 
-                    <span className="material-symbols-outlined text-white/20 group-hover:text-[#fce003] transition-colors shrink-0 text-lg">
+                    <span className="material-symbols-outlined text-white/20 group-hover:text-[#F59E0B] transition-colors shrink-0 text-lg">
                       arrow_forward_ios
                     </span>
                   </div>
@@ -281,7 +281,7 @@ export default function ExplorePage() {
                     <button
                       onClick={() => setActiveMediaTab('render')}
                       className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                        activeMediaTab === 'render' ? 'bg-[#fce003] text-black' : 'text-white/60 hover:text-white'
+                        activeMediaTab === 'render' ? 'bg-[#F59E0B] text-black' : 'text-white/60 hover:text-white'
                       }`}
                     >
                       <span className="material-symbols-outlined text-[10px]">photo_library</span>
@@ -354,7 +354,7 @@ export default function ExplorePage() {
                         key={idx}
                         onClick={() => setActiveImageIdx(idx)}
                         className={`w-12 h-12 rounded-lg overflow-hidden border transition-all ${
-                          activeImageIdx === idx ? 'border-[#fce003] scale-105' : 'border-white/10 hover:border-white/30'
+                          activeImageIdx === idx ? 'border-[#F59E0B] scale-105' : 'border-white/10 hover:border-white/30'
                         }`}
                       >
                         <img src={imgUrl} className="w-full h-full object-cover" />
@@ -368,7 +368,7 @@ export default function ExplorePage() {
               <div className="w-full md:w-80 bg-[#161308] overflow-y-auto p-8 flex flex-col gap-6 shrink-0 text-left">
                 {/* Title */}
                 <div>
-                  <span className="text-[8px] font-black text-[#fce003] uppercase tracking-widest border border-[#fce003]/20 bg-[#fce003]/5 px-2 py-0.5 rounded">
+                  <span className="text-[8px] font-black text-[#F59E0B] uppercase tracking-widest border border-[#F59E0B]/20 bg-[#F59E0B]/5 px-2 py-0.5 rounded">
                     {parsed.category || selectedItem.category || 'CAD Design'}
                   </span>
                   <h2 className="text-xl font-headline font-black text-white uppercase tracking-tight mt-2.5">
@@ -382,11 +382,11 @@ export default function ExplorePage() {
                 {/* Designer Card */}
                 <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#fce003]/10 border border-[#fce003]/20 flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center overflow-hidden">
                       {selectedItem.designer?.avatarUrl ? (
                         <img src={selectedItem.designer.avatarUrl} className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-xs font-black text-[#fce003]">
+                        <span className="text-xs font-black text-[#F59E0B]">
                           {selectedItem.designer?.fullName?.charAt(0).toUpperCase() || 'D'}
                         </span>
                       )}
@@ -404,7 +404,7 @@ export default function ExplorePage() {
                   {selectedItem.designer?.email && (
                     <Link
                       href={`/inbox/compose?to=${selectedItem.designer.email}&subject=Inquiry about: ${encodeURIComponent(selectedItem.title)}`}
-                      className="w-full bg-[#fce003] text-black font-headline font-black text-[9px] uppercase tracking-widest py-3 rounded-xl hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-[#fce003]/10"
+                      className="w-full bg-[#F59E0B] text-black font-headline font-black text-[9px] uppercase tracking-widest py-3 rounded-xl hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-[#F59E0B]/10"
                     >
                       <span className="material-symbols-outlined text-sm">mail</span>
                       Contact Designer
@@ -446,3 +446,4 @@ export default function ExplorePage() {
     </div>
   );
 }
+

@@ -309,7 +309,7 @@ export default function TransferPage() {
       <style>{`
         .electric-gradient-border {
             background: linear-gradient(#121414, #121414) padding-box,
-                        linear-gradient(45deg, #fce003, #00fbfe) border-box;
+                        linear-gradient(45deg, #F59E0B, #00fbfe) border-box;
             border: 2px dashed transparent;
         }
         .kinetic-btn {
@@ -326,14 +326,14 @@ export default function TransferPage() {
       {!isAuthenticated && (
         <header className="flex items-center justify-between px-6 py-4 border-b border-[#4b4732]/10 bg-[#1a1c1c]/50 backdrop-blur-xl sticky top-0 z-50">
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-[#fce003] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
+             <div className="w-12 h-12 bg-[#F59E0B] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
                 <span className="material-symbols-outlined text-black text-2xl font-black">architecture</span>
              </div>
              <div>
                 <h1 className="text-2xl font-headline font-black text-white tracking-tighter uppercase italic leading-none">
-                  CAD<span className="text-[#fce003]">ONCE</span>
+                  CAD<span className="text-[#F59E0B]">ONCE</span>
                 </h1>
-                <p className="text-[10px] font-bold text-[#fce003] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
+                <p className="text-[10px] font-bold text-[#F59E0B] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
                   For Organizations
                 </p>
              </div>
@@ -691,3 +691,4 @@ export default function TransferPage() {
     </div>
   );
 }
+

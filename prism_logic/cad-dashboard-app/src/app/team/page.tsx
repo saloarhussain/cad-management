@@ -151,8 +151,8 @@ export default function TeamPage() {
       {isLoading ? (
         <div className="min-h-screen bg-[#161308] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+            <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
           </div>
         </div>
       ) : (
@@ -162,7 +162,7 @@ export default function TeamPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
           <div>
             <h2 className="font-headline text-2xl font-black tracking-tight text-white uppercase italic">
-              Team <span className="text-[#fce003]">Intelligence</span>
+              Team <span className="text-[#F59E0B]">Intelligence</span>
             </h2>
             <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">Global workforce deployment & productivity</p>
           </div>
@@ -175,7 +175,7 @@ export default function TeamPage() {
             </div>
             <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
               <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Avg Performance</p>
-              <p className="text-sm font-black text-[#fce003]">
+              <p className="text-sm font-black text-[#F59E0B]">
                 {Math.round(allDesigners.reduce((acc, d) => acc + (d.performance || 0), 0) / (allDesigners.length || 1))}%
               </p>
             </div>
@@ -192,11 +192,11 @@ export default function TeamPage() {
         {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8">
           <div className="flex-1 relative group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#fce003] transition-colors">search</span>
+            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#F59E0B] transition-colors">search</span>
             <input 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#fce003]/50 outline-none transition-all" 
+              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#F59E0B]/50 outline-none transition-all" 
               placeholder="Search by name, role, or skill..." 
               type="text"
             />
@@ -204,7 +204,7 @@ export default function TeamPage() {
           <div className="grid grid-cols-2 md:flex md:flex-row gap-2">
             <button 
               onClick={() => setShowFilters(true)}
-              className={`w-full px-2 md:px-6 py-4 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || selectedSkill !== 'All' || sortOrder !== 'none' ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+              className={`w-full px-2 md:px-6 py-4 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || selectedSkill !== 'All' || sortOrder !== 'none' ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
             >
               <span className="material-symbols-outlined text-sm">tune</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Filters</span>
@@ -227,15 +227,15 @@ export default function TeamPage() {
         {/* Strategic Team Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDesigners.map((designer, idx) => (
-            <div key={designer.id || idx} className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 hover:bg-white/[0.05] hover:border-[#fce003]/30 transition-all duration-500 overflow-hidden shadow-2xl">
+            <div key={designer.id || idx} className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 hover:bg-white/[0.05] hover:border-[#F59E0B]/30 transition-all duration-500 overflow-hidden shadow-2xl">
               <Link href={`/team/${designer.id}`} className="absolute inset-0 z-10"></Link>
               
               {/* Visual Accent */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#fce003]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#fce003]/10 transition-colors" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59E0B]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#F59E0B]/10 transition-colors" />
 
               <div className="flex justify-between items-start mb-4 relative z-20">
                 <div className="flex gap-3 sm:gap-4 items-center sm:items-start">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 shrink-0 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#F59E0B]/50 transition-all">
                     <Avatar
                       src={designer.avatar}
                       email={designer.email}
@@ -246,23 +246,23 @@ export default function TeamPage() {
                   </div>
                   <div className="text-left flex-1 min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-headline font-black text-white text-base sm:text-lg leading-tight group-hover:text-[#fce003] transition-colors truncate">{designer.name}</h3>
+                      <h3 className="font-headline font-black text-white text-base sm:text-lg leading-tight group-hover:text-[#F59E0B] transition-colors truncate">{designer.name}</h3>
                       <div className="flex shrink-0 items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
                         <span className="text-[10px] leading-none">{designer.flag}</span>
                         <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{designer.location}</span>
                       </div>
                     </div>
-                    <p className="text-[#fce003]/60 text-[8px] font-black capitalize tracking-[0.2em] mt-1.5 truncate">{designer.role}</p>
+                    <p className="text-[#F59E0B]/60 text-[8px] font-black capitalize tracking-[0.2em] mt-1.5 truncate">{designer.role}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <p className="text-white/20 text-[7px] font-bold capitalize tracking-widest shrink-0">{designer.experience}</p>
                       <span className="w-1 h-1 bg-white/10 rounded-full shrink-0" />
-                      <span className={`text-[7px] font-black capitalize tracking-widest truncate ${designer.employmentType === 'In-House' ? 'text-white/40' : 'text-[#fce003]'}`}>
+                      <span className={`text-[7px] font-black capitalize tracking-widest truncate ${designer.employmentType === 'In-House' ? 'text-white/40' : 'text-[#F59E0B]'}`}>
                         {designer.employmentType || 'Freelancer'}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="w-8 h-8 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all ml-2">
+                <div className="w-8 h-8 shrink-0 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#F59E0B] group-hover:bg-[#F59E0B]/10 transition-all ml-2">
                   <span className="material-symbols-outlined text-sm">badge</span>
                 </div>
               </div>
@@ -271,11 +271,11 @@ export default function TeamPage() {
               <div className="mb-4 relative z-20">
                 <div className="flex justify-between items-end mb-2">
                    <p className="text-[8px] font-black text-neutral-500 capitalize tracking-widest">Performance Protocol</p>
-                   <p className="text-xs font-black text-[#fce003]">{designer.performance}%</p>
+                   <p className="text-xs font-black text-[#F59E0B]">{designer.performance}%</p>
                 </div>
                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/5 p-0.5">
                    <div 
-                     className="h-full bg-gradient-to-r from-orange-600 to-[#fce003] rounded-full shadow-[0_0_15px_rgba(252,224,3,0.3)] transition-all duration-1000"
+                     className="h-full bg-gradient-to-r from-orange-600 to-[#F59E0B] rounded-full shadow-[0_0_15px_rgba(252,224,3,0.3)] transition-all duration-1000"
                      style={{ width: `${designer.performance}%` }}
                    />
                 </div>
@@ -284,7 +284,7 @@ export default function TeamPage() {
               {/* Specialization Tags */}
               <div className="flex flex-wrap gap-2 mb-4 relative z-20">
                 {designer.tags?.map((tag: string) => (
-                  <span key={tag} className="px-3 py-1 bg-white/5 rounded-lg text-[7px] font-black text-white/40 capitalize tracking-widest border border-white/5 group-hover:border-[#fce003]/20 transition-colors">
+                  <span key={tag} className="px-3 py-1 bg-white/5 rounded-lg text-[7px] font-black text-white/40 capitalize tracking-widest border border-white/5 group-hover:border-[#F59E0B]/20 transition-colors">
                     {tag}
                   </span>
                 ))}
@@ -310,7 +310,7 @@ export default function TeamPage() {
                      </div>
                    )}
                  </div>
-                 <Link href={`/team/${designer.id}`} className="text-[#fce003] text-[8px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
+                 <Link href={`/team/${designer.id}`} className="text-[#F59E0B] text-[8px] font-black uppercase tracking-widest flex items-center gap-1 hover:underline">
                     Dossier
                     <span className="material-symbols-outlined text-[10px]">open_in_new</span>
                  </Link>
@@ -334,7 +334,7 @@ export default function TeamPage() {
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowFilters(false)} />
           <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#fce003]/5 to-transparent">
+            <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#F59E0B]/5 to-transparent">
               <div>
                 <h3 className="text-white font-headline font-black text-xl italic uppercase tracking-tighter">Segment Talent</h3>
                 <p className="text-neutral-500 text-[8px] uppercase tracking-[0.3em] font-bold">Designer Allocation Protocol</p>
@@ -356,7 +356,7 @@ export default function TeamPage() {
                     <button 
                       key={opt.id}
                       onClick={() => setEmploymentFilter(opt.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${employmentFilter === opt.id ? 'bg-[#fce003] border-[#fce003] text-stone-900 shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${employmentFilter === opt.id ? 'bg-[#F59E0B] border-[#F59E0B] text-stone-900 shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                     >
                       <span className="material-symbols-outlined text-lg">{opt.icon}</span>
                       <span className="text-[8px] font-black uppercase">{opt.label}</span>
@@ -376,7 +376,7 @@ export default function TeamPage() {
                     <button 
                       key={opt.id}
                       onClick={() => setSortOrder(opt.id)}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${sortOrder === opt.id ? 'bg-[#fce003] border-[#fce003] text-stone-900 shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all ${sortOrder === opt.id ? 'bg-[#F59E0B] border-[#F59E0B] text-stone-900 shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                     >
                       <span className="material-symbols-outlined text-lg">{opt.icon}</span>
                       <span className="text-[8px] font-black uppercase">{opt.label}</span>
@@ -392,7 +392,7 @@ export default function TeamPage() {
                     <button 
                       key={c}
                       onClick={() => setSelectedCountry(c)}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedCountry === c ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedCountry === c ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                     >
                       {c}
                     </button>
@@ -407,7 +407,7 @@ export default function TeamPage() {
                     <button 
                       key={s}
                       onClick={() => setSelectedSkill(s)}
-                      className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedSkill === s ? 'bg-[#fce003]/30 border-[#fce003]/50 text-[#fce003]' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                      className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedSkill === s ? 'bg-[#F59E0B]/30 border-[#F59E0B]/50 text-[#F59E0B]' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                     >
                       {s}
                     </button>
@@ -429,3 +429,4 @@ export default function TeamPage() {
     </AuthGuard>
   );
 }
+

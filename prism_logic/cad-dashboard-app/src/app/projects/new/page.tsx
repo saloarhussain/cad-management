@@ -25,17 +25,17 @@ const DatePickerFacade = ({ label, isDeadline, name }: { label: string, isDeadli
 
   return (
     <div className="space-y-2 relative">
-      <label className={`font-label text-[10px] font-bold uppercase tracking-wider ${isDeadline ? 'text-[#fce003]' : 'text-stone-400'}`}>
+      <label className={`font-label text-[10px] font-bold uppercase tracking-wider ${isDeadline ? 'text-[#F59E0B]' : 'text-stone-400'}`}>
         {label}
       </label>
       <div 
         onClick={handleClick}
-        className={`w-full bg-surface-container-lowest border ${isDeadline ? 'border-[#fce003]/20' : 'border-transparent'} rounded p-3 focus-within:ring-2 focus-within:ring-[#fce003] transition-all flex justify-between items-center cursor-pointer relative overflow-hidden group`}
+        className={`w-full bg-surface-container-lowest border ${isDeadline ? 'border-[#F59E0B]/20' : 'border-transparent'} rounded p-3 focus-within:ring-2 focus-within:ring-[#F59E0B] transition-all flex justify-between items-center cursor-pointer relative overflow-hidden group`}
       >
         <span className={date ? "text-white" : "text-stone-700"}>
           {displayDate}
         </span>
-        <span className="material-symbols-outlined text-white pointer-events-none group-focus-within:text-[#fce003] transition-colors">calendar_month</span>
+        <span className="material-symbols-outlined text-white pointer-events-none group-focus-within:text-[#F59E0B] transition-colors">calendar_month</span>
         <input 
           ref={inputRef}
           type="date"
@@ -96,14 +96,14 @@ export default function NewProjectPage() {
     <AuthGuard>
       <div className="bg-background text-on-surface font-body min-h-screen relative overflow-hidden pb-32 text-left">
         {/* Visual Element: Background Glow */}
-        <div className="fixed top-[20%] left-[-10%] w-[40vw] h-[40vw] bg-[#fce003]/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+        <div className="fixed top-[20%] left-[-10%] w-[40vw] h-[40vw] bg-[#F59E0B]/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
         <div className="fixed bottom-[10%] right-[-10%] w-[30vw] h-[30vw] bg-[#FEA500]/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
         <main className="pt-24 px-6 md:px-10 max-w-7xl mx-auto w-full">
           {/* Header Section */}
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[#fce003] mb-1 block">New Entry</span>
+              <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[#F59E0B] mb-1 block">New Entry</span>
               <h2 className="font-headline text-4xl font-extrabold tracking-tight text-white">Initialize Project</h2>
             </div>
             <div className="flex gap-2">
@@ -116,16 +116,16 @@ export default function NewProjectPage() {
             {/* Main Content Area */}
             <div className="md:col-span-8 space-y-6">
               {/* Basic Info Card */}
-              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#fce003]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#fce003]/10 transition-all duration-300">
+              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#F59E0B]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#F59E0B]/10 transition-all duration-300">
                 <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#fce003]">info</span> Core Details
+                  <span className="material-symbols-outlined text-sm text-[#F59E0B]">info</span> Core Details
                 </h3>
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
                       <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Assigned Client</label>
                       <div className="relative group">
-                        <select name="client" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all appearance-none cursor-pointer text-white">
+                        <select name="client" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all appearance-none cursor-pointer text-white">
                           <option value="">Select Client...</option>
                           {clients.map((c) => (
                             <option key={c.id} value={c.companyName || c.name}>
@@ -143,7 +143,7 @@ export default function NewProjectPage() {
                           name="designer" 
                           required 
                           onChange={(e) => setSelectedDesignerName(e.target.value)}
-                          className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all appearance-none cursor-pointer text-white"
+                          className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all appearance-none cursor-pointer text-white"
                         >
                           <option value="">Select Designer...</option>
                           {designers.map((d) => (
@@ -158,7 +158,7 @@ export default function NewProjectPage() {
                   </div>
                   <div className="space-y-2 mt-5">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Order ID</label>
-                    <input name="orderId" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all placeholder:text-stone-700 text-sm text-white" placeholder="e.g. #ORD-1234" type="text" />
+                    <input name="orderId" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all placeholder:text-stone-700 text-sm text-white" placeholder="e.g. #ORD-1234" type="text" />
                   </div>
                   <div className="space-y-4">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Reference Gallery</label>
@@ -212,19 +212,19 @@ export default function NewProjectPage() {
               </div>
 
               {/* Financials Card */}
-              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#fce003]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#fce003]/10 transition-all duration-300">
+              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#F59E0B]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#F59E0B]/10 transition-all duration-300">
                 <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#fce003]">payments</span> Financial Logic
+                  <span className="material-symbols-outlined text-sm text-[#F59E0B]">payments</span> Financial Logic
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Revenue</label>
-                    <div className="relative flex items-center bg-surface-container-lowest border border-white/5 rounded-xl focus-within:border-[#fce003]/30 focus-within:ring-1 focus-within:ring-[#fce003]/30 transition-all overflow-hidden">
+                    <div className="relative flex items-center bg-surface-container-lowest border border-white/5 rounded-xl focus-within:border-[#F59E0B]/30 focus-within:ring-1 focus-within:ring-[#F59E0B]/30 transition-all overflow-hidden">
                       <div className="relative">
                         <select 
                           name="revenueCurrency" 
                           defaultValue="USD"
-                          className="bg-transparent border-none py-3 pl-3 pr-8 text-[#fce003] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
+                          className="bg-transparent border-none py-3 pl-3 pr-8 text-[#F59E0B] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                         >
                           <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
                           <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
@@ -232,14 +232,14 @@ export default function NewProjectPage() {
                           <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
                           <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
                         </select>
-                        <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#fce003] scale-75">expand_more</span>
+                        <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#F59E0B] scale-75">expand_more</span>
                       </div>
                       <input name="revenue" required className="w-full bg-transparent border-none p-3 text-on-surface focus:outline-none focus:ring-0 placeholder:text-stone-700 text-white" placeholder="0.00" type="number" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Expense</label>
-                    <div className="relative flex items-center bg-surface-container-lowest border border-white/5 rounded-xl focus-within:border-[#fce003]/30 focus-within:ring-1 focus-within:ring-[#fce003]/30 transition-all overflow-hidden">
+                    <div className="relative flex items-center bg-surface-container-lowest border border-white/5 rounded-xl focus-within:border-[#F59E0B]/30 focus-within:ring-1 focus-within:ring-[#F59E0B]/30 transition-all overflow-hidden">
                       <div className="relative">
                         <select 
                           name="expenseCurrency" 
@@ -263,7 +263,7 @@ export default function NewProjectPage() {
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Payment Status</label>
                     <div className="relative group">
-                      <select name="paymentStatus" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all appearance-none cursor-pointer text-white">
+                      <select name="paymentStatus" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all appearance-none cursor-pointer text-white">
                         <option value="Unpaid">Unpaid</option>
                         <option value="50% Advance">50% Advance</option>
                         <option value="Partial Payment">Partial Payment</option>
@@ -274,7 +274,7 @@ export default function NewProjectPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Amount Paid</label>
-                    <input name="paidAmount" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all placeholder:text-stone-700 text-sm text-white" placeholder="0.00" type="number" defaultValue="0" />
+                    <input name="paidAmount" className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all placeholder:text-stone-700 text-sm text-white" placeholder="0.00" type="number" defaultValue="0" />
                   </div>
                 </div>
 
@@ -306,7 +306,7 @@ export default function NewProjectPage() {
               {/* Timeline Card */}
               <div className="bg-surface-container-high p-6 rounded-2xl shadow-[0_0_15px_rgba(252,224,3,0.02)] border border-white/5">
                 <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-[#fce003]">calendar_today</span> Timeline
+                  <span className="material-symbols-outlined text-sm text-[#F59E0B]">calendar_today</span> Timeline
                 </h3>
                 <div className="space-y-5">
                   <DatePickerFacade name="orderDate" label="Order Date" />
@@ -315,14 +315,14 @@ export default function NewProjectPage() {
               </div>
 
               {/* Project Details Card */}
-              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#fce003]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#fce003]/10 transition-all duration-300">
+              <div className="bg-surface-container p-6 rounded-2xl border border-white/5 shadow-sm hover:shadow-[0_0_30px_rgba(252,224,3,0.08)] hover:border-[#F59E0B]/10 focus-within:shadow-[0_0_30px_rgba(252,224,3,0.08)] focus-within:border-[#F59E0B]/10 transition-all duration-300">
                 <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
-                  <span className="material-symbols-outlined text-sm text-[#fce003]">precision_manufacturing</span> Project Specifications
+                  <span className="material-symbols-outlined text-sm text-[#F59E0B]">precision_manufacturing</span> Project Specifications
                 </h3>
                 <div className="space-y-5">
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Project Title</label>
-                    <input name="title" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all placeholder:text-stone-600 text-white" placeholder="e.g., Art Deco Diamond Ring" type="text" />
+                    <input name="title" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all placeholder:text-stone-600 text-white" placeholder="e.g., Art Deco Diamond Ring" type="text" />
                   </div>
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Skills Needed</label>
@@ -333,12 +333,12 @@ export default function NewProjectPage() {
                         <span className="text-[10px] text-stone-600 italic ml-1 self-center">No skills added yet. Add custom skills below.</span>
                       ) : (
                         skills.map((skill) => (
-                          <span key={skill} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#fce003]/10 border border-[#fce003]/20 rounded-lg text-[10px] font-bold text-[#fce003] uppercase">
+                          <span key={skill} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-lg text-[10px] font-bold text-[#F59E0B] uppercase">
                             {skill}
                             <button
                               type="button"
                               onClick={() => setSkills(skills.filter(s => s !== skill))}
-                              className="w-3.5 h-3.5 rounded-full bg-[#fce003]/10 hover:bg-[#fce003]/20 flex items-center justify-center text-[8px] text-[#fce003] font-bold"
+                              className="w-3.5 h-3.5 rounded-full bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 flex items-center justify-center text-[8px] text-[#F59E0B] font-bold"
                             >
                               ✕
                             </button>
@@ -364,7 +364,7 @@ export default function NewProjectPage() {
                           }
                         }}
                         placeholder="Type skill & press Enter..."
-                        className="flex-grow bg-surface-container-lowest border border-white/5 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-stone-600 focus:outline-none focus:border-[#fce003]/30"
+                        className="flex-grow bg-surface-container-lowest border border-white/5 rounded-xl px-3 py-2.5 text-xs text-white placeholder:text-stone-600 focus:outline-none focus:border-[#F59E0B]/30"
                       />
                       <button
                         type="button"
@@ -383,7 +383,7 @@ export default function NewProjectPage() {
                   </div>
                   <div className="space-y-2">
                     <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Design Brief &amp; Notes</label>
-                    <textarea name="brief" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#fce003]/30 focus:ring-1 focus:ring-[#fce003]/30 transition-all placeholder:text-stone-600 text-sm resize-none text-white" placeholder="Specify stone sizes, setting styles, and intricate CAD requirements..." rows={4}></textarea>
+                    <textarea name="brief" required className="w-full bg-surface-container-lowest border border-white/5 rounded-xl p-3 text-on-surface focus:border-[#F59E0B]/30 focus:ring-1 focus:ring-[#F59E0B]/30 transition-all placeholder:text-stone-600 text-sm resize-none text-white" placeholder="Specify stone sizes, setting styles, and intricate CAD requirements..." rows={4}></textarea>
                   </div>
                 </div>
               </div>
@@ -403,3 +403,4 @@ export default function NewProjectPage() {
     </AuthGuard>
   );
 }
+

@@ -50,26 +50,26 @@ export const TopAppBar: React.FC = () => {
         {isAuthenticated && pathname !== '/' && pathname !== '/designer' && (
           <button 
             onClick={() => router.back()}
-            className="p-2 -ml-2 text-[#fce003] hover:bg-white/5 rounded-full transition-all active:scale-95 group flex items-center justify-center relative"
+            className="p-2 -ml-2 text-[#F59E0B] hover:bg-white/5 rounded-full transition-all active:scale-95 group flex items-center justify-center relative"
             title="Navigate Back"
           >
             <span className="material-symbols-outlined text-2xl group-hover:-translate-x-1 transition-transform">arrow_back</span>
-            <div className="absolute -bottom-1 w-0 h-0.5 bg-[#fce003] group-hover:w-full transition-all duration-300" />
+            <div className="absolute -bottom-1 w-0 h-0.5 bg-[#F59E0B] group-hover:w-full transition-all duration-300" />
           </button>
         )}
 
         <div className="md:hidden flex items-center gap-1.5 sm:gap-3">
           <Link href={isDesigner ? "/designer" : "/"} className="flex items-center gap-2.5 active:scale-95 transition-transform">
             {(!isAuthenticated || pathname === '/' || pathname === '/designer') && (
-              <div className="size-9 bg-[#fce003] rounded-[10px] flex items-center justify-center text-black shadow-[0_0_15px_rgba(252,224,3,0.3)] shrink-0">
+              <div className="size-9 bg-[#F59E0B] rounded-[10px] flex items-center justify-center text-black shadow-[0_0_15px_rgba(252,224,3,0.3)] shrink-0">
                 <span className="material-symbols-outlined text-black font-black text-lg leading-none">architecture</span>
               </div>
             )}
             <div className="flex flex-col">
               <h1 className="font-headline font-black tracking-tighter uppercase text-white text-sm sm:text-base italic leading-none">
-                CAD<span className="text-[#fce003]">ONCE</span>
+                CAD<span className="text-[#F59E0B]">ONCE</span>
               </h1>
-              <p className="text-[#fce003] text-[8px] font-bold mt-0.5 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)] leading-none">
+              <p className="text-[#F59E0B] text-[8px] font-bold mt-0.5 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)] leading-none">
                 {isDesigner ? 'For Designers' : 'For Organizations'}
               </p>
             </div>
@@ -80,10 +80,10 @@ export const TopAppBar: React.FC = () => {
         <div className="hidden md:flex items-center gap-4">
           <div className="relative group">
             <span className="absolute inset-y-0 left-3.5 flex items-center text-on-surface-variant pointer-events-none">
-              <span className="material-symbols-outlined text-[18px] group-focus-within:text-[#fce003] transition-colors">search</span>
+              <span className="material-symbols-outlined text-[18px] group-focus-within:text-[#F59E0B] transition-colors">search</span>
             </span>
             <input 
-              className="bg-white/[0.03] border border-white/5 rounded-2xl pl-11 pr-4 py-2 md:w-40 lg:w-80 text-[11px] font-bold text-white placeholder:text-neutral-500 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#fce003]/20 focus:border-[#fce003]/30 outline-none transition-all duration-300" 
+              className="bg-white/[0.03] border border-white/5 rounded-2xl pl-11 pr-4 py-2 md:w-40 lg:w-80 text-[11px] font-bold text-white placeholder:text-neutral-500 focus:bg-white/[0.05] focus:ring-1 focus:ring-[#F59E0B]/20 focus:border-[#F59E0B]/30 outline-none transition-all duration-300" 
               placeholder="Search assets, projects, or designers..." 
               type="text"
             />
@@ -131,7 +131,7 @@ export const TopAppBar: React.FC = () => {
             <div className="relative flex items-center">
               <button 
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="size-8 rounded-xl overflow-hidden border border-white/10 hover:border-[#fce003] transition-all cursor-pointer active:scale-95 group shrink-0"
+                className="size-8 rounded-xl overflow-hidden border border-white/10 hover:border-[#F59E0B] transition-all cursor-pointer active:scale-95 group shrink-0"
                 title="User Profile Menu"
               >
                 <img 
@@ -166,7 +166,7 @@ export const TopAppBar: React.FC = () => {
                     <Link 
                       href={isDesigner ? "/designer/profile" : "/settings"} 
                       onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-neutral-300 hover:text-[#fce003] hover:bg-white/5 transition-all text-xs font-bold"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-neutral-300 hover:text-[#F59E0B] hover:bg-white/5 transition-all text-xs font-bold"
                     >
                       <span className="material-symbols-outlined text-[18px]">person</span>
                       <span>{isDesigner ? "Profile Workstation" : "Dashboard Settings"}</span>
@@ -196,3 +196,4 @@ export const TopAppBar: React.FC = () => {
     </header>
   );
 };
+

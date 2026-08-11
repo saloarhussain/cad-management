@@ -43,14 +43,14 @@ export const SidebarNav: React.FC = () => {
       <div className="p-6 flex flex-col gap-8 h-full">
         {/* Brand Logo */}
         <div className="flex items-center gap-3">
-          <div className="size-10 bg-[#fce003] rounded-xl flex items-center justify-center text-black shadow-[0_0_20px_rgba(252,224,3,0.3)] shrink-0">
+          <div className="size-10 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shadow-[0_0_20px_rgba(252,224,3,0.3)] shrink-0">
             <span className="material-symbols-outlined text-black font-black text-xl leading-none">architecture</span>
           </div>
           <div className="flex flex-col">
             <h1 className="font-headline font-black text-lg text-white tracking-tighter uppercase italic leading-none">
-              CAD<span className="text-[#fce003]">ONCE</span>
+              CAD<span className="text-[#F59E0B]">ONCE</span>
             </h1>
-            <p className="text-[#fce003] text-[9px] font-bold mt-0.5 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
+            <p className="text-[#F59E0B] text-[9px] font-bold mt-0.5 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
               {isDesigner ? 'For Designers' : 'For Organizations'}
             </p>
           </div>
@@ -66,7 +66,7 @@ export const SidebarNav: React.FC = () => {
                 href={item.href}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative overflow-hidden ${
                   isActive 
-                    ? 'bg-white/5 text-[#fce003]' 
+                    ? 'bg-white/5 text-[#F59E0B]' 
                     : 'text-on-surface-variant hover:bg-white/[0.02] hover:text-white'
                 }`}
               >
@@ -80,7 +80,7 @@ export const SidebarNav: React.FC = () => {
                   {item.label}
                 </span>
                 {isActive && (
-                  <div className="ml-auto w-1 h-1 rounded-full bg-[#fce003] shadow-[0_0_8px_rgba(252,224,3,0.8)]" />
+                  <div className="ml-auto w-1 h-1 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(252,224,3,0.8)]" />
                 )}
               </Link>
             );
@@ -103,3 +103,4 @@ export const SidebarNav: React.FC = () => {
     </aside>
   );
 };
+

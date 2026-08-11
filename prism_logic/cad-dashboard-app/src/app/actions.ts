@@ -2492,10 +2492,10 @@ export async function requestViewportOtp(projectId: string, email: string) {
       subject: `Verification Code for ${project.title}`,
       html: `
         <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #0c0a04; color: white;">
-          <h2 style="color: #fce003; text-transform: uppercase; font-size: 16px;">Identity Verification</h2>
+          <h2 style="color: #F59E0B; text-transform: uppercase; font-size: 16px;">Identity Verification</h2>
           <p style="font-size: 12px; color: #ccc;">Use the code below to access your secure CAD viewport for <b>${project.title}</b>.</p>
           <div style="background: rgba(252, 224, 3, 0.1); padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; border: 1px solid rgba(252, 224, 3, 0.2);">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #fce003;">${otp}</span>
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #F59E0B;">${otp}</span>
           </div>
           <p style="font-size: 10px; color: #888; text-align: center;">This code will expire in 15 minutes.</p>
         </div>
@@ -2618,13 +2618,13 @@ export async function submitViewportFeedback(projectId: string, annotations: any
       subject: `New Viewport Feedback: ${project.title}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background: #0c0a04; color: white; border-radius: 15px;">
-          <h2 style="color: #fce003; text-transform: uppercase; font-size: 18px;">New 3D Viewport Feedback</h2>
+          <h2 style="color: #F59E0B; text-transform: uppercase; font-size: 18px;">New 3D Viewport Feedback</h2>
           <p style="color: #ccc; font-size: 14px;">A client has submitted ${annotations.length} feedback pins for project: <b>${project.title}</b>.</p>
-          <div style="background: rgba(252, 224, 3, 0.05); padding: 20px; border-left: 4px solid #fce003; margin: 20px 0; border-radius: 0 10px 10px 0;">
+          <div style="background: rgba(252, 224, 3, 0.05); padding: 20px; border-left: 4px solid #F59E0B; margin: 20px 0; border-radius: 0 10px 10px 0;">
             <pre style="white-space: pre-wrap; font-family: monospace; color: #eee; font-size: 12px;">${note}</pre>
           </div>
           <div style="margin-top: 30px; text-align: center;">
-            <a href="https://www.cadonce.com/projects/${projectId}" style="background: #fce003; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 12px; text-transform: uppercase;">Open Project Dashboard</a>
+            <a href="https://www.cadonce.com/projects/${projectId}" style="background: #F59E0B; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 12px; text-transform: uppercase;">Open Project Dashboard</a>
           </div>
         </div>
       `,
@@ -4753,4 +4753,5 @@ export async function getExploreItems() {
     return { success: false, error: err.message || err.toString() };
   }
 }
+
 

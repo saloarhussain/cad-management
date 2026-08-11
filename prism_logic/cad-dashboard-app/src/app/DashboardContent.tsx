@@ -288,7 +288,7 @@ export default function DashboardContent({
 
   return (
     <AuthGuard>
-      <div className="pt-20 px-6 space-y-6 pb-10 relative">
+      <div className="pt-6 px-6 space-y-6 pb-10 relative">
         {/* Payout Alert Notification */}
         {stats.payoutsDue > 0 && (
           <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-3 group animate-in slide-in-from-top-4 duration-500">
@@ -318,9 +318,9 @@ export default function DashboardContent({
               {/* Clients and Team Counts */}
               <div className="flex items-center gap-2">
                 <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
-                  <span className="material-symbols-outlined text-xs text-[#fce003]">person</span>
+                  <span className="material-symbols-outlined text-xs text-[#F59E0B]">person</span>
                   <span className="text-[9px] font-black uppercase tracking-wider text-white">
-                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span> <span className="text-[#fce003] font-bold">({activeClientsCount} Active)</span>
+                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span> <span className="text-[#F59E0B] font-bold">({activeClientsCount} Active)</span>
                   </span>
                 </div>
                 <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
@@ -335,20 +335,20 @@ export default function DashboardContent({
               {/* Export Button */}
               <button
                 onClick={handleExport}
-                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-4 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#fce003]/50 transition-all group shadow-sm active:scale-95"
+                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-4 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#F59E0B]/50 transition-all group shadow-sm active:scale-95"
                 title="Export to Excel"
               >
-                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-hover:text-[#fce003]">Export</span>
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-[#fce003]">download_for_offline</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-hover:text-[#F59E0B]">Export</span>
+                <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-[#F59E0B]">download_for_offline</span>
               </button>
 
               {/* Date Filter Button */}
               <button
                 onClick={() => setIsCalendarOpen(true)}
-                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-2 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#fce003]/50 transition-all group shadow-sm active:scale-95"
+                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-2 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#F59E0B]/50 transition-all group shadow-sm active:scale-95"
               >
                 <div className="flex items-center gap-2 h-full">
-                  <div className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all bg-[#fce003] text-zinc-950 shadow-sm flex items-center justify-center h-[70%]`}>
+                  <div className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all bg-[#F59E0B] text-zinc-950 shadow-sm flex items-center justify-center h-[70%]`}>
                     {filterMode === 'day' ? 'Daily' : filterMode === 'month' ? 'Monthly' : filterMode === 'year' ? 'Yearly' : 'Custom'}
                   </div>
                   <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface pr-1">calendar_month</span>
@@ -358,7 +358,7 @@ export default function DashboardContent({
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#fce003] animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse"></span>
             <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-80">
               Viewing: <span className="text-on-surface">{formatSelectedDate()}</span>
             </span>
@@ -387,7 +387,7 @@ export default function DashboardContent({
                     <button
                       key={mode}
                       onClick={() => setFilterMode(mode)}
-                      className={`flex-1 min-w-[60px] py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${filterMode === mode ? 'bg-[#fce003] text-zinc-950 shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
+                      className={`flex-1 min-w-[60px] py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${filterMode === mode ? 'bg-[#F59E0B] text-zinc-950 shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
                     >
                       {mode}
                     </button>
@@ -408,7 +408,7 @@ export default function DashboardContent({
                             setSelectedDate(newDate);
                           }
                         }}
-                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all color-scheme-dark"
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
                       />
                     </div>
                   )}
@@ -424,7 +424,7 @@ export default function DashboardContent({
                             d.setMonth(parseInt(e.target.value));
                             setSelectedDate(d);
                           }}
-                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all"
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                         >
                           {Array.from({ length: 12 }).map((_, i) => (
                             <option key={i} value={i}>{new Date(2024, i).toLocaleString('default', { month: 'long' })}</option>
@@ -440,7 +440,7 @@ export default function DashboardContent({
                             d.setFullYear(parseInt(e.target.value));
                             setSelectedDate(d);
                           }}
-                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all"
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                         >
                           {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
@@ -458,7 +458,7 @@ export default function DashboardContent({
                           d.setFullYear(parseInt(e.target.value));
                           setSelectedDate(d);
                         }}
-                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all"
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                       >
                         {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                       </select>
@@ -476,7 +476,7 @@ export default function DashboardContent({
                             const d = new Date(e.target.value);
                             if (!isNaN(d.getTime())) setStartDate(d);
                           }}
-                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all color-scheme-dark"
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
                         />
                       </div>
                       <div className="space-y-2">
@@ -488,7 +488,7 @@ export default function DashboardContent({
                             const d = new Date(e.target.value);
                             if (!isNaN(d.getTime())) setEndDate(d);
                           }}
-                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#fce003]/50 transition-all color-scheme-dark"
+                          className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
                         />
                       </div>
                     </div>
@@ -497,7 +497,7 @@ export default function DashboardContent({
 
                 <button
                   onClick={() => setIsCalendarOpen(false)}
-                  className="w-full py-4 rounded-xl electric-gradient text-zinc-950 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[#fce003]/20 hover:scale-[1.02] active:scale-95 transition-all mt-4"
+                  className="w-full py-4 rounded-xl electric-gradient text-zinc-950 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[#F59E0B]/20 hover:scale-[1.02] active:scale-95 transition-all mt-4"
                 >
                   Apply Filter
                 </button>
@@ -529,7 +529,7 @@ export default function DashboardContent({
               <div className="space-y-3 overflow-y-auto no-scrollbar flex-1">
                 {getProjectsForMetric().length > 0 ? (
                   getProjectsForMetric().map((p: any) => (
-                    <Link key={p.id} href={`/projects/${p.id}`} className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex flex-col gap-2 hover:border-[#fce003]/50 hover:bg-zinc-800/50 transition-all cursor-pointer group">
+                    <Link key={p.id} href={`/projects/${p.id}`} className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex flex-col gap-2 hover:border-[#F59E0B]/50 hover:bg-zinc-800/50 transition-all cursor-pointer group">
                       <div className="flex flex-col gap-1">
                         <div className="flex justify-between items-center">
                           <p className="text-[4.5px] font-black text-on-surface-variant tracking-widest opacity-60">Order ID: {p.id}</p>
@@ -539,7 +539,7 @@ export default function DashboardContent({
                         </div>
                         <div className="flex justify-between items-center gap-2">
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-headline font-extrabold text-on-surface text-sm leading-tight truncate group-hover:text-[#fce003] transition-colors" title={p.title}>
+                            <h4 className="font-headline font-extrabold text-on-surface text-sm leading-tight truncate group-hover:text-[#F59E0B] transition-colors" title={p.title}>
                               {p.title}
                             </h4>
                             <p className="text-[10px] text-on-surface-variant font-medium mt-1 truncate">
@@ -549,7 +549,7 @@ export default function DashboardContent({
                           </div>
                           <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                             <div className={`font-headline font-extrabold px-2.5 py-1 rounded border text-xs ${
-                              selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'border-zinc-500 text-white' : 'border-[#fce003] text-[#fce003]'
+                              selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'border-zinc-500 text-white' : 'border-[#F59E0B] text-[#F59E0B]'
                             }`}>
                               {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? getCurrencySymbol(p.expenseCurrency || 'INR') : getCurrencySymbol(p.revenueCurrency || 'USD')}
                               {parseFloat(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.expense || '0') : (p.revenue || '0')).toLocaleString()}
@@ -624,14 +624,14 @@ export default function DashboardContent({
         {/* Bento Grid: Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
           {/* Revenue Card */}
-          <div onClick={() => handleCardClick('Total Revenue')} className="col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-[#fce003]/20 to-transparent shadow-2xl group active:scale-[0.98] transition-all cursor-pointer">
+          <div onClick={() => handleCardClick('Total Revenue')} className="col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-[#F59E0B]/20 to-transparent shadow-2xl group active:scale-[0.98] transition-all cursor-pointer">
             <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 lg:p-6 border border-white/5 relative overflow-hidden">
               {/* Info Tooltip */}
               <div 
                 className="absolute top-3 right-3 z-30 group/tooltip"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
+                <span className="material-symbols-outlined text-white/30 hover:text-[#F59E0B] text-sm cursor-help transition-colors select-none">
                   info
                 </span>
                 <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
@@ -646,12 +646,12 @@ export default function DashboardContent({
                   <h3 className="text-2xl sm:text-3xl lg:text-2xl font-headline font-black text-white tracking-tighter leading-none truncate">
                     {stats.currency}{stats.totalRevenue.toLocaleString()}
                   </h3>
-                  <div className="px-2 py-1 bg-[#fce003]/10 rounded-full border border-[#fce003]/20 flex-shrink-0">
-                    <span className="text-[10px] font-black text-[#fce003]">+{margin}%</span>
+                  <div className="px-2 py-1 bg-[#F59E0B]/10 rounded-full border border-[#F59E0B]/20 flex-shrink-0">
+                    <span className="text-[10px] font-black text-[#F59E0B]">+{margin}%</span>
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-[#fce003]"></span>
+                  <span className="w-1 h-1 rounded-full bg-[#F59E0B]"></span>
                   <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant opacity-40">Performance: {filterMode}</p>
                 </div>
               </div>
@@ -666,7 +666,7 @@ export default function DashboardContent({
                 className="absolute top-3 right-3 z-30 group/tooltip"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
+                <span className="material-symbols-outlined text-white/30 hover:text-[#F59E0B] text-sm cursor-help transition-colors select-none">
                   info
                 </span>
                 <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
@@ -679,7 +679,7 @@ export default function DashboardContent({
                 <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Pending</p>
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
               </div>
-              <h3 className="text-lg sm:text-xl font-headline font-black text-[#fce003] tracking-tight truncate">
+              <h3 className="text-lg sm:text-xl font-headline font-black text-[#F59E0B] tracking-tight truncate">
                 {stats.currency}{stats.pendingRevenue.toLocaleString()}
               </h3>
               <p className="text-[7px] font-black uppercase tracking-widest text-orange-500 mt-2 opacity-80">Pipeline</p>
@@ -694,7 +694,7 @@ export default function DashboardContent({
                 className="absolute top-3 right-3 z-30 group/tooltip"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
+                <span className="material-symbols-outlined text-white/30 hover:text-[#F59E0B] text-sm cursor-help transition-colors select-none">
                   info
                 </span>
                 <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
@@ -719,7 +719,7 @@ export default function DashboardContent({
                 className="absolute top-3 right-3 z-30 group/tooltip"
                 onClick={(e) => e.stopPropagation()}
               >
-                <span className="material-symbols-outlined text-white/30 hover:text-[#fce003] text-sm cursor-help transition-colors select-none">
+                <span className="material-symbols-outlined text-white/30 hover:text-[#F59E0B] text-sm cursor-help transition-colors select-none">
                   info
                 </span>
                 <div className="absolute right-0 top-full mt-1.5 w-52 p-3 rounded-xl bg-zinc-950/95 border border-white/10 shadow-2xl opacity-0 invisible group-hover/tooltip:opacity-100 group-hover/tooltip:visible transition-all duration-200 pointer-events-none z-40 backdrop-blur-md">
@@ -759,13 +759,13 @@ export default function DashboardContent({
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
-                  <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
+                  <h3 className="text-xl font-headline font-black text-[#F59E0B] tracking-tight leading-none">
                     {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
                   </h3>
                 </div>
                 <button 
                   onClick={() => setIsPendingJobsExpanded(!isPendingJobsExpanded)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-[#fce003]/30 rounded-lg text-[10px] font-black text-[#fce003] uppercase tracking-widest hover:bg-[#fce003]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[10px] font-black text-[#F59E0B] uppercase tracking-widest hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
                 >
                   <span>{isPendingJobsExpanded ? 'Hide Details' : 'Show Details'}</span>
                   <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isPendingJobsExpanded ? 'rotate-180' : ''}`}>
@@ -803,7 +803,7 @@ export default function DashboardContent({
                                   {projectImage ? (
                                     <img src={projectImage} className="w-full h-full object-cover" alt="" />
                                   ) : (
-                                    <span className="material-symbols-outlined text-[#fce003] text-xl">precision_manufacturing</span>
+                                    <span className="material-symbols-outlined text-[#F59E0B] text-xl">precision_manufacturing</span>
                                   )}
                                 </div>
                                 
@@ -819,7 +819,7 @@ export default function DashboardContent({
 
                               <Link 
                                 href={`/projects/${p.id}`}
-                                className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#fce003]/30 hover:bg-[#fce003]/10 hover:text-[#fce003] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
+                                className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#F59E0B]/30 hover:bg-[#F59E0B]/10 hover:text-[#F59E0B] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
                               >
                                 Workspace
                               </Link>
@@ -840,13 +840,13 @@ export default function DashboardContent({
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
               <div className="p-6 flex items-center justify-between w-full">
                 <div>
-                  <h3 className="text-xl font-headline font-black text-[#fce003] tracking-tight leading-none">
+                  <h3 className="text-xl font-headline font-black text-[#F59E0B] tracking-tight leading-none">
                     {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? 'Deadline' : 'Deadlines'}
                   </h3>
                 </div>
                 <button 
                   onClick={() => setIsDeadlinesExpanded(!isDeadlinesExpanded)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-[#fce003]/30 rounded-lg text-[10px] font-black text-[#fce003] uppercase tracking-widest hover:bg-[#fce003]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[10px] font-black text-[#F59E0B] uppercase tracking-widest hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
                 >
                   <span>{isDeadlinesExpanded ? 'Hide Details' : 'Show Details'}</span>
                   <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isDeadlinesExpanded ? 'rotate-180' : ''}`}>
@@ -865,7 +865,7 @@ export default function DashboardContent({
                   ) : (
                     <div className="divide-y divide-white/5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar w-full">
                       {upcomingDeadlines.map((p: any, idx: number) => {
-                        const colors = ['from-[#fce003] to-[#FF8A00]', 'bg-outline-variant', 'bg-secondary'];
+                        const colors = ['from-[#F59E0B] to-[#FF8A00]', 'bg-outline-variant', 'bg-secondary'];
                         const colorClass = colors[idx % colors.length];
                         return (
                           <div key={p.id} className="py-3 flex items-center justify-between gap-4 group w-full">
@@ -878,7 +878,7 @@ export default function DashboardContent({
                             </div>
                             <Link 
                               href={`/projects/${p.id}`}
-                              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#fce003]/30 hover:bg-[#fce003]/10 hover:text-[#fce003] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
+                              className="px-3 py-1.5 bg-white/5 border border-white/10 hover:border-[#F59E0B]/30 hover:bg-[#F59E0B]/10 hover:text-[#F59E0B] rounded-lg text-[9px] font-black text-white uppercase tracking-widest transition-all duration-200"
                             >
                               Workspace
                             </Link>
@@ -899,7 +899,7 @@ export default function DashboardContent({
               {isFounder && (
                 <button
                   onClick={() => setShowLinkInput(!showLinkInput)}
-                  className="text-[8px] font-black text-[#fce003] uppercase tracking-[0.2em] px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#fce003]/30 transition-all focus:outline-none"
+                  className="text-[8px] font-black text-[#F59E0B] uppercase tracking-[0.2em] px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#F59E0B]/30 transition-all focus:outline-none"
                 >
                   {showLinkInput ? 'Cancel' : 'Add Link'}
                 </button>
@@ -915,12 +915,12 @@ export default function DashboardContent({
                       value={linkInput}
                       onChange={(e) => setLinkInput(e.target.value)}
                       placeholder="Paste Amazon link..."
-                      className="w-full bg-zinc-900 border border-white/10 rounded-xl pl-3 pr-20 py-2.5 text-[10px] text-white font-bold placeholder:text-white/20 focus:outline-none focus:border-[#fce003]/50 transition-all"
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl pl-3 pr-20 py-2.5 text-[10px] text-white font-bold placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                     />
                     <button
                       onClick={handleAddByLink}
                       disabled={isFetchingLink}
-                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#fce003] text-zinc-950 text-[8px] font-black uppercase tracking-widest rounded-lg disabled:opacity-50 transition-all active:scale-95"
+                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#F59E0B] text-zinc-950 text-[8px] font-black uppercase tracking-widest rounded-lg disabled:opacity-50 transition-all active:scale-95"
                     >
                       {isFetchingLink ? 'Fetching...' : 'Fetch'}
                     </button>
@@ -935,7 +935,7 @@ export default function DashboardContent({
                   </div>
                 ) : products.length === 0 ? (
                   <div className="flex flex-col items-center justify-center w-full py-10 rounded-xl text-center">
-                    <span className="material-symbols-outlined text-[#fce003] text-2xl mb-2 opacity-50">shopping_basket</span>
+                    <span className="material-symbols-outlined text-[#F59E0B] text-2xl mb-2 opacity-50">shopping_basket</span>
                     <span className="text-[8px] font-black uppercase tracking-widest text-white/40">No Products Curated</span>
                     {isFounder && <p className="text-[7px] font-bold text-white/20 mt-1 uppercase">Add products to begin</p>}
                   </div>
@@ -948,7 +948,7 @@ export default function DashboardContent({
                         href={product.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex flex-col flex-shrink-0 w-32 rounded-xl bg-surface-container border border-outline-variant/10 shadow-lg overflow-hidden transition-all hover:border-[#fce003]/30 hover:scale-[1.02] active:scale-95 cursor-pointer block"
+                        className="flex flex-col flex-shrink-0 w-32 rounded-xl bg-surface-container border border-outline-variant/10 shadow-lg overflow-hidden transition-all hover:border-[#F59E0B]/30 hover:scale-[1.02] active:scale-95 cursor-pointer block"
                       >
                         <div className="w-full aspect-square overflow-hidden relative bg-zinc-900">
                           <img alt={product.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" src={product.imageUrl} />
@@ -967,7 +967,7 @@ export default function DashboardContent({
                         <div className="p-2 space-y-1">
                           <h4 className="text-[9px] font-bold text-on-surface truncate leading-tight opacity-95">{product.title}</h4>
                           <div className="flex flex-col">
-                            <p className="text-xs font-headline font-extrabold text-[#fce003]">
+                            <p className="text-xs font-headline font-extrabold text-[#F59E0B]">
                               {new Intl.NumberFormat(product.countryCode === 'IN' ? 'en-IN' : 'en-US', {
                                 style: 'currency',
                                 currency: product.currency || (product.countryCode === 'IN' ? 'INR' : 'USD'),
@@ -976,7 +976,7 @@ export default function DashboardContent({
                             </p>
                           </div>
                           <div className="flex flex-nowrap gap-1">
-                            <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-[#fce003]/30 text-[7px] font-black text-[#fce003] uppercase tracking-tighter truncate">+{estimatedPoints} Pts</span>
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-[#F59E0B]/30 text-[7px] font-black text-[#F59E0B] uppercase tracking-tighter truncate">+{estimatedPoints} Pts</span>
                           </div>
                         </div>
                       </a>
@@ -997,3 +997,4 @@ export default function DashboardContent({
     </AuthGuard>
   );
 }
+

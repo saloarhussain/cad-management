@@ -40,10 +40,10 @@ export default function NewClientPage() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#7b7767]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(252,224,3,0.12)]">
           <div className="flex justify-between items-center w-full px-6 py-4">
             <div className="flex items-center gap-4">
-              <Link href="/clients" className="text-[#fce003] active:scale-95 duration-200 hover:bg-[#fce003]/10 p-2 rounded-lg">
+              <Link href="/clients" className="text-[#F59E0B] active:scale-95 duration-200 hover:bg-[#F59E0B]/10 p-2 rounded-lg">
                 <span className="material-symbols-outlined">arrow_back</span>
               </Link>
-              <h1 className="font-headline font-bold tracking-tight text-xl text-[#fce003]">Add New Client</h1>
+              <h1 className="font-headline font-bold tracking-tight text-xl text-[#F59E0B]">Add New Client</h1>
             </div>
           </div>
         </header>
@@ -262,3 +262,4 @@ export default function NewClientPage() {
     </AuthGuard>
   );
 }
+

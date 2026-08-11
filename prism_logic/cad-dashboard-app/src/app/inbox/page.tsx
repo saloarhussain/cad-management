@@ -143,7 +143,7 @@ export default function InboxPage() {
                       }}
                       className={`block rounded-2xl p-4 border transition-all cursor-pointer group relative overflow-hidden ${
                         isSelected 
-                          ? 'bg-white/5 border-[#fce003]/30 shadow-[0_0_20px_rgba(252,224,3,0.05)]' 
+                          ? 'bg-white/5 border-[#F59E0B]/30 shadow-[0_0_20px_rgba(252,224,3,0.05)]' 
                           : 'bg-surface-container/50 border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
                       }`}
                     >
@@ -155,18 +155,18 @@ export default function InboxPage() {
                       
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isSelected ? 'bg-[#fce003]/20 border border-[#fce003]/30' : 'bg-white/5 border border-white/10'
+                          isSelected ? 'bg-[#F59E0B]/20 border border-[#F59E0B]/30' : 'bg-white/5 border border-white/10'
                         }`}>
-                          <span className={`material-symbols-outlined text-sm ${isSelected ? 'text-[#fce003]' : 'text-neutral-500 group-hover:text-white'}`}>deployed_code</span>
+                          <span className={`material-symbols-outlined text-sm ${isSelected ? 'text-[#F59E0B]' : 'text-neutral-500 group-hover:text-white'}`}>deployed_code</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <h3 className={`text-[11px] font-black uppercase truncate ${isSelected ? 'text-[#fce003]' : 'text-white/80'}`}>{project.title}</h3>
+                            <h3 className={`text-[11px] font-black uppercase truncate ${isSelected ? 'text-[#F59E0B]' : 'text-white/80'}`}>{project.title}</h3>
                             <span className="text-[7px] font-bold text-neutral-500 uppercase shrink-0">#{project.orderId?.slice(-6)}</span>
                           </div>
                           <p className="text-[9px] text-neutral-500 line-clamp-1 font-medium italic">Project Workspace Chat</p>
                         </div>
-                        <span className={`material-symbols-outlined text-sm transition-transform ${isSelected ? 'text-[#fce003] translate-x-1' : 'text-white/10 group-hover:text-white/30'}`}>chevron_right</span>
+                        <span className={`material-symbols-outlined text-sm transition-transform ${isSelected ? 'text-[#F59E0B] translate-x-1' : 'text-white/10 group-hover:text-white/30'}`}>chevron_right</span>
                       </div>
                     </div>
                   );
@@ -203,3 +203,4 @@ export default function InboxPage() {
     </AuthGuard>
   );
 }
+

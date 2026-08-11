@@ -15,7 +15,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const shouldHavePadding = isAuthenticated && !isAuthPage;
 
   return (
-    <main className={`${shouldHavePadding ? 'md:pl-64' : 'md:pl-0'} min-h-screen transition-all duration-500 ease-in-out bg-[#0c0a04]`}>
+    <main className={`${shouldHavePadding ? 'md:pl-64' : 'md:pl-0'} min-h-screen transition-all duration-500 ease-in-out bg-background`}>
       {children}
     </main>
   );

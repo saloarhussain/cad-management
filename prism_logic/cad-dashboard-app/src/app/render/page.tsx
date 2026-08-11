@@ -654,7 +654,7 @@ export default function RenderStudioPage() {
 
                   <button
                     onClick={triggerCapture}
-                    className="w-full py-3 bg-[#fce003] hover:bg-[#ebd003] text-black font-extrabold text-[10px] uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.95]"
+                    className="w-full py-3 bg-[#F59E0B] hover:bg-[#ebd003] text-black font-extrabold text-[10px] uppercase tracking-widest rounded-xl shadow-lg transition-all active:scale-[0.95]"
                   >
                     Save Photo Render
                   </button>
@@ -882,3 +882,4 @@ export default function RenderStudioPage() {
     </AuthGuard>
   );
 }
+

@@ -8,20 +8,20 @@ export default function SampleBriefPage() {
     <div className="min-h-screen bg-[#0c0a04] text-white font-sans p-6 md:p-12">
       <div className="max-w-4xl mx-auto">
         <header className="mb-12 border-b border-white/10 pb-8">
-          <h1 className="text-4xl font-black uppercase tracking-tighter italic text-[#fce003]">Design Briefing <span className="text-white">Sample</span></h1>
+          <h1 className="text-4xl font-black uppercase tracking-tighter italic text-[#F59E0B]">Design Briefing <span className="text-white">Sample</span></h1>
           <p className="text-neutral-500 mt-2 uppercase tracking-[0.3em] text-[10px] font-bold">Standard Operating Procedure • Reference Guide</p>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Example 1 */}
           <section className="space-y-6">
-            <div className="bg-surface-container p-8 rounded-[2rem] border border-[#fce003]/20 shadow-2xl">
-              <span className="bg-[#fce003] text-black text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4 inline-block">Pro Example</span>
+            <div className="bg-surface-container p-8 rounded-[2rem] border border-[#F59E0B]/20 shadow-2xl">
+              <span className="bg-[#F59E0B] text-black text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest mb-4 inline-block">Pro Example</span>
               <h2 className="text-xl font-bold mb-2">Bespoke Emerald Cocktail Ring</h2>
               <p className="text-sm text-neutral-400 leading-relaxed">
                 "We need a high-luxury cocktail ring centered around a 4ct cushion-cut emerald. The band should be 18k yellow gold with a 'hidden' halo of micro-pavé diamonds. 
                 <br/><br/>
-                <span className="text-[#fce003] font-bold underline">Measurements:</span> Ring size US 7. Emerald dimensions are 10mm x 8.5mm. Main band width should be 2.2mm tapering to 1.8mm at the base."
+                <span className="text-[#F59E0B] font-bold underline">Measurements:</span> Ring size US 7. Emerald dimensions are 10mm x 8.5mm. Main band width should be 2.2mm tapering to 1.8mm at the base."
               </p>
             </div>
 
@@ -40,7 +40,7 @@ export default function SampleBriefPage() {
           {/* Guide Section */}
           <section className="space-y-8">
             <div>
-              <h3 className="text-[#fce003] text-xs font-black uppercase tracking-widest mb-4">Required Details</h3>
+              <h3 className="text-[#F59E0B] text-xs font-black uppercase tracking-widest mb-4">Required Details</h3>
               <ul className="space-y-4">
                 {[
                   { title: "Core Vision", desc: "Clearly state the item type, main materials, and overall aesthetic (e.g., Minimalist, Baroque, Industrial)." },
@@ -59,8 +59,8 @@ export default function SampleBriefPage() {
               </ul>
             </div>
 
-            <div className="p-6 bg-[#fce003]/5 border border-[#fce003]/10 rounded-2xl">
-              <h4 className="text-[10px] font-black text-[#fce003] uppercase tracking-widest mb-2">💡 Expert Tip</h4>
+            <div className="p-6 bg-[#F59E0B]/5 border border-[#F59E0B]/10 rounded-2xl">
+              <h4 className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest mb-2">💡 Expert Tip</h4>
               <p className="text-xs text-neutral-400 leading-relaxed italic">
                 "The more detail you provide about measurements, the fewer revisions we'll need. Always try to include a top-view and side-view reference if possible."
               </p>
@@ -78,3 +78,4 @@ export default function SampleBriefPage() {
     </div>
   );
 }
+

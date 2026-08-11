@@ -25,7 +25,7 @@ export function RoleBasedNavigation() {
   return (
     <>
       <SidebarNav />
-      <TopAppBar />
+      {/* <TopAppBar /> */}
       <BottomNavBar />
     </>
   );

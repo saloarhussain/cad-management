@@ -262,8 +262,8 @@ export default function ClientsPage() {
         {isLoading ? (
           <div className="min-h-screen bg-[#161308] flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+              <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
             </div>
           </div>
         ) : (
@@ -273,7 +273,7 @@ export default function ClientsPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div>
               <h2 className="font-headline text-2xl font-black tracking-tight text-white uppercase italic">
-                Client <span className="text-[#fce003]">Intelligence</span>
+                Client <span className="text-[#F59E0B]">Intelligence</span>
               </h2>
               <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">High-value partner relationship management</p>
             </div>
@@ -286,7 +286,7 @@ export default function ClientsPage() {
               </div>
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
                 <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Active Value</p>
-                <p className="text-sm font-black text-[#fce003]">${filteredClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
+                <p className="text-sm font-black text-[#F59E0B]">${filteredClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
               </div>
               <div className="hidden sm:block px-4 py-2 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
                 <p className="text-[7px] font-black text-yellow-400 uppercase tracking-widest mb-0.5">Status</p>
@@ -301,11 +301,11 @@ export default function ClientsPage() {
           {/* Advanced Filters & Search Bar */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="flex-1 relative group">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#fce003] transition-colors">search</span>
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#F59E0B] transition-colors">search</span>
               <input 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#fce003]/50 outline-none transition-all" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#F59E0B]/50 outline-none transition-all" 
                 placeholder="Search by company, name, or location..." 
                 type="text"
               />
@@ -321,7 +321,7 @@ export default function ClientsPage() {
               </button>
               <button 
                 onClick={() => setShowFilters(true)}
-                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
               >
                 <span className="material-symbols-outlined text-sm">tune</span>
                 <span className="text-[10px] font-black uppercase tracking-widest">Filters</span>
@@ -347,14 +347,14 @@ export default function ClientsPage() {
               <Link 
                 key={client.id || idx} 
                 href={`/clients/${client.id}`}
-                className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-[#fce003]/30 transition-all duration-500 overflow-hidden shadow-2xl block"
+                className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-[#F59E0B]/30 transition-all duration-500 overflow-hidden shadow-2xl block"
               >
                 {/* Visual Accent */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#fce003]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#fce003]/10 transition-colors" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59E0B]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#F59E0B]/10 transition-colors" />
 
                 <div className="flex justify-between items-start mb-6 relative z-20">
                   <div className="flex gap-4 items-center">
-                    <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
+                    <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#F59E0B]/50 transition-all">
                       <Avatar
                         email={client.email}
                         name={client.name}
@@ -364,7 +364,7 @@ export default function ClientsPage() {
                       />
                     </div>
                     <div className="text-left">
-                      <h3 className="font-headline font-black text-white text-lg leading-tight group-hover:text-[#fce003] transition-colors">{client.name}</h3>
+                      <h3 className="font-headline font-black text-white text-lg leading-tight group-hover:text-[#F59E0B] transition-colors">{client.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{client.contact}</span>
                         <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
@@ -381,7 +381,7 @@ export default function ClientsPage() {
                     >
                       <span className="material-symbols-outlined text-sm" style={favorites.includes(client.id) ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
                     </button>
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all">
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#F59E0B] group-hover:bg-[#F59E0B]/10 transition-all">
                       <span className="material-symbols-outlined text-sm">arrow_outward</span>
                     </div>
                   </div>
@@ -389,11 +389,11 @@ export default function ClientsPage() {
 
                 {/* KPI Section */}
                 <div className="grid grid-cols-2 gap-3 mb-6 relative z-20">
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#fce003]/10 transition-colors">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors">
                     <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Total Revenue</p>
                     <p className="font-headline font-black text-white text-xl tracking-tight leading-none">{client.earnings}</p>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#fce003]/10 transition-colors flex justify-between items-center">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors flex justify-between items-center">
                     <div>
                       <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Task</p>
                       <div className="flex items-center gap-3">
@@ -403,7 +403,7 @@ export default function ClientsPage() {
                         </div>
                         <div className="w-px h-6 bg-white/10" />
                         <div className="text-center">
-                          <p className="text-xs font-black text-[#fce003] leading-none">{client.live}</p>
+                          <p className="text-xs font-black text-[#F59E0B] leading-none">{client.live}</p>
                           <p className="text-[6px] font-bold text-neutral-600 uppercase">Live</p>
                         </div>
                       </div>
@@ -457,7 +457,7 @@ export default function ClientsPage() {
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowFilters(false)} />
             <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#fce003]/5 to-transparent">
+              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#F59E0B]/5 to-transparent">
                 <div>
                   <h3 className="text-white font-headline font-black text-xl italic uppercase tracking-tighter">Segment Data</h3>
                   <p className="text-neutral-500 text-[8px] uppercase tracking-[0.3em] font-bold">Partner Optimization Protocol</p>
@@ -476,7 +476,7 @@ export default function ClientsPage() {
                       <button 
                         key={opt}
                         onClick={() => setSortOrder(opt)}
-                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#fce003] border-[#fce003] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                       >
                         {opt}
                       </button>
@@ -515,3 +515,4 @@ export default function ClientsPage() {
     </div>
   );
 }
+

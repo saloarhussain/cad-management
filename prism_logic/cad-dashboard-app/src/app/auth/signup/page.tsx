@@ -130,7 +130,7 @@ function SignupForm() {
       <div>
         <div className="flex justify-between items-start mb-1">
           <h2 className="text-3xl font-headline font-black text-white tracking-[0.1em] uppercase italic">
-            Join the <span className="text-[#fce003]">Studio</span>
+            Join the <span className="text-[#F59E0B]">Studio</span>
           </h2>
           <span className="text-yellow-400 font-bold text-xs bg-yellow-400/10 px-2 py-1 rounded-md whitespace-nowrap">
             Step {step} / 3
@@ -298,3 +298,4 @@ export default function SignupPage() {
     </Suspense>
   );
 }
+

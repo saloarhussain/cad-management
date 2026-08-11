@@ -273,10 +273,10 @@ export function composeTemplate(recipient: string, subject: string, content: str
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #111; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #1a1a17; border-radius: 12px; overflow: hidden; border: 1px solid #2a2a22; }
-      .header { background: linear-gradient(135deg, #fce003, #FF2626); padding: 24px 40px; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FF2626); padding: 24px 40px; }
       .header h1 { margin: 0; color: #000; font-size: 20px; font-weight: 900; }
       .body { padding: 40px; }
-      .ref-badge { display: inline-block; background: #222218; border: 1px solid #fce003/30; color: #fce003; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
+      .ref-badge { display: inline-block; background: #222218; border: 1px solid #F59E0B/30; color: #F59E0B; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 20px; }
       .content { font-size: 15px; color: #c0c0b0; line-height: 1.7; white-space: pre-wrap; }
       .footer { padding: 24px 40px; border-top: 1px solid #2a2a22; font-size: 11px; color: #555545; text-align: center; }
     </style>
@@ -307,7 +307,7 @@ export function deliveryTemplate(project: any, clientName: string, magicLink: st
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-      .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FEA500); padding: 48px 40px; text-align: center; }
       .header h1 { margin: 0; color: #000; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
       .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
       .body { padding: 48px 40px; }
@@ -315,8 +315,8 @@ export function deliveryTemplate(project: any, clientName: string, magicLink: st
       .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
       .project-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
       .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
-      .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
-      .cta-button { display: block; background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; rounded-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
+      .value { color: #F59E0B; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+      .cta-button { display: block; background: linear-gradient(135deg, #F59E0B, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; rounded-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
       .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
     </style>
   </head>
@@ -364,7 +364,7 @@ export function clientInviteTemplate(client: any, magicLink: string, organizatio
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-      .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FEA500); padding: 48px 40px; text-align: center; }
       .header h1 { margin: 0; color: #000; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
       .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
       .body { padding: 48px 40px; }
@@ -372,9 +372,9 @@ export function clientInviteTemplate(client: any, magicLink: string, organizatio
       .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
       .profile-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
       .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
-      .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+      .value { color: #F59E0B; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
       .cta-button { display: inline-block; padding: 18px 30px; border-radius: 12px; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: transform 0.2s; text-align: center; }
-      .btn-accept { background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; }
+      .btn-accept { background: linear-gradient(135deg, #F59E0B, #FEA500); color: #000 !important; }
       .btn-deny { background: #222; color: #888 !important; border: 1px solid #333; }
       .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
     </style>
@@ -426,7 +426,7 @@ export function designerInviteTemplate(designer: any, magicLink: string, organiz
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-      .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FEA500); padding: 48px 40px; text-align: center; }
       .header h1 { margin: 0; color: #000; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
       .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
       .body { padding: 48px 40px; }
@@ -434,9 +434,9 @@ export function designerInviteTemplate(designer: any, magicLink: string, organiz
       .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
       .profile-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
       .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
-      .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+      .value { color: #F59E0B; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
       .cta-button { display: inline-block; padding: 18px 30px; border-radius: 12px; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: transform 0.2s; text-align: center; }
-      .btn-accept { background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; }
+      .btn-accept { background: linear-gradient(135deg, #F59E0B, #FEA500); color: #000 !important; }
       .btn-deny { background: #222; color: #888 !important; border: 1px solid #333; }
       .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
     </style>
@@ -543,7 +543,7 @@ export function projectAssignmentTemplate(project: any, organizationName: string
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-      .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FEA500); padding: 48px 40px; text-align: center; }
       .header h1 { margin: 0; color: #000; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
       .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
       .body { padding: 48px 40px; }
@@ -551,8 +551,8 @@ export function projectAssignmentTemplate(project: any, organizationName: string
       .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
       .project-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
       .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
-      .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
-      .cta-button { display: block; background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
+      .value { color: #F59E0B; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+      .cta-button { display: block; background: linear-gradient(135deg, #F59E0B, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
       .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
     </style>
   </head>
@@ -652,7 +652,7 @@ export function feedbackReceivedTemplate(project: any, rating: number, comment: 
     <style>
       body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
       .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-      .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+      .header { background: linear-gradient(135deg, #F59E0B, #FEA500); padding: 48px 40px; text-align: center; }
       .header h1 { margin: 0; color: #000; font-size: 32px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
       .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
       .body { padding: 48px 40px; }
@@ -660,10 +660,10 @@ export function feedbackReceivedTemplate(project: any, rating: number, comment: 
       .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
       .project-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
       .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
-      .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
-      .stars { color: #fce003; font-size: 24px; margin-bottom: 10px; }
+      .value { color: #F59E0B; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+      .stars { color: #F59E0B; font-size: 24px; margin-bottom: 10px; }
       .comment { color: #c0c0b0; font-size: 14px; font-style: italic; line-height: 1.6; }
-      .cta-button { display: block; background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
+      .cta-button { display: block; background: linear-gradient(135deg, #F59E0B, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
       .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
     </style>
   </head>
@@ -698,3 +698,4 @@ export function feedbackReceivedTemplate(project: any, rating: number, comment: 
   </html>
   `;
 }
+

@@ -9,12 +9,12 @@ import MainLayout from "@/components/MainLayout";
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const interHeadline = Inter({
   variable: "--font-headline",
   subsets: ["latin"],
 });
 
-const inter = Inter({
+const interBody = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -99,7 +99,7 @@ export default function RootLayout({
         <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </head>
       <body
-        className={`${plusJakartaSans.variable} ${inter.variable} font-body bg-background text-on-surface antialiased min-h-full`}
+        className={`${interHeadline.variable} ${interBody.variable} font-body bg-background text-on-surface antialiased min-h-full`}
       >
         <GoogleAnalytics ga_id={gaId} />
         <AuthProvider>

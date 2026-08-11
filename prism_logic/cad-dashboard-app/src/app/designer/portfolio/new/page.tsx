@@ -121,15 +121,15 @@ export default function AddPortfolioPage() {
           {/* Form Section: Project Identity */}
           <section className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="h-1 w-8 bg-gradient-to-r from-[#fce003] to-[#00fbfe] rounded-full"></div>
-              <h2 className="font-headline text-sm font-extrabold uppercase tracking-widest text-[#fce003]">Project Identity</h2>
+              <div className="h-1 w-8 bg-gradient-to-r from-[#F59E0B] to-[#00fbfe] rounded-full"></div>
+              <h2 className="font-headline text-sm font-extrabold uppercase tracking-widest text-[#F59E0B]">Project Identity</h2>
             </div>
             
             <div className="space-y-4">
               <div className="group">
                 <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] mb-2 ml-1">Project Title</label>
                 <input 
-                  className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] placeholder:opacity-30 focus:outline-none focus:border-[#fce003] transition-all" 
+                  className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] placeholder:opacity-30 focus:outline-none focus:border-[#F59E0B] transition-all" 
                   placeholder="e.g. Geometric Diamond Solitaire" 
                   type="text"
                   value={formData.title}
@@ -142,7 +142,7 @@ export default function AddPortfolioPage() {
                 <div className="group">
                   <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] mb-2 ml-1">Service Category</label>
                   <select 
-                    className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] focus:outline-none focus:border-[#fce003] transition-all"
+                    className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] focus:outline-none focus:border-[#F59E0B] transition-all"
                     value={formData.category}
                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                   >
@@ -157,7 +157,7 @@ export default function AddPortfolioPage() {
                   <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] mb-2 ml-1">Software Used</label>
                   <div className="relative">
                     <select 
-                      className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] transition-all min-h-[140px] focus:outline-none focus:border-[#fce003]" 
+                      className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] transition-all min-h-[140px] focus:outline-none focus:border-[#F59E0B]" 
                       multiple
                       value={formData.software}
                       onChange={handleSoftwareChange}
@@ -179,7 +179,7 @@ export default function AddPortfolioPage() {
               <div className="group">
                 <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] mb-2 ml-1">Project Narrative</label>
                 <textarea 
-                  className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] placeholder:opacity-30 focus:outline-none focus:border-[#fce003] transition-all resize-none" 
+                  className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] placeholder:opacity-30 focus:outline-none focus:border-[#F59E0B] transition-all resize-none" 
                   placeholder="Describe the technical challenges and design inspiration..." 
                   rows={4}
                   value={formData.narrative}
@@ -192,7 +192,7 @@ export default function AddPortfolioPage() {
           {/* Asset Section */}
           <section className="space-y-6">
             <div className="flex items-center gap-3">
-              <div className="h-1 w-8 bg-gradient-to-r from-[#fce003] to-[#00fbfe] rounded-full"></div>
+              <div className="h-1 w-8 bg-gradient-to-r from-[#F59E0B] to-[#00fbfe] rounded-full"></div>
               <h2 className="font-headline text-sm font-extrabold uppercase tracking-widest text-[#00fbfe]">Asset Injection</h2>
             </div>
             
@@ -206,9 +206,9 @@ export default function AddPortfolioPage() {
                   className="absolute inset-0 opacity-0 cursor-pointer z-10" 
                   onChange={(e) => handleFileChange(e, 'renders')}
                 />
-                <div className="absolute inset-0 bg-[#fce003]/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
-                <div className="border-2 border-dashed border-[#4b4732] group-hover:border-[#fce003] transition-all rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-3 bg-[#1e2020]/50">
-                  <span className="material-symbols-outlined text-4xl text-[#fce003]">photo_library</span>
+                <div className="absolute inset-0 bg-[#F59E0B]/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg"></div>
+                <div className="border-2 border-dashed border-[#4b4732] group-hover:border-[#F59E0B] transition-all rounded-lg p-8 flex flex-col items-center justify-center text-center space-y-3 bg-[#1e2020]/50">
+                  <span className="material-symbols-outlined text-4xl text-[#F59E0B]">photo_library</span>
                   <div>
                     <p className="font-headline font-bold text-white">Upload High-Fidelity Renders</p>
                     <p className="text-xs text-[#cec7ab] mt-1">PNG, JPG or TIFF (Max 20MB)</p>
@@ -266,7 +266,7 @@ export default function AddPortfolioPage() {
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className={`w-full bg-gradient-to-r from-[#fce003] to-[#00fbfe] text-black font-headline font-black text-sm uppercase tracking-[0.2em] py-5 rounded-lg shadow-[0_0_30px_rgba(252,224,3,0.3)] hover:shadow-[0_0_40px_rgba(252,224,3,0.5)] transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full bg-gradient-to-r from-[#F59E0B] to-[#00fbfe] text-black font-headline font-black text-sm uppercase tracking-[0.2em] py-5 rounded-lg shadow-[0_0_30px_rgba(252,224,3,0.3)] hover:shadow-[0_0_40px_rgba(252,224,3,0.5)] transition-all transform active:scale-[0.98] flex items-center justify-center gap-3 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               <span>{isSubmitting ? 'Publishing...' : 'Publish to Portfolio'}</span>
               <span className="material-symbols-outlined font-bold">rocket_launch</span>
@@ -301,3 +301,4 @@ export default function AddPortfolioPage() {
     </div>
   );
 }
+

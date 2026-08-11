@@ -77,7 +77,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         {/* Lock card */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full">
           <div className="w-24 h-24 rounded-2xl bg-surface-container border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(252,224,3,0.1)]">
-            <span className="material-symbols-outlined text-5xl text-[#fce003]">lock</span>
+            <span className="material-symbols-outlined text-5xl text-[#F59E0B]">lock</span>
           </div>
 
           <p className="text-[10px] font-bold tracking-[0.3em] text-yellow-400/70 uppercase mb-2">
@@ -133,3 +133,4 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   return <>{children}</>;
 }
+

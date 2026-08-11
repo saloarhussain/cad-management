@@ -144,8 +144,8 @@ export default function ProjectsPage() {
       {isLoading ? (
         <div className="min-h-screen bg-[#161308] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+            <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
           </div>
         </div>
       ) : (
@@ -154,7 +154,7 @@ export default function ProjectsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="text-left">
             <h2 className="font-headline text-2xl font-black tracking-tight text-white uppercase italic">
-              Project <span className="text-[#fce003]">Studio</span>
+              Project <span className="text-[#F59E0B]">Studio</span>
             </h2>
             <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">High-fidelity CAD design workspace and queue</p>
           </div>
@@ -190,7 +190,7 @@ export default function ProjectsPage() {
             <div className="lg:col-span-12 flex flex-col items-center justify-center py-32 bg-white/[0.02] backdrop-blur-3xl rounded-[2.5rem] border border-white/5 mx-auto w-full max-w-2xl shadow-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-b from-yellow-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 group-hover:border-yellow-400/30 transition-all duration-500 shadow-xl relative z-10">
-                <span className="material-symbols-outlined text-4xl text-white/20 group-hover:text-[#fce003] group-hover:scale-110 transition-all duration-500">
+                <span className="material-symbols-outlined text-4xl text-white/20 group-hover:text-[#F59E0B] group-hover:scale-110 transition-all duration-500">
                   {activeTab === 'active' ? 'rocket_launch' : 'verified'}
                 </span>
               </div>
@@ -203,7 +203,7 @@ export default function ProjectsPage() {
                   : 'You haven\'t completed any production cycles yet'}
               </p>
               {activeTab === 'active' && !isDesigner && (
-                <Link href="/projects/new" className="mt-10 px-10 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#fce003] hover:text-black hover:border-[#fce003] transition-all active:scale-95 shadow-xl relative z-10">
+                <Link href="/projects/new" className="mt-10 px-10 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#F59E0B] hover:text-black hover:border-[#F59E0B] transition-all active:scale-95 shadow-xl relative z-10">
                   Launch New Project
                 </Link>
               )}
@@ -286,7 +286,7 @@ export default function ProjectsPage() {
 
                       {!isDesigner && (
                         <div className="grid grid-cols-2 gap-4 text-left border-t border-white/5 pt-3">
-                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.revenueCurrency || 'USD') === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.revenueCurrency || 'USD') === '$' ? 'border-red-500' : 'border-[#F59E0B]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Revenue</label>
                             <div className="flex items-center justify-between mt-1">
                               <div className="flex items-center gap-1.5">
@@ -302,7 +302,7 @@ export default function ProjectsPage() {
                                 </span>
                             </div>
                           </div>
-                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.expenseCurrency || 'INR') === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.expenseCurrency || 'INR') === '$' ? 'border-red-500' : 'border-[#F59E0B]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Expense</label>
                             <div className="flex items-center justify-between mt-1">
                               <div className="flex items-center gap-1.5">
@@ -384,7 +384,7 @@ export default function ProjectsPage() {
                     <div className="mt-6 relative z-20 space-y-3">
                       <Link href={`/projects/${project.id}`} className="w-full py-3.5 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 rounded-xl group/btn flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg">
                         <span className="font-black text-[9px] uppercase tracking-[0.2em] text-white/40 group-hover/btn:text-white transition-colors">Project Workstation</span>
-                        <span className="material-symbols-outlined text-[10px] text-[#fce003]/40 group-hover/btn:text-[#fce003] transition-colors">arrow_forward_ios</span>
+                        <span className="material-symbols-outlined text-[10px] text-[#F59E0B]/40 group-hover/btn:text-[#F59E0B] transition-colors">arrow_forward_ios</span>
                       </Link>
 
                       {isDesigner && (
@@ -407,3 +407,4 @@ export default function ProjectsPage() {
     </AuthGuard>
   );
 }
+
