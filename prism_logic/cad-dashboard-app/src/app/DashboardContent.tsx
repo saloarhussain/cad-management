@@ -309,59 +309,56 @@ export default function DashboardContent({
 
         {/* Welcome Section */}
         <section className="mt-6 space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 sm:gap-0">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-              <div>
-                <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
-                <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1.5 opacity-60">Strategic Dashboard</p>
-              </div>
-              {/* Clients and Team Counts */}
-              <div className="flex items-center gap-2">
-                <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
-                  <span className="material-symbols-outlined text-xs text-[#F59E0B]">person</span>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-white">
-                    {stats.totalClients} <span className="text-on-surface-variant opacity-60">Clients</span> <span className="text-[#F59E0B] font-bold">({activeClientsCount} Active)</span>
-                  </span>
-                </div>
-                <div className="px-3 py-2 bg-surface-container-low rounded-xl border border-white/5 shadow-md flex items-center gap-2">
-                  <span className="material-symbols-outlined text-xs text-[#00fbfe]">groups</span>
-                  <span className="text-[9px] font-black uppercase tracking-wider text-white">
-                    {stats.totalDesigners} <span className="text-on-surface-variant opacity-60">Team</span> <span className="text-[#00fbfe] font-bold">({activeDesignersCount} Active)</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto h-10">
-              {/* Export Button */}
-              <button
-                onClick={handleExport}
-                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-4 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#F59E0B]/50 transition-all group shadow-sm active:scale-95"
-                title="Export to Excel"
-              >
-                <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant group-hover:text-[#F59E0B]">Export</span>
-                <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-[#F59E0B]">download_for_offline</span>
-              </button>
+          <div>
+            <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
+            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1.5 opacity-60">Strategic Dashboard</p>
+          </div>
 
-              {/* Date Filter Button */}
-              <button
-                onClick={() => setIsCalendarOpen(true)}
-                className="flex-1 sm:flex-none h-full flex items-center justify-center gap-2 px-2 bg-surface-container rounded-xl border border-outline-variant/30 hover:border-[#F59E0B]/50 transition-all group shadow-sm active:scale-95"
-              >
-                <div className="flex items-center gap-2 h-full">
-                  <div className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all bg-[#F59E0B] text-zinc-950 shadow-sm flex items-center justify-center h-[70%]`}>
-                    {filterMode === 'day' ? 'Daily' : filterMode === 'month' ? 'Monthly' : filterMode === 'year' ? 'Yearly' : 'Custom'}
-                  </div>
-                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant group-hover:text-on-surface pr-1">calendar_month</span>
-                </div>
-              </button>
+          {/* Quick Stats Chips */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-6 px-6 snap-x hide-scrollbar">
+            <div className="snap-start shrink-0 bg-surface-container rounded-full px-4 py-2 flex items-center gap-2 border border-white/5">
+              <span className="material-symbols-outlined text-[#F59E0B] text-[18px]">person</span>
+              <span className="text-[11px] font-bold text-on-surface tracking-wider">
+                {stats.totalClients} Clients <span className="text-[#F59E0B]">({activeClientsCount} Active)</span>
+              </span>
+            </div>
+            <div className="snap-start shrink-0 bg-surface-container rounded-full px-4 py-2 flex items-center gap-2 border border-white/5">
+              <span className="material-symbols-outlined text-[#2DD4BF] text-[18px]">groups</span>
+              <span className="text-[11px] font-bold text-on-surface tracking-wider">
+                {stats.totalDesigners} Team <span className="text-[#2DD4BF]">({activeDesignersCount} Active)</span>
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] animate-pulse"></span>
-            <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-80">
-              Viewing: <span className="text-on-surface">{formatSelectedDate()}</span>
-            </span>
+          {/* Actions & Filters */}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
+              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-80">
+                Viewing: <span className="text-on-surface">{formatSelectedDate()}</span>
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* Date Filter Dropdown */}
+              <button
+                onClick={() => setIsCalendarOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors active:scale-95 text-[10px] font-bold tracking-wider"
+              >
+                <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                <span className="uppercase">{filterMode === 'day' ? 'DAILY' : filterMode === 'month' ? 'MONTHLY' : filterMode === 'year' ? 'YEARLY' : 'CUSTOM'}</span>
+                <span className="material-symbols-outlined text-[14px]">expand_more</span>
+              </button>
+
+              {/* Export Button */}
+              <button
+                onClick={handleExport}
+                className="w-8 h-8 flex items-center justify-center bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-[#F59E0B] transition-colors active:scale-95"
+                title="Export to Excel"
+              >
+                <span className="material-symbols-outlined text-[18px]">download</span>
+              </button>
+            </div>
           </div>
         </section>
 
