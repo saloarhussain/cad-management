@@ -297,11 +297,11 @@ export default function DashboardContent({
                 <span className="material-symbols-outlined text-xl">account_balance_wallet</span>
               </div>
               <div>
-                <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Payouts Outstanding</h4>
-                <p className="text-[8px] font-bold text-red-400/80 uppercase tracking-tight">You have {stats.payoutsDueCount} completed projects pending designer payment</p>
+                <h4 className="text-[11px] font-bold text-white tracking-wider">Payouts Outstanding</h4>
+                <p className="text-[11px] font-bold text-red-400/80 tracking-wider">You have {stats.payoutsDueCount} completed projects pending designer payment</p>
               </div>
             </div>
-            <Link href="/projects" className="w-full sm:w-auto text-center px-4 py-2.5 bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/20">
+            <Link href="/projects" className="w-full sm:w-auto text-center px-4 py-2.5 bg-red-500 text-white text-[11px] font-bold tracking-wider rounded-lg hover:bg-red-600 transition-all active:scale-95 shadow-lg shadow-red-500/20">
               Pay Now
             </Link>
           </div>
@@ -311,7 +311,7 @@ export default function DashboardContent({
         <section className="mt-6 space-y-4">
           <div>
             <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
-            <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1.5 opacity-60">Strategic Dashboard</p>
+            <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mt-1.5">Strategic Dashboard</p>
           </div>
 
           {/* Quick Stats Chips */}
@@ -334,7 +334,7 @@ export default function DashboardContent({
           <div className="flex items-center justify-between gap-2 pt-1">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse"></div>
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest opacity-80">
+              <p className="text-[11px] font-bold text-on-surface-variant tracking-wider">
                 Viewing: <span className="text-on-surface">{formatSelectedDate()}</span>
               </p>
             </div>
@@ -638,18 +638,18 @@ export default function DashboardContent({
                 </div>
               </div>
               <div className="relative z-10">
-                <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-2 opacity-60">Total Revenue</p>
+                <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mb-2">Total Revenue</p>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-2xl sm:text-3xl lg:text-2xl font-headline font-black text-white tracking-tighter leading-none truncate">
                     {stats.currency}{stats.totalRevenue.toLocaleString()}
                   </h3>
                   <div className="px-2 py-1 bg-[#F59E0B]/10 rounded-full border border-[#F59E0B]/20 flex-shrink-0">
-                    <span className="text-[10px] font-black text-[#F59E0B]">+{margin}%</span>
+                    <span className="text-[11px] font-bold text-[#F59E0B]">+{margin}%</span>
                   </div>
                 </div>
                 <div className="mt-4 flex items-center gap-1.5">
-                  <span className="w-1 h-1 rounded-full bg-[#F59E0B]"></span>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-on-surface-variant opacity-40">Performance: {filterMode}</p>
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]"></span>
+                  <p className="text-[11px] font-bold text-on-surface-variant tracking-wider opacity-60">Performance: {filterMode.charAt(0).toUpperCase() + filterMode.slice(1)}</p>
                 </div>
               </div>
             </div>
@@ -672,14 +672,14 @@ export default function DashboardContent({
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 mb-1 opacity-60">
-                <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Pending</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <p className="text-[11px] font-bold text-on-surface-variant tracking-wider">Pending</p>
                 <div className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]"></div>
               </div>
               <h3 className="text-lg sm:text-xl font-headline font-black text-[#F59E0B] tracking-tight truncate">
                 {stats.currency}{stats.pendingRevenue.toLocaleString()}
               </h3>
-              <p className="text-[7px] font-black uppercase tracking-widest text-orange-500 mt-2 opacity-80">Pipeline</p>
+              <p className="text-[11px] font-bold text-orange-500 tracking-wider mt-2">Pipeline</p>
             </div>
           </div>
 
@@ -700,11 +700,11 @@ export default function DashboardContent({
                   </p>
                 </div>
               </div>
-              <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Expenses</p>
+              <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mb-1">Expenses</p>
               <h3 className="text-lg sm:text-xl font-headline font-black text-white tracking-tight truncate">
                 {stats.currency}{stats.totalExpense.toLocaleString()}
               </h3>
-              <p className="text-[7px] font-black uppercase tracking-widest text-on-surface-variant mt-2 opacity-40">Designer Payouts</p>
+              <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mt-2 opacity-60">Designer Payouts</p>
             </div>
           </div>
 
@@ -726,19 +726,19 @@ export default function DashboardContent({
                 </div>
               </div>
               <div className="relative z-10">
-                <p className="text-[8px] font-black text-on-surface-variant uppercase tracking-[0.2em] mb-1 opacity-60">Payouts Due</p>
+                <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mb-1">Payouts Due</p>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className={`text-lg sm:text-xl font-headline font-black tracking-tight ${stats.payoutsDue > 0 ? 'text-red-500' : 'text-white'} truncate`}>
                     {stats.currency}{stats.payoutsDue.toLocaleString()}
                   </h3>
                   <div className="flex-shrink-0">
                     <div className={`inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-xl border ${stats.payoutsDue > 0 ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-white/5 border-white/10 text-on-surface-variant'}`}>
-                      <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest">{stats.payoutsDueCount} {stats.payoutsDueCount === 1 ? 'Pending' : 'Pending'}</span>
+                      <span className="text-[11px] font-bold tracking-wider">{stats.payoutsDueCount} {stats.payoutsDueCount === 1 ? 'Pending' : 'Pending'}</span>
                       {stats.payoutsDue > 0 && <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
                     </div>
                   </div>
                 </div>
-                <p className="text-[7px] font-black uppercase tracking-widest text-on-surface-variant mt-2 opacity-40">Outstanding Payouts</p>
+                <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mt-2 opacity-60">Outstanding Payouts</p>
               </div>
             </div>
           </div>
@@ -762,7 +762,7 @@ export default function DashboardContent({
                 </div>
                 <button 
                   onClick={() => setIsPendingJobsExpanded(!isPendingJobsExpanded)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[10px] font-black text-[#F59E0B] uppercase tracking-widest hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[11px] font-bold text-[#F59E0B] tracking-wider hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
                 >
                   <span>{isPendingJobsExpanded ? 'Hide Details' : 'Show Details'}</span>
                   <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isPendingJobsExpanded ? 'rotate-180' : ''}`}>
@@ -843,7 +843,7 @@ export default function DashboardContent({
                 </div>
                 <button 
                   onClick={() => setIsDeadlinesExpanded(!isDeadlinesExpanded)}
-                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[10px] font-black text-[#F59E0B] uppercase tracking-widest hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
+                  className="flex items-center gap-1.5 px-4 py-2 border border-[#F59E0B]/30 rounded-lg text-[11px] font-bold text-[#F59E0B] tracking-wider hover:bg-[#F59E0B]/10 transition-colors active:scale-95 duration-150 focus:outline-none"
                 >
                   <span>{isDeadlinesExpanded ? 'Hide Details' : 'Show Details'}</span>
                   <span className={`material-symbols-outlined text-sm transition-transform duration-300 ${isDeadlinesExpanded ? 'rotate-180' : ''}`}>
@@ -856,7 +856,7 @@ export default function DashboardContent({
               {isDeadlinesExpanded && (
                 <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {upcomingDeadlines.length === 0 ? (
-                    <div className="text-center py-4 text-[10px] font-black text-white/20 uppercase tracking-widest w-full">
+                    <div className="text-center py-4 text-[11px] font-bold text-white/20 tracking-wider w-full">
                       No immediate deadlines
                     </div>
                   ) : (
@@ -896,7 +896,7 @@ export default function DashboardContent({
               {isFounder && (
                 <button
                   onClick={() => setShowLinkInput(!showLinkInput)}
-                  className="text-[8px] font-black text-[#F59E0B] uppercase tracking-[0.2em] px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#F59E0B]/30 transition-all focus:outline-none"
+                  className="text-[11px] font-bold text-[#F59E0B] tracking-wider px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#F59E0B]/30 transition-all focus:outline-none"
                 >
                   {showLinkInput ? 'Cancel' : 'Add Link'}
                 </button>
@@ -917,7 +917,7 @@ export default function DashboardContent({
                     <button
                       onClick={handleAddByLink}
                       disabled={isFetchingLink}
-                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#F59E0B] text-zinc-950 text-[8px] font-black uppercase tracking-widest rounded-lg disabled:opacity-50 transition-all active:scale-95"
+                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#F59E0B] text-zinc-950 text-[11px] font-bold tracking-wider rounded-lg disabled:opacity-50 transition-all active:scale-95"
                     >
                       {isFetchingLink ? 'Fetching...' : 'Fetch'}
                     </button>
@@ -928,13 +928,13 @@ export default function DashboardContent({
               <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 min-h-[160px] w-full flex-1">
                 {isLoadingProducts ? (
                   <div className="flex items-center justify-center w-full py-10 opacity-30 animate-pulse">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em]">Synchronizing...</span>
+                    <span className="text-[11px] font-bold tracking-wider">Synchronizing...</span>
                   </div>
                 ) : products.length === 0 ? (
                   <div className="flex flex-col items-center justify-center w-full py-10 rounded-xl text-center">
                     <span className="material-symbols-outlined text-[#F59E0B] text-2xl mb-2 opacity-50">shopping_basket</span>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/40">No Products Curated</span>
-                    {isFounder && <p className="text-[7px] font-bold text-white/20 mt-1 uppercase">Add products to begin</p>}
+                    <span className="text-[11px] font-bold text-white/40 tracking-wider">No Products Curated</span>
+                    {isFounder && <p className="text-[11px] font-bold text-white/20 mt-1">Add products to begin</p>}
                   </div>
                 ) : (
                   products.map((product) => {
