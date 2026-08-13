@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import AuthGuard from '@/components/AuthGuard';
 import { getDesignerDb, sendPayoutReminder } from '@/app/actions';
+import { useSidebar } from '@/components/SidebarContext';
 
 export default function DesignerDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -18,6 +19,7 @@ export default function DesignerDashboard() {
   const [exchangeRate, setExchangeRate] = useState<number>(83.5);
   const [displayCurrency, setDisplayCurrency] = useState<'₹' | '$'>('₹');
   const { user, loading: authLoading, activeOrganizationId, availableOrganizations, organizationName } = useAuth();
+  const { isCollapsed } = useSidebar();
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -256,7 +258,7 @@ export default function DesignerDashboard() {
         )}
 
         {/* Header Navigation Shell */}
-        <header className="fixed top-0 left-0 md:left-64 w-full md:w-[calc(100%-16rem)] z-50 bg-[#37393a] flex justify-between items-center px-6 h-16 max-w-full">
+        <header className={`fixed top-0 left-0 ${isCollapsed ? 'md:left-20 md:w-[calc(100%-5rem)]' : 'md:left-64 md:w-[calc(100%-16rem)]'} w-full z-50 bg-[#37393a] flex justify-between items-center px-6 h-16 max-w-full transition-all duration-300`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#333535] flex items-center justify-center border border-[#4b4732]/30 overflow-hidden">
               <img alt={user?.user_metadata?.fullName || 'Designer'} className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSxHNAi3lO0iv34ml7AI6y25zJ58tWsIjKITC7XFdQ1lEC-k9fFCQxesbThH3MZXowAORIriJ1tLSOt872IlxliXlIDLuxQ8Mo5f4_-CfRuyCuit4QhZ1xp0bOOnvuaz_olk1XQPGynEc9hEiszFE2e-hQXg7KmhC3XT1BAPO_3NSuOpn6Amb7KaV6h3DpBHU6x6aLL8p-Gaw_QhwFnZoUsyQutv0HzKOasMZq7nNItQcIbRtvx-DlyuZECjH-l1W7VVWEOW2Iv7Q"/>

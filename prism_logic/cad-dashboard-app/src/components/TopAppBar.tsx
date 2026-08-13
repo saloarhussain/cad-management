@@ -5,9 +5,11 @@ import { useAuth } from '@/components/AuthProvider';
 import { getDesignerStatus } from '@/app/actions';
 import { usePathname, useRouter } from 'next/navigation';
 import { NotificationCenter } from '@/components/NotificationCenter';
+import { useSidebar } from '@/components/SidebarContext';
 
 export const TopAppBar: React.FC = () => {
   const { isAuthenticated, subscription, user, organizationName, availableOrganizations, activeOrganizationId, switchOrganization, isDesigner, loading: authLoading } = useAuth();
+  const { isCollapsed } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
   const [hasMounted, setHasMounted] = useState(false);
@@ -42,7 +44,7 @@ export const TopAppBar: React.FC = () => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 w-full md:left-64 md:w-[calc(100%-16rem)] z-[200] flex justify-between items-center px-6 h-16 ${isDesigner ? 'bg-[#0c0a04]/95 border-b border-white/5' : 'bg-[#0c0a04]/80 border-b border-white/5'} backdrop-blur-xl shadow-[0_4px_20px_rgba(252,224,3,0.05)] transition-all duration-300 opacity-100`}
+      className={`fixed top-0 left-0 w-full ${isCollapsed ? 'md:left-20 md:w-[calc(100%-5rem)]' : 'md:left-64 md:w-[calc(100%-16rem)]'} z-[200] flex justify-between items-center px-6 h-16 ${isDesigner ? 'bg-[#0c0a04]/95 border-b border-white/5' : 'bg-[#0c0a04]/80 border-b border-white/5'} backdrop-blur-xl shadow-[0_4px_20px_rgba(252,224,3,0.05)] transition-all duration-300 opacity-100`}
     >
 
       <div className="flex items-center gap-1.5 sm:gap-3">

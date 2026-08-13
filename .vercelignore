@@ -1,8 +1,30 @@
+# Sibling mockup folders (not part of next.js project)
+add_new_client_updated_nav/
+add_new_designer_form/
+client_management_refined_organization/
+compose_message/
+inbox_mobile/
+master_editor_cad_viewport/
+master_editor_viewport/
+project_studio_refined_details_1/
+project_studio_refined_details_2/
+real_estate_agent_portal/
+team_management_mobile/
+dashboard_mobile_prism_logic/
+
+# Electron tracker project and build artifacts
+prism_logic/cad-dashboard-app/desktop-tracker/
+prism_logic/cad-dashboard-app/out/
+
+# Standard overrides
 node_modules/
 .next/
+.git/
+.vercel/
 **/node_modules/
 **/.next/
-.git/
+**/out/
+**/.vercel/
 *.png
 *.jpg
 *.jpeg

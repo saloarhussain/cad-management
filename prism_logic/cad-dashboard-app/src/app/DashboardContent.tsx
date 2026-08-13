@@ -309,13 +309,31 @@ export default function DashboardContent({
 
         {/* Welcome Section */}
         <section className="mt-6 space-y-4">
-          <div>
-            <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
-            <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mt-1.5">Strategic Dashboard</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="font-headline text-[20px] sm:text-[24px] font-extrabold tracking-tight text-on-surface leading-none">Data Overview</h1>
+              <p className="text-[11px] font-bold text-on-surface-variant tracking-wider mt-1.5">Strategic Dashboard</p>
+            </div>
+
+            {/* Quick Stats Chips (Desktop View only, shown inline with title) */}
+            <div className="hidden md:flex items-center gap-3">
+              <div className="bg-surface-container rounded-full px-4 py-2 flex items-center justify-center gap-1.5 border border-white/5 min-w-0">
+                <span className="material-symbols-outlined text-[#F59E0B] text-[16px] sm:text-[18px] shrink-0">person</span>
+                <span className="text-[11px] font-bold text-on-surface tracking-wide truncate">
+                  {stats.totalClients} Clients <span className="text-[#F59E0B]">({activeClientsCount} Active)</span>
+                </span>
+              </div>
+              <div className="bg-surface-container rounded-full px-4 py-2 flex items-center justify-center gap-1.5 border border-white/5 min-w-0">
+                <span className="material-symbols-outlined text-[#2DD4BF] text-[16px] sm:text-[18px] shrink-0">groups</span>
+                <span className="text-[11px] font-bold text-on-surface tracking-wide truncate">
+                  {stats.totalDesigners} Team <span className="text-[#2DD4BF]">({activeDesignersCount} Active)</span>
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Quick Stats Chips */}
-          <div className="grid grid-cols-2 gap-2 w-full">
+          {/* Quick Stats Chips (Mobile View only, shown stacked below title) */}
+          <div className="grid grid-cols-2 gap-2 w-full md:hidden">
             <div className="bg-surface-container rounded-full px-3 py-2 flex items-center justify-center gap-1.5 border border-white/5 w-full min-w-0">
               <span className="material-symbols-outlined text-[#F59E0B] text-[16px] sm:text-[18px] shrink-0">person</span>
               <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-on-surface tracking-wide truncate">

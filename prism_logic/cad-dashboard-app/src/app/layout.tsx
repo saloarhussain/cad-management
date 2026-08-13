@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import GlobalLoadingShield from "@/components/GlobalLoadingShield";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MainLayout from "@/components/MainLayout";
+import { SidebarProvider } from "@/components/SidebarContext";
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
 
@@ -103,12 +104,14 @@ export default function RootLayout({
       >
         <GoogleAnalytics ga_id={gaId} />
         <AuthProvider>
-          <GlobalLoadingShield>
-            <RoleBasedNavigation />
-            <MainLayout>
-              {children}
-            </MainLayout>
-          </GlobalLoadingShield>
+          <SidebarProvider>
+            <GlobalLoadingShield>
+              <RoleBasedNavigation />
+              <MainLayout>
+                {children}
+              </MainLayout>
+            </GlobalLoadingShield>
+          </SidebarProvider>
         </AuthProvider>
       </body>
     </html>

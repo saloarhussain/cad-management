@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getDb } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
+import { useSidebar } from '@/components/SidebarContext';
 import { PLATFORM_CONFIG, GLOBAL_CURRENCIES, getCurrencySymbol } from '@/lib/config';
 import { ProjectChat } from '@/components/ProjectChat';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
@@ -100,6 +101,7 @@ export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, user, isDesigner } = useAuth();
+  const { isCollapsed } = useSidebar();
   const [project, setProject] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -536,7 +538,7 @@ export default function ProjectDetailsPage() {
       )}
 
       {/* TopAppBar */}
-      <header className="bg-[#1a1a17]/95 backdrop-blur-xl fixed top-0 left-0 md:left-64 right-0 z-[200] border-b border-white/5 shadow-2xl transition-all duration-300">
+      <header className={`bg-[#1a1a17]/95 backdrop-blur-xl fixed top-0 left-0 ${isCollapsed ? 'md:left-20' : 'md:left-64'} right-0 z-[200] border-b border-white/5 shadow-2xl transition-all duration-300`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-[#fce003] active:scale-95 transition-all">

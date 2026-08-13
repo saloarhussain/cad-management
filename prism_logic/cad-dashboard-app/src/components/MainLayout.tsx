@@ -2,10 +2,12 @@
 
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
+import { useSidebar } from '@/components/SidebarContext';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated } = useAuth();
+  const { isCollapsed } = useSidebar();
   
   // Pages that should NEVER have sidebar padding (Auth, Setup, etc.)
   const isAuthPage = pathname?.startsWith('/auth');
@@ -15,7 +17,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const shouldHavePadding = isAuthenticated && !isAuthPage;
 
   return (
-    <main className={`${shouldHavePadding ? 'md:pl-64' : 'md:pl-0'} min-h-screen transition-all duration-500 ease-in-out bg-background`}>
+    <main className={`${shouldHavePadding ? (isCollapsed ? 'md:pl-20' : 'md:pl-64') : 'md:pl-0'} min-h-screen transition-all duration-300 ease-in-out bg-background`}>
       {children}
     </main>
   );
