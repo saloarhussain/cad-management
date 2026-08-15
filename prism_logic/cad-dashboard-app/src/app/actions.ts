@@ -468,13 +468,54 @@ export async function deleteDesigner(id: string) {
   }
 }
 
+async function getNextOrderId(userId: string, supabase: any, orderDate?: any): Promise<string> {
+  const { data: existingProjects } = await supabase
+    .from('projects')
+    .select('orderId, createdAt')
+    .eq('user_id', userId);
+
+  const projectDate = orderDate ? new Date(orderDate) : new Date();
+  const year = projectDate.getFullYear();
+  const month = projectDate.getMonth();
+  let fyStart = year;
+  let fyEnd = year + 1;
+  if (month < 3) {
+    fyStart = year - 1;
+    fyEnd = year;
+  }
+  const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
+
+  let maxSerial = 0;
+  if (existingProjects) {
+    existingProjects.forEach((p: any) => {
+      if (p.orderId) {
+        const match = p.orderId.match(new RegExp(`CAD\\/${fyString}\\/(\\d+)`, 'i'));
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxSerial) {
+            maxSerial = num;
+          }
+        }
+      }
+    });
+  }
+  const serialNo = (maxSerial + 1).toString().padStart(4, '0');
+  return `CAD/${fyString}/${serialNo}`;
+}
+
 export async function saveProject(formData: FormData) {
   try {
     const { user, supabase } = await getAuthenticatedUser();
+    
+    let orderId = formData.get('orderId') as string;
+    if (!orderId) {
+      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
+    }
+
     const newProject = {
       id: Date.now().toString(),
       title: formData.get('title'),
-      orderId: formData.get('orderId') || `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      orderId,
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -720,9 +761,14 @@ export async function updateProjectAction(formData: FormData) {
     const { user, supabase } = await getAuthenticatedUser();
     const projectId = formData.get('id') as string;
 
+    let orderId = formData.get('orderId') as string;
+    if (!orderId) {
+      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
+    }
+
     const updatedData: any = {
       title: formData.get('title'),
-      orderId: formData.get('orderId') || `ORD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      orderId,
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),

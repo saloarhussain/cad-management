@@ -44,8 +44,87 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
     if (settings.error) console.error('Settings fetch error:', settings.error);
     if (products.error) console.error('Products fetch error:', products.error);
 
+    const projectsData = projects.data || [];
+    
+    // Auto-healing logic: ensure all projects have sequential CAD/YY-YY/XXXX series orderIds
+    const sortedProjects = [...projectsData].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (parseFloat(a.id) || 0);
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (parseFloat(b.id) || 0);
+      return dateA - dateB;
+    });
+
+    const fyCounters: Record<string, number> = {};
+    const updates: Promise<any>[] = [];
+    let needsUpdate = false;
+
+    // Pass 1: scan and initialize financial year counters based on existing valid series
+    sortedProjects.forEach(p => {
+      if (p.orderId && !p.orderId.startsWith('ORD-') && p.orderId !== 'Pending') {
+        const projectDate = p.createdAt ? new Date(p.createdAt) : (p.id ? new Date(parseFloat(p.id)) : new Date());
+        const year = projectDate.getFullYear();
+        const month = projectDate.getMonth();
+        let fyStart = year;
+        let fyEnd = year + 1;
+        if (month < 3) {
+          fyStart = year - 1;
+          fyEnd = year;
+        }
+        const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
+        
+        const match = p.orderId.match(/CAD\/\d{2}-\d{2}\/(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > (fyCounters[fyString] || 0)) {
+            fyCounters[fyString] = num;
+          }
+        }
+      }
+    });
+
+    // Pass 2: assign sequential IDs to projects that have default or empty orderIds
+    sortedProjects.forEach(p => {
+      const projectDate = p.createdAt ? new Date(p.createdAt) : (p.id ? new Date(parseFloat(p.id)) : new Date());
+      const year = projectDate.getFullYear();
+      const month = projectDate.getMonth();
+      let fyStart = year;
+      let fyEnd = year + 1;
+      if (month < 3) {
+        fyStart = year - 1;
+        fyEnd = year;
+      }
+      const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
+
+      const isRandomOrEmpty = !p.orderId || p.orderId.startsWith('ORD-') || p.orderId === 'Pending';
+      
+      if (isRandomOrEmpty) {
+        fyCounters[fyString] = (fyCounters[fyString] || 0) + 1;
+        const serialNo = fyCounters[fyString].toString().padStart(4, '0');
+        const correctOrderId = `CAD/${fyString}/${serialNo}`;
+        
+        p.orderId = correctOrderId;
+        needsUpdate = true;
+        
+        updates.push(
+          (async () => {
+            const { error } = await supabase
+              .from('projects')
+              .update({ orderId: correctOrderId })
+              .eq('id', p.id)
+              .eq('user_id', userId);
+            if (error) {
+              console.error(`Error updating project ${p.id} orderId:`, error.message);
+            }
+          })()
+        );
+      }
+    });
+
+    if (needsUpdate && updates.length > 0) {
+      await Promise.all(updates);
+    }
+
     return {
-      projects: projects.data || [],
+      projects: projectsData,
       designers: designers.data || [],
       clients: clients.data || [],
       settings: settings.data?.[0] || {},
