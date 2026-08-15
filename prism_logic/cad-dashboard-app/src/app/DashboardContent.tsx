@@ -247,6 +247,7 @@ export default function DashboardContent({
 
       // Prepare data for Excel
       const dataToExport = filteredProjects.map(p => ({
+        InvoiceNo: p.orderId || `M${p.id ? p.id.toString().slice(0, 5).padStart(5, '0') : '10001'}`,
         Title: p.title,
         Client: p.client,
         Designer: p.designer || 'Unassigned',
@@ -255,7 +256,6 @@ export default function DashboardContent({
         Expense: `${getCurrencySymbol(p.expenseCurrency || 'INR')}${p.expense}`,
         PaymentStatus: p.paymentStatus || 'Unpaid',
         PayoutStatus: p.payoutStatus || 'Pending',
-        InvoiceNo: p.orderId || `M${p.id ? p.id.toString().slice(0, 5).padStart(5, '0') : '10001'}`,
         CreatedAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A',
         Deadline: p.deadlineDate || 'N/A'
       }));
@@ -266,6 +266,7 @@ export default function DashboardContent({
 
       // Set column widths
       const wscols = [
+        { wch: 18 }, // InvoiceNo
         { wch: 30 }, // Title
         { wch: 20 }, // Client
         { wch: 20 }, // Designer
@@ -274,7 +275,6 @@ export default function DashboardContent({
         { wch: 12 }, // Expense
         { wch: 15 }, // PaymentStatus
         { wch: 15 }, // PayoutStatus
-        { wch: 18 }, // InvoiceNo
         { wch: 15 }, // CreatedAt
         { wch: 15 }  // Deadline
       ];
