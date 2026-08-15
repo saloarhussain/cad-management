@@ -46,7 +46,7 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
 
     const projectsData = projects.data || [];
     
-    // Auto-healing logic: ensure all projects have sequential CAD/YY-YY/XXXX series orderIds
+    // Auto-healing logic: ensure all projects have sequential MC/YY-YY/XXXX series orderIds
     const sortedProjects = [...projectsData].sort((a, b) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : (parseFloat(a.id) || 0);
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : (parseFloat(b.id) || 0);
@@ -59,7 +59,7 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
 
     // Pass 1: scan and initialize financial year counters based on existing valid series
     sortedProjects.forEach(p => {
-      if (p.orderId && !p.orderId.startsWith('ORD-') && p.orderId !== 'Pending') {
+      if (p.orderId && !p.orderId.startsWith('ORD-') && !p.orderId.startsWith('CAD/') && p.orderId !== 'Pending') {
         const projectDate = p.createdAt ? new Date(p.createdAt) : (p.id ? new Date(parseFloat(p.id)) : new Date());
         const year = projectDate.getFullYear();
         const month = projectDate.getMonth();
@@ -71,7 +71,7 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
         }
         const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
         
-        const match = p.orderId.match(/CAD\/\d{2}-\d{2}\/(\d+)/i);
+        const match = p.orderId.match(/MC\/\d{2}-\d{2}\/(\d+)/i);
         if (match) {
           const num = parseInt(match[1], 10);
           if (!isNaN(num) && num > (fyCounters[fyString] || 0)) {
@@ -81,7 +81,7 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
       }
     });
 
-    // Pass 2: assign sequential IDs to projects that have default or empty orderIds
+    // Pass 2: assign sequential IDs to projects that have default, old CAD/, or empty orderIds
     sortedProjects.forEach(p => {
       const projectDate = p.createdAt ? new Date(p.createdAt) : (p.id ? new Date(parseFloat(p.id)) : new Date());
       const year = projectDate.getFullYear();
@@ -94,12 +94,12 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
       }
       const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
 
-      const isRandomOrEmpty = !p.orderId || p.orderId.startsWith('ORD-') || p.orderId === 'Pending';
+      const isRandomOrEmpty = !p.orderId || p.orderId.startsWith('ORD-') || p.orderId.startsWith('CAD/') || p.orderId === 'Pending';
       
       if (isRandomOrEmpty) {
         fyCounters[fyString] = (fyCounters[fyString] || 0) + 1;
         const serialNo = fyCounters[fyString].toString().padStart(4, '0');
-        const correctOrderId = `CAD/${fyString}/${serialNo}`;
+        const correctOrderId = `MC/${fyString}/${serialNo}`;
         
         p.orderId = correctOrderId;
         needsUpdate = true;

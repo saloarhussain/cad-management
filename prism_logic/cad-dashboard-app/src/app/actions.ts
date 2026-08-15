@@ -489,7 +489,7 @@ async function getNextOrderId(userId: string, supabase: any, orderDate?: any): P
   if (existingProjects) {
     existingProjects.forEach((p: any) => {
       if (p.orderId) {
-        const match = p.orderId.match(new RegExp(`CAD\\/${fyString}\\/(\\d+)`, 'i'));
+        const match = p.orderId.match(new RegExp(`MC\\/${fyString}\\/(\\d+)`, 'i'));
         if (match) {
           const num = parseInt(match[1], 10);
           if (!isNaN(num) && num > maxSerial) {
@@ -500,7 +500,7 @@ async function getNextOrderId(userId: string, supabase: any, orderDate?: any): P
     });
   }
   const serialNo = (maxSerial + 1).toString().padStart(4, '0');
-  return `CAD/${fyString}/${serialNo}`;
+  return `MC/${fyString}/${serialNo}`;
 }
 
 export async function saveProject(formData: FormData) {
