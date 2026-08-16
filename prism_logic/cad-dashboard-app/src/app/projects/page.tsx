@@ -98,7 +98,11 @@ export default function ProjectsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const { isAuthenticated, user, isDesigner } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
-  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | 'week' | 'month' | 'quarter' | 'year'>('all');
+  const [filterMode, setFilterMode] = useState<'all' | 'day' | 'month' | 'year' | 'custom'>('all');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -145,7 +149,7 @@ export default function ProjectsPage() {
       const matchesTab = activeTab === 'completed' ? p.status === 'Completed' : p.status !== 'Completed';
       if (!matchesTab) return false;
 
-      if (periodFilter === 'all') return true;
+      if (filterMode === 'all') return true;
 
       const dateStr = p.createdAt || p.orderDate;
       if (!dateStr) return false;
@@ -153,42 +157,25 @@ export default function ProjectsPage() {
       const pDate = new Date(dateStr);
       if (isNaN(pDate.getTime())) return false;
 
-      const now = new Date();
-      
-      if (periodFilter === 'today') {
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-        return pDate >= startOfToday;
+      if (filterMode === 'day') {
+        return pDate.toDateString() === selectedDate.toDateString();
       }
-
-      if (periodFilter === 'week') {
-        const startOfWeek = new Date();
-        const currentDay = startOfWeek.getDay();
-        const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
-        startOfWeek.setDate(startOfWeek.getDate() - distanceToMonday);
-        startOfWeek.setHours(0, 0, 0, 0);
-        return pDate >= startOfWeek;
+      if (filterMode === 'month') {
+        return pDate.getMonth() === selectedDate.getMonth() && pDate.getFullYear() === selectedDate.getFullYear();
       }
-
-      if (periodFilter === 'month') {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        return pDate >= startOfMonth;
+      if (filterMode === 'year') {
+        return pDate.getFullYear() === selectedDate.getFullYear();
       }
-
-      if (periodFilter === 'quarter') {
-        const currentQuarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
-        const startOfQuarter = new Date(now.getFullYear(), currentQuarterStartMonth, 1);
-        return pDate >= startOfQuarter;
+      if (filterMode === 'custom') {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return pDate >= start && pDate <= end;
       }
-
-      if (periodFilter === 'year') {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        return pDate >= startOfYear;
-      }
-
       return true;
     });
-  }, [realProjects, activeTab, periodFilter]);
+  }, [realProjects, activeTab, filterMode, selectedDate, startDate, endDate]);
 
   return (
     <AuthGuard>
@@ -200,7 +187,8 @@ export default function ProjectsPage() {
           </div>
         </div>
       ) : (
-        <div className="pt-20 pb-32 px-6 max-w-7xl mx-auto space-y-8">
+        <>
+          <div className="pt-20 pb-32 px-6 max-w-7xl mx-auto space-y-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="text-left">
@@ -226,26 +214,16 @@ export default function ProjectsPage() {
               </button>
             </div>
 
-            <div className="relative flex items-center bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors active:scale-95 text-[10px] font-bold tracking-wider px-3 py-1.5 cursor-pointer">
+            <button
+              onClick={() => setIsCalendarOpen(true)}
+              className="flex items-center bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors active:scale-95 text-[10px] font-bold tracking-wider px-3 py-1.5 cursor-pointer"
+            >
               <span className="material-symbols-outlined text-[16px] pointer-events-none mr-1.5">calendar_month</span>
               <span className="uppercase pointer-events-none font-bold">
-                {periodFilter === 'all' ? 'ALL TIME' : periodFilter === 'today' ? 'DAILY' : periodFilter === 'week' ? 'WEEKLY' : periodFilter === 'month' ? 'MONTHLY' : periodFilter === 'quarter' ? 'QUARTERLY' : 'YEARLY'}
+                {filterMode === 'all' ? 'ALL TIME' : filterMode === 'day' ? 'DAILY' : filterMode === 'month' ? 'MONTHLY' : filterMode === 'year' ? 'YEARLY' : 'CUSTOM'}
               </span>
               <span className="material-symbols-outlined text-[14px] pointer-events-none ml-1.5">expand_more</span>
-              
-              <select
-                value={periodFilter}
-                onChange={(e) => setPeriodFilter(e.target.value as any)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              >
-                <option value="all" className="bg-[#161308] text-white">All Time</option>
-                <option value="today" className="bg-[#161308] text-white">Today</option>
-                <option value="week" className="bg-[#161308] text-white">This Week</option>
-                <option value="month" className="bg-[#161308] text-white">This Month</option>
-                <option value="quarter" className="bg-[#161308] text-white">This Quarter</option>
-                <option value="year" className="bg-[#161308] text-white">This Year</option>
-              </select>
-            </div>
+            </button>
           </div>
 
           {!isDesigner && (
@@ -475,7 +453,164 @@ export default function ProjectsPage() {
           )}
         </div>
         </div>
+
+      {/* Date Filter Modal */}
+      {isCalendarOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div
+            className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
+            onClick={() => setIsCalendarOpen(false)}
+          />
+          <div className="relative w-full max-w-sm bg-surface-container border border-outline-variant/30 rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-headline font-black text-lg text-on-surface">Select Range</h3>
+              <button onClick={() => setIsCalendarOpen(false)} className="text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Mode Selector */}
+              <div className="flex p-1 bg-zinc-900 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
+                {(['all', 'day', 'month', 'year', 'custom'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setFilterMode(mode)}
+                    className={`flex-1 min-w-[60px] py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${filterMode === mode ? 'bg-[#F59E0B] text-zinc-950 shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+
+              {/* Date Input Area */}
+              <div className="space-y-4">
+                {filterMode === 'all' && (
+                  <div className="text-center py-4">
+                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">All Time Projects Selected</p>
+                  </div>
+                )}
+
+                {filterMode === 'day' && (
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Pick a Day</label>
+                    <input
+                      type="date"
+                      value={(() => {
+                        if (!selectedDate || isNaN(selectedDate.getTime())) return '';
+                        return selectedDate.toISOString().split('T')[0];
+                      })()}
+                      onChange={(e) => {
+                        const newDate = new Date(e.target.value);
+                        if (!isNaN(newDate.getTime())) {
+                          setSelectedDate(newDate);
+                        }
+                      }}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                    />
+                  </div>
+                )}
+
+                {filterMode === 'month' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Month</label>
+                      <select
+                        value={selectedDate.getMonth()}
+                        onChange={(e) => {
+                          const d = new Date(selectedDate);
+                          d.setMonth(parseInt(e.target.value));
+                          setSelectedDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                      >
+                        {Array.from({ length: 12 }).map((_, i) => (
+                          <option key={i} value={i} className="bg-[#161308] text-white">{new Date(2024, i).toLocaleString('default', { month: 'long' })}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Year</label>
+                      <select
+                        value={selectedDate.getFullYear()}
+                        onChange={(e) => {
+                          const d = new Date(selectedDate);
+                          d.setFullYear(parseInt(e.target.value));
+                          setSelectedDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                      >
+                        {[2024, 2025, 2026].map(y => <option key={y} value={y} className="bg-[#161308] text-white">{y}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {filterMode === 'year' && (
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Select Year</label>
+                    <select
+                      value={selectedDate.getFullYear()}
+                      onChange={(e) => {
+                        const d = new Date(selectedDate);
+                        d.setFullYear(parseInt(e.target.value));
+                        setSelectedDate(d);
+                      }}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                    >
+                      {[2024, 2025, 2026].map(y => <option key={y} value={y} className="bg-[#161308] text-white">{y}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {filterMode === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">From</label>
+                      <input
+                        type="date"
+                        value={(() => {
+                          if (!startDate || isNaN(startDate.getTime())) return '';
+                          return startDate.toISOString().split('T')[0];
+                        })()}
+                        onChange={(e) => {
+                          const d = new Date(e.target.value);
+                          if (!isNaN(d.getTime())) setStartDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">To</label>
+                      <input
+                        type="date"
+                        value={(() => {
+                          if (!endDate || isNaN(endDate.getTime())) return '';
+                          return endDate.toISOString().split('T')[0];
+                        })()}
+                        onChange={(e) => {
+                          const d = new Date(e.target.value);
+                          if (!isNaN(d.getTime())) setEndDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setIsCalendarOpen(false)}
+                className="w-full py-4 rounded-xl electric-gradient text-zinc-950 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[#F59E0B]/20 hover:scale-[1.02] active:scale-95 transition-all mt-4 animate-gradient bg-[length:200%_100%]"
+              >
+                Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+      </>
+    )}
     </AuthGuard>
   );
 }
