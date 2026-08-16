@@ -98,6 +98,7 @@ export default function ProjectsPage() {
   const [clients, setClients] = useState<any[]>([]);
   const { isAuthenticated, user, isDesigner } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'today' | 'week' | 'month' | 'quarter' | 'year'>('all');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -139,6 +140,56 @@ export default function ProjectsPage() {
     if (isAuthenticated) fetchData();
   }, [isAuthenticated, isDesigner]);
 
+  const filteredProjects = useMemo(() => {
+    return realProjects.filter((p: any) => {
+      const matchesTab = activeTab === 'completed' ? p.status === 'Completed' : p.status !== 'Completed';
+      if (!matchesTab) return false;
+
+      if (periodFilter === 'all') return true;
+
+      const dateStr = p.createdAt || p.orderDate;
+      if (!dateStr) return false;
+
+      const pDate = new Date(dateStr);
+      if (isNaN(pDate.getTime())) return false;
+
+      const now = new Date();
+      
+      if (periodFilter === 'today') {
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+        return pDate >= startOfToday;
+      }
+
+      if (periodFilter === 'week') {
+        const startOfWeek = new Date();
+        const currentDay = startOfWeek.getDay();
+        const distanceToMonday = currentDay === 0 ? 6 : currentDay - 1;
+        startOfWeek.setDate(startOfWeek.getDate() - distanceToMonday);
+        startOfWeek.setHours(0, 0, 0, 0);
+        return pDate >= startOfWeek;
+      }
+
+      if (periodFilter === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        return pDate >= startOfMonth;
+      }
+
+      if (periodFilter === 'quarter') {
+        const currentQuarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
+        const startOfQuarter = new Date(now.getFullYear(), currentQuarterStartMonth, 1);
+        return pDate >= startOfQuarter;
+      }
+
+      if (periodFilter === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        return pDate >= startOfYear;
+      }
+
+      return true;
+    });
+  }, [realProjects, activeTab, periodFilter]);
+
   return (
     <AuthGuard>
       {isLoading ? (
@@ -159,19 +210,42 @@ export default function ProjectsPage() {
             <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">High-fidelity CAD design workspace and queue</p>
           </div>
 
-          <div className="flex items-center bg-white/5 backdrop-blur-xl rounded-2xl p-1 border border-white/10 shadow-2xl">
-            <button
-              onClick={() => setActiveTab('active')}
-              className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'active' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
-            >
-              Active Queue
-            </button>
-            <button
-              onClick={() => setActiveTab('completed')}
-              className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'completed' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
-            >
-              Completed
-            </button>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center bg-white/5 backdrop-blur-xl rounded-2xl p-1 border border-white/10 shadow-2xl">
+              <button
+                onClick={() => setActiveTab('active')}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'active' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
+              >
+                Active Queue
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'completed' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
+              >
+                Completed
+              </button>
+            </div>
+
+            <div className="relative">
+              <select
+                value={periodFilter}
+                onChange={(e) => setPeriodFilter(e.target.value as any)}
+                className="bg-white/5 backdrop-blur-xl border border-white/10 text-white/80 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase tracking-widest cursor-pointer focus:outline-none focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400 transition-all hover:text-white appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundPosition: 'right 0.75rem center',
+                  backgroundSize: '1em',
+                  backgroundRepeat: 'no-repeat'
+                }}
+              >
+                <option value="all" className="bg-[#161308] text-white">All Time</option>
+                <option value="today" className="bg-[#161308] text-white">Today</option>
+                <option value="week" className="bg-[#161308] text-white">This Week</option>
+                <option value="month" className="bg-[#161308] text-white">This Month</option>
+                <option value="quarter" className="bg-[#161308] text-white">This Quarter</option>
+                <option value="year" className="bg-[#161308] text-white">This Year</option>
+              </select>
+            </div>
           </div>
 
           {!isDesigner && (
@@ -186,7 +260,7 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Dynamic Project Cards */}
-          {realProjects.filter(p => activeTab === 'completed' ? p.status === 'Completed' : p.status !== 'Completed').length === 0 ? (
+          {filteredProjects.length === 0 ? (
             <div className="lg:col-span-12 flex flex-col items-center justify-center py-32 bg-white/[0.02] backdrop-blur-3xl rounded-[2.5rem] border border-white/5 mx-auto w-full max-w-2xl shadow-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-b from-yellow-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 group-hover:border-yellow-400/30 transition-all duration-500 shadow-xl relative z-10">
@@ -209,9 +283,7 @@ export default function ProjectsPage() {
               )}
             </div>
           ) : (
-            realProjects
-              .filter(p => activeTab === 'completed' ? p.status === 'Completed' : p.status !== 'Completed')
-              .map((project, idx) => (
+            filteredProjects.map((project, idx) => (
                 <div key={project.id || idx} className="lg:col-span-4 flex flex-col">
                   <div className="bg-surface-container h-full rounded-lg border border-white/5 flex flex-col p-5 hover:border-primary/20 transition-all duration-300 relative overflow-hidden group">
                     <div className="space-y-4 flex-grow relative z-20">
