@@ -226,17 +226,17 @@ export default function ProjectsPage() {
               </button>
             </div>
 
-            <div className="relative">
+            <div className="relative flex items-center bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors active:scale-95 text-[10px] font-bold tracking-wider px-3 py-1.5 cursor-pointer">
+              <span className="material-symbols-outlined text-[16px] pointer-events-none mr-1.5">calendar_month</span>
+              <span className="uppercase pointer-events-none font-bold">
+                {periodFilter === 'all' ? 'ALL TIME' : periodFilter === 'today' ? 'DAILY' : periodFilter === 'week' ? 'WEEKLY' : periodFilter === 'month' ? 'MONTHLY' : periodFilter === 'quarter' ? 'QUARTERLY' : 'YEARLY'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] pointer-events-none ml-1.5">expand_more</span>
+              
               <select
                 value={periodFilter}
                 onChange={(e) => setPeriodFilter(e.target.value as any)}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 text-white/80 rounded-xl pl-4 pr-10 py-2.5 text-[10px] font-black uppercase tracking-widest cursor-pointer focus:outline-none focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400 transition-all hover:text-white appearance-none"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                  backgroundPosition: 'right 0.75rem center',
-                  backgroundSize: '1em',
-                  backgroundRepeat: 'no-repeat'
-                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               >
                 <option value="all" className="bg-[#161308] text-white">All Time</option>
                 <option value="today" className="bg-[#161308] text-white">Today</option>
