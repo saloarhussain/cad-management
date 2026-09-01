@@ -1,6 +1,7 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { saveClient } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
@@ -9,11 +10,16 @@ import { getTaxIdLabel } from '@/lib/tax';
 
 export default function NewClientPage() {
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [saving, setSaving] = React.useState(false);
   const [country, setCountry] = React.useState('');
 
+  useEffect(() => {
+    router.prefetch('/clients');
+  }, [router]);
+
   const handleSubmit = async (formData: FormData) => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || saving) return;
     setSaving(true);
     try {
       const result = await saveClient(formData);
@@ -21,14 +27,14 @@ export default function NewClientPage() {
         if (result.warning) {
           alert(result.warning);
         }
-        window.location.href = '/clients';
+        router.push('/clients');
       } else {
         alert(result.error || 'Failed to save client. Please try again.');
+        setSaving(false);
       }
     } catch (err: any) {
       console.error('Save error:', err);
       alert(err.message || 'An unexpected error occurred. Please ensure you are logged in.');
-    } finally {
       setSaving(false);
     }
   };

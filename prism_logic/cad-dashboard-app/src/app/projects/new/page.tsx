@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { saveProject, getDb } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
@@ -52,6 +53,7 @@ const DatePickerFacade = ({ label, isDeadline, name }: { label: string, isDeadli
 
 export default function NewProjectPage() {
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [designers, setDesigners] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
@@ -62,6 +64,7 @@ export default function NewProjectPage() {
   const [skillInput, setSkillInput] = useState("");
 
   useEffect(() => {
+    router.prefetch('/projects');
     const fetchData = async () => {
       const db = await getDb();
       setDesigners(db.designers || []);
@@ -69,25 +72,23 @@ export default function NewProjectPage() {
     };
     fetchData();
     setMounted(true);
-  }, []);
-
-
+  }, [router]);
 
   const handleSubmit = async (formData: FormData) => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || saving) return;
     setSaving(true);
     try {
       formData.append('tags', JSON.stringify(skills));
       const result = await saveProject(formData);
       if (result.success) {
-        window.location.href = '/projects';
+        router.push('/projects');
       } else {
         alert(result.error || 'Failed to save project. Please try again.');
+        setSaving(false);
       }
     } catch (err: any) {
       console.error('Save error:', err);
       alert(err.message || 'An unexpected error occurred. Please ensure you are logged in.');
-    } finally {
       setSaving(false);
     }
   };
@@ -390,9 +391,22 @@ export default function NewProjectPage() {
 
               {/* Actions */}
               <div className="pt-4">
-                <button disabled={saving} className="w-full electric-gradient text-[#383100] font-black py-4 rounded-xl shadow-[0_0_20px_rgba(252,224,3,0.3)] active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
-                  <span>{saving ? 'Saving...' : 'Save Project'}</span>
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{saving ? 'hourglass_top' : 'bolt'}</span>
+                <button 
+                  disabled={saving} 
+                  className="w-full electric-gradient text-[#383100] font-black py-4 rounded-xl shadow-[0_0_20px_rgba(252,224,3,0.3)] active:scale-[0.98] transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer hover:brightness-105 active:brightness-95 select-none" 
+                  type="submit"
+                >
+                  {saving ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-[#383100] border-t-transparent rounded-full animate-spin"></span>
+                      <span>Saving Project...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Save Project</span>
+                      <span className="material-symbols-outlined font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                    </>
+                  )}
                 </button>
                 <p className="text-center text-[10px] text-stone-500 mt-4 font-label uppercase tracking-tighter">Automatic sync enabled</p>
               </div>

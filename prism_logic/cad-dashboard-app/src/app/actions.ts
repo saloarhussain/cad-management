@@ -553,48 +553,53 @@ export async function saveProject(formData: FormData) {
 
     await insertRecord('projects', newProject, user.id, supabase);
 
-    // [NEW] Send Email to Designer if assigned
+    // [ASYNC BACKGROUND EMAIL] Send Email to Designer if assigned without blocking the API response
     if (newProject.designer) {
       try {
-        const { data: designer } = await supabase
-          .from('designers')
-          .select('email')
-          .ilike('fullName', String(newProject.designer))
-          .maybeSingle();
+        const headerList = await headers();
+        const host = headerList.get('host');
+        const protocol = headerList.get('x-forwarded-proto') || 'http';
+        const baseUrl = `${protocol}://${host}`;
 
-        if (designer?.email) {
-          const { data: invitingUserSettings } = await supabase
-            .from('settings')
-            .select('organizationName')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
-          
-          // [DYNAMIC ORIGIN] Resolve the base URL for links
-          const headerList = await headers();
-          const host = headerList.get('host');
-          const protocol = headerList.get('x-forwarded-proto') || 'http';
-          const baseUrl = `${protocol}://${host}`;
-          const magicLink = `${baseUrl}/projects/${newProject.id}`;
+        (async () => {
+          try {
+            const { data: designer } = await supabase
+              .from('designers')
+              .select('email')
+              .ilike('fullName', String(newProject.designer))
+              .maybeSingle();
 
-          await sendEmail({
-            to: designer.email,
-            subject: `New Project Assigned: ${newProject.title}`,
-            html: projectAssignmentTemplate(newProject, organizationName, magicLink),
-            credentials: {
-              user: PLATFORM_CONFIG.FOUNDER_EMAIL,
-              password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
-              senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
-              smtpHost: 'smtp.gmail.com',
-              smtpPort: 465,
-              smtpSecure: true
+            if (designer?.email) {
+              const { data: invitingUserSettings } = await supabase
+                .from('settings')
+                .select('organizationName')
+                .eq('user_id', user.id)
+                .maybeSingle();
+              
+              const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
+              const magicLink = `${baseUrl}/projects/${newProject.id}`;
+
+              await sendEmail({
+                to: designer.email,
+                subject: `New Project Assigned: ${newProject.title}`,
+                html: projectAssignmentTemplate(newProject, organizationName, magicLink),
+                credentials: {
+                  user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+                  password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+                  senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+                  smtpHost: 'smtp.gmail.com',
+                  smtpPort: 465,
+                  smtpSecure: true
+                }
+              });
+              console.log(`[Email] Assignment email sent to ${designer.email}`);
             }
-          });
-          console.log(`[Email] Assignment email sent to ${designer.email}`);
-        }
-      } catch (mailErr: any) {
-        console.error('[Email] Failed to send assignment email:', mailErr.message);
+          } catch (mailErr: any) {
+            console.error('[Email] Failed to send assignment email:', mailErr.message);
+          }
+        })().catch(err => console.error('[saveProject background email error]:', err));
+      } catch (err: any) {
+        console.error('[saveProject] Header/Email init error:', err.message);
       }
     }
 
@@ -833,40 +838,45 @@ export async function updateProjectAction(formData: FormData) {
           .eq('status', 'active');
       }
 
-      // [NEW] Send Email to Designer on assignment
+      // [ASYNC BACKGROUND EMAIL] Send Email to Designer on assignment without blocking API response
       if (newDesigner?.email) {
         try {
-          const { data: invitingUserSettings } = await supabase
-            .from('settings')
-            .select('organizationName')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
-          
-          // [DYNAMIC ORIGIN] Resolve the base URL for links
           const headerList = await headers();
           const host = headerList.get('host');
           const protocol = headerList.get('x-forwarded-proto') || 'http';
           const baseUrl = `${protocol}://${host}`;
-          const magicLink = `${baseUrl}/projects/${projectId}`;
 
-          await sendEmail({
-            to: newDesigner.email,
-            subject: `Project Assignment: ${updatedData.title || oldProject.title}`,
-            html: projectAssignmentTemplate({ ...oldProject, ...updatedData, id: projectId }, organizationName, magicLink),
-            credentials: {
-              user: PLATFORM_CONFIG.FOUNDER_EMAIL,
-              password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
-              senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
-              smtpHost: 'smtp.gmail.com',
-              smtpPort: 465,
-              smtpSecure: true
+          (async () => {
+            try {
+              const { data: invitingUserSettings } = await supabase
+                .from('settings')
+                .select('organizationName')
+                .eq('user_id', user.id)
+                .maybeSingle();
+              
+              const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
+              const magicLink = `${baseUrl}/projects/${projectId}`;
+
+              await sendEmail({
+                to: newDesigner.email,
+                subject: `Project Assignment: ${updatedData.title || oldProject.title}`,
+                html: projectAssignmentTemplate({ ...oldProject, ...updatedData, id: projectId }, organizationName, magicLink),
+                credentials: {
+                  user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+                  password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+                  senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+                  smtpHost: 'smtp.gmail.com',
+                  smtpPort: 465,
+                  smtpSecure: true
+                }
+              });
+              console.log(`[Email] Assignment email sent to ${newDesigner.email}`);
+            } catch (mailErr: any) {
+              console.error('[Email] Failed to send assignment email:', mailErr.message);
             }
-          });
-          console.log(`[Email] Assignment email sent to ${newDesigner.email}`);
-        } catch (mailErr: any) {
-          console.error('[Email] Failed to send assignment email:', mailErr.message);
+          })().catch(err => console.error('[updateProjectAction background email error]:', err));
+        } catch (err: any) {
+          console.error('[updateProjectAction] Header/Email init error:', err.message);
         }
       }
     }
