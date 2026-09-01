@@ -74,10 +74,12 @@ export default function NewProjectPage() {
     setMounted(true);
   }, [router]);
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!isAuthenticated || saving) return;
     setSaving(true);
     try {
+      const formData = new FormData(e.currentTarget);
       formData.append('tags', JSON.stringify(skills));
       const result = await saveProject(formData);
       if (result.success) {
@@ -113,7 +115,7 @@ export default function NewProjectPage() {
           </div>
 
           {/* Form Layout: Bento Style */}
-          <form action={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Main Content Area */}
             <div className="md:col-span-8 space-y-6">
               {/* Basic Info Card */}

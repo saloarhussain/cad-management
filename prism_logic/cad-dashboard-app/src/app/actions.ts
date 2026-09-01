@@ -469,11 +469,6 @@ export async function deleteDesigner(id: string) {
 }
 
 async function getNextOrderId(userId: string, supabase: any, orderDate?: any): Promise<string> {
-  const { data: existingProjects } = await supabase
-    .from('projects')
-    .select('orderId, createdAt')
-    .eq('user_id', userId);
-
   const projectDate = orderDate ? new Date(orderDate) : new Date();
   const year = projectDate.getFullYear();
   const month = projectDate.getMonth();
@@ -485,19 +480,20 @@ async function getNextOrderId(userId: string, supabase: any, orderDate?: any): P
   }
   const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
 
+  const { data: latestProjects } = await supabase
+    .from('projects')
+    .select('orderId')
+    .eq('user_id', userId)
+    .ilike('orderId', `MC/${fyString}/%`)
+    .order('orderId', { ascending: false })
+    .limit(1);
+
   let maxSerial = 0;
-  if (existingProjects) {
-    existingProjects.forEach((p: any) => {
-      if (p.orderId) {
-        const match = p.orderId.match(new RegExp(`MC\\/${fyString}\\/(\\d+)`, 'i'));
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (!isNaN(num) && num > maxSerial) {
-            maxSerial = num;
-          }
-        }
-      }
-    });
+  if (latestProjects && latestProjects.length > 0 && latestProjects[0].orderId) {
+    const match = latestProjects[0].orderId.match(new RegExp(`MC\\/${fyString}\\/(\\d+)`, 'i'));
+    if (match) {
+      maxSerial = parseInt(match[1], 10) || 0;
+    }
   }
   const serialNo = (maxSerial + 1).toString().padStart(4, '0');
   return `MC/${fyString}/${serialNo}`;
@@ -555,52 +551,44 @@ export async function saveProject(formData: FormData) {
 
     // [ASYNC BACKGROUND EMAIL] Send Email to Designer if assigned without blocking the API response
     if (newProject.designer) {
-      try {
-        const headerList = await headers();
-        const host = headerList.get('host');
-        const protocol = headerList.get('x-forwarded-proto') || 'http';
-        const baseUrl = `${protocol}://${host}`;
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.cadonce.com';
+      (async () => {
+        try {
+          const { data: designer } = await supabase
+            .from('designers')
+            .select('email')
+            .ilike('fullName', String(newProject.designer))
+            .maybeSingle();
 
-        (async () => {
-          try {
-            const { data: designer } = await supabase
-              .from('designers')
-              .select('email')
-              .ilike('fullName', String(newProject.designer))
+          if (designer?.email) {
+            const { data: invitingUserSettings } = await supabase
+              .from('settings')
+              .select('organizationName')
+              .eq('user_id', user.id)
               .maybeSingle();
+            
+            const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
+            const magicLink = `${baseUrl}/projects/${newProject.id}`;
 
-            if (designer?.email) {
-              const { data: invitingUserSettings } = await supabase
-                .from('settings')
-                .select('organizationName')
-                .eq('user_id', user.id)
-                .maybeSingle();
-              
-              const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
-              const magicLink = `${baseUrl}/projects/${newProject.id}`;
-
-              await sendEmail({
-                to: designer.email,
-                subject: `New Project Assigned: ${newProject.title}`,
-                html: projectAssignmentTemplate(newProject, organizationName, magicLink),
-                credentials: {
-                  user: PLATFORM_CONFIG.FOUNDER_EMAIL,
-                  password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
-                  senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
-                  smtpHost: 'smtp.gmail.com',
-                  smtpPort: 465,
-                  smtpSecure: true
-                }
-              });
-              console.log(`[Email] Assignment email sent to ${designer.email}`);
-            }
-          } catch (mailErr: any) {
-            console.error('[Email] Failed to send assignment email:', mailErr.message);
+            await sendEmail({
+              to: designer.email,
+              subject: `New Project Assigned: ${newProject.title}`,
+              html: projectAssignmentTemplate(newProject, organizationName, magicLink),
+              credentials: {
+                user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+                password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+                senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+                smtpHost: 'smtp.gmail.com',
+                smtpPort: 465,
+                smtpSecure: true
+              }
+            });
+            console.log(`[Email] Assignment email sent to ${designer.email}`);
           }
-        })().catch(err => console.error('[saveProject background email error]:', err));
-      } catch (err: any) {
-        console.error('[saveProject] Header/Email init error:', err.message);
-      }
+        } catch (mailErr: any) {
+          console.error('[Email] Failed to send assignment email:', mailErr.message);
+        }
+      })().catch(err => console.error('[saveProject background email error]:', err));
     }
 
     // [ESCROW] If escrow is enabled, initiate the hold protocol
@@ -613,7 +601,6 @@ export async function saveProject(formData: FormData) {
       }
     }
 
-    revalidatePath('/projects');
     return { success: true, id: newProject.id };
   } catch (err: any) {
     console.error('[saveProject] Error:', err.message);
