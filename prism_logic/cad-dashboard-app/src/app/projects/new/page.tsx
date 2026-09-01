@@ -78,21 +78,52 @@ export default function NewProjectPage() {
     e.preventDefault();
     if (!isAuthenticated || saving) return;
     setSaving(true);
+
+    const formData = new FormData(e.currentTarget);
+    formData.append('tags', JSON.stringify(skills));
+
+    const clientVal = (formData.get('client') as string) || '';
+    const designerVal = (formData.get('designer') as string) || '';
+    const titleVal = (formData.get('title') as string) || '';
+
+    const tempProject = {
+      id: Date.now().toString(),
+      title: titleVal,
+      orderId: (formData.get('orderId') as string) || 'Generating...',
+      client: clientVal,
+      clientCompany: clientVal,
+      clientShortName: clientVal.slice(0, 2).toUpperCase(),
+      designer: designerVal,
+      revenue: (formData.get('revenue') as string) || '0',
+      revenueCurrency: (formData.get('revenueCurrency') as string) || '$',
+      expense: (formData.get('expense') as string) || '0',
+      expenseCurrency: (formData.get('expenseCurrency') as string) || '₹',
+      orderDate: (formData.get('orderDate') as string) || new Date().toISOString().split('T')[0],
+      deadlineDate: (formData.get('deadlineDate') as string) || '',
+      description: (formData.get('brief') as string) || '',
+      images: (() => {
+        const val = formData.get('images');
+        if (!val) return [];
+        try { return JSON.parse(val as string); } catch { return []; }
+      })(),
+      status: 'High Priority',
+      paymentStatus: (formData.get('paymentStatus') as string) || 'Unpaid',
+      paidAmount: (formData.get('paidAmount') as string) || '0',
+      createdAt: new Date().toISOString(),
+      tags: skills.length > 0 ? skills : ['High-Poly', 'Ray-Tracing', 'Nodes']
+    };
+
     try {
-      const formData = new FormData(e.currentTarget);
-      formData.append('tags', JSON.stringify(skills));
-      const result = await saveProject(formData);
-      if (result.success) {
-        router.push('/projects');
-      } else {
-        alert(result.error || 'Failed to save project. Please try again.');
-        setSaving(false);
-      }
-    } catch (err: any) {
-      console.error('Save error:', err);
-      alert(err.message || 'An unexpected error occurred. Please ensure you are logged in.');
-      setSaving(false);
-    }
+      sessionStorage.setItem('optimistic_new_project', JSON.stringify(tempProject));
+    } catch (err) {}
+
+    // INSTANT 0ms NAVIGATION TO PROJECTS:
+    router.push('/projects');
+
+    // Run database write in parallel in background
+    saveProject(formData).catch((err: any) => {
+      console.error('Background save error:', err);
+    });
   };
 
   return (

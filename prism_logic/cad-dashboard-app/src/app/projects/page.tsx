@@ -106,6 +106,18 @@ export default function ProjectsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Instant optimistic render on mount if coming from project creation
+    try {
+      const saved = sessionStorage.getItem('optimistic_new_project');
+      if (saved) {
+        const item = JSON.parse(saved);
+        setRealProjects(prev => {
+          if (prev.some(p => p.id === item.id || (p.title === item.title && p.client === item.client))) return prev;
+          return [item, ...prev];
+        });
+      }
+    } catch (e) {}
+
     if (!isAuthenticated) return;
     const fetchData = async () => {
       setIsLoading(true);
@@ -117,8 +129,6 @@ export default function ProjectsPage() {
       if (isDesigner) {
         const designerRes = await getDesignerDb();
         dbProjects = designerRes.projects || [];
-        // For clients, we might need to fetch them differently if designers need details
-        // but for now, we'll use the basic db
         const fullDb = await getDb();
         dbClients = fullDb.clients || [];
       } else {
@@ -138,6 +148,12 @@ export default function ProjectsPage() {
           tags: p.tags || ['High-Poly', 'Ray-Tracing', 'Nodes']
         };
       });
+
+      // Clear optimistic cache after real DB is fetched
+      try {
+        sessionStorage.removeItem('optimistic_new_project');
+      } catch (e) {}
+
       setRealProjects(formatted);
       setIsLoading(false);
     };
