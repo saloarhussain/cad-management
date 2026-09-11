@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ensureBanglish, containsBengaliScript } from '@/lib/bengaliTransliterate';
 
 export const maxDuration = 60; // Up to 60 seconds for Gemini translation batch
 
@@ -10,7 +11,6 @@ interface MessageInput {
   isSystem?: boolean;
 }
 
-// Fallback dictionary for common phrases in case Gemini API key is not configured
 const COMMON_BANGLISH_MAP: Record<string, string> = {
   'hi': 'Ei je',
   'hello': 'Salam / Hello',
@@ -34,16 +34,19 @@ const COMMON_BANGLISH_MAP: Record<string, string> = {
   'on the way': 'Ami rastay achi',
 };
 
-function simpleBanglishFallback(text: string): string {
+function fallbackBanglish(text: string): string {
   if (!text) return '';
   if (text.startsWith('<') && text.endsWith('>')) return text; // e.g. <Media omitted>
 
-  const lower = text.trim().toLowerCase();
+  // First convert any Bengali script characters to Banglish
+  let result = ensureBanglish(text);
+
+  const lower = result.trim().toLowerCase();
   if (COMMON_BANGLISH_MAP[lower]) {
     return COMMON_BANGLISH_MAP[lower];
   }
 
-  // Pre-translated sample lines fallback
+  // Common CAD/sample conversational replacements
   if (lower.includes('diamond ring') && lower.includes('cad model')) {
     return 'Ei bro! Diamond ring er CAD model ta ki review korsen?';
   }
@@ -72,8 +75,10 @@ function simpleBanglishFallback(text: string): string {
     return 'Wow, darun lagche! Cholo eita wrap up kore feli!';
   }
 
-  return text;
+  return result;
 }
+
+const CANDIDATE_MODELS = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-1.5-flash'];
 
 export async function POST(req: Request) {
   try {
@@ -91,18 +96,16 @@ export async function POST(req: Request) {
       // Graceful fallback when API key is not present
       const fallbackTranslations = messages.map((m) => ({
         id: m.id,
-        banglishText: simpleBanglishFallback(m.text),
+        banglishText: fallbackBanglish(m.text),
       }));
       return NextResponse.json({
         success: true,
         translations: fallbackTranslations,
-        source: 'fallback',
+        source: 'transliteration-fallback',
       });
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Use gemini-2.5-flash or gemini-1.5-flash
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     // Prepare JSON payload for Gemini
     const inputPayload = translatable.map((m) => ({
@@ -112,25 +115,51 @@ export async function POST(req: Request) {
 
     const prompt = `
 You are an expert translator specializing in modern, conversational BANGLISH.
-"Banglish" is Bengali language written phonetically in the English / Latin alphabet, exactly as used in everyday WhatsApp, Messenger, and text messaging by Bengalis (in Dhaka, Kolkata, and worldwide).
+"Banglish" is Bengali language written exclusively in the ENGLISH / LATIN ALPHABET (A-Z, a-z), exactly as used by Bengalis in everyday WhatsApp, Messenger, and SMS.
 
-Translate every message into natural, fluent Banglish.
-
-Rules:
-1. Output MUST be in English/Latin letters (e.g. "Kemon acho?", "Ki obostha bhai?", "Ami ekhon rastay achi", "Kal shokale kotha hobe").
-2. Tone: ${tone === 'formal' ? 'Polite, respectful conversational Bengali (using apni, thik ache, dhonnobad)' : tone === 'slang' ? 'Youthful, energetic Dhakaite texting slang (using bro, mama, pera nai, shera)' : 'Friendly, casual everyday WhatsApp conversation (using tumi/tui as appropriate)'}.
-3. Keep all emojis in their original place.
-4. Keep technical terms, file names (e.g., .3dm, .stl), numbers, percentages, timestamps, and brand names (e.g., CADONCE, WhatsApp, Zoom, Google) unchanged.
-5. If an input is already in Banglish or Bengali, polish it into natural, clean Banglish.
-6. Return STRICTLY a JSON array of objects with keys "id" and "banglishText". No markdown codeblocks, no extra explanation.
+CRITICAL INSTRUCTION - ZERO BENGALI SCRIPT PERMITTED:
+1. Every single word in the output MUST BE WRITTEN IN THE ENGLISH ALPHABET.
+2. DO NOT USE ANY BENGALI CHARACTERS (বাংলা বর্ণমালা যেমন ক, খ, গ, আ, ই, etc. কখোনোই ব্যবহার করবে না).
+3. If an input is in Bengali script (e.g. "আমি ভালো আছি, আপনি কেমন আছেন?"), you MUST convert it to English letters: "Ami bhalo achi, apni kemon achen?".
+4. If an input is in English (e.g. "How are you? Are we ready?"), translate it to Bengali language written in English letters: "Kemon achen? Amra ki ready?".
+5. Tone: ${tone === 'formal' ? 'Polite, respectful conversational Bengali in English letters (apni, thik ache, dhonnobad)' : tone === 'slang' ? 'Youthful, energetic Dhakaite texting slang in English letters (bro, mama, pera nai, shera, joss)' : 'Friendly, casual everyday WhatsApp conversation in English letters (tumi/tui, kemon acho, thik ache)'}.
+6. Keep all emojis intact.
+7. Keep file extensions (e.g. .3dm, .stl), numbers, percentages, timestamps, and brand names (e.g. CADONCE, WhatsApp) unchanged.
+8. Return STRICTLY a JSON array of objects with keys "id" and "banglishText". No markdown backticks, no explanations.
 
 Input messages to translate:
 ${JSON.stringify(inputPayload, null, 2)}
 `;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    let text = response.text().trim();
+    let text = '';
+    let successModel = '';
+
+    // Try candidate models in sequence
+    for (const modelName of CANDIDATE_MODELS) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        text = response.text().trim();
+        successModel = modelName;
+        break;
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed, trying next:`, err.message);
+      }
+    }
+
+    if (!text) {
+      // Fall back to built-in transliteration engine
+      const fallbackTranslations = messages.map((m) => ({
+        id: m.id,
+        banglishText: fallbackBanglish(m.text),
+      }));
+      return NextResponse.json({
+        success: true,
+        translations: fallbackTranslations,
+        source: 'local-transliteration-engine',
+      });
+    }
 
     // Clean up markdown fences if present
     if (text.startsWith('```json')) {
@@ -159,34 +188,38 @@ ${JSON.stringify(inputPayload, null, 2)}
       }
     }
 
-    // Map back into full message list
-    const translationMap = new Map(translatedList.map((item) => [item.id, item.banglishText]));
+    // Map back into full message list and ENSURE NO BENGALI CHARACTERS EXIST
+    const translationMap = new Map(translatedList.map((item) => [
+      item.id,
+      ensureBanglish(item.banglishText)
+    ]));
 
     const fullTranslations = messages.map((m) => {
       if (m.isSystem || m.text.startsWith('<Media omitted>')) {
         return { id: m.id, banglishText: m.text };
       }
+      const translated = translationMap.get(m.id);
       return {
         id: m.id,
-        banglishText: translationMap.get(m.id) || simpleBanglishFallback(m.text),
+        banglishText: translated ? ensureBanglish(translated) : fallbackBanglish(m.text),
       };
     });
 
     return NextResponse.json({
       success: true,
       translations: fullTranslations,
-      source: 'gemini',
+      source: successModel || 'gemini',
     });
   } catch (error: any) {
     console.error('WhatsApp Banglish Translation Error:', error);
 
-    // Provide seamless fallback so UI never breaks
+    // Reliable fallback so chat ALWAYS transforms to Banglish
     try {
       const body = await req.clone().json();
       const messages = body.messages || [];
       const fallbackTranslations = messages.map((m: any) => ({
         id: m.id,
-        banglishText: simpleBanglishFallback(m.text),
+        banglishText: fallbackBanglish(m.text),
       }));
 
       return NextResponse.json({

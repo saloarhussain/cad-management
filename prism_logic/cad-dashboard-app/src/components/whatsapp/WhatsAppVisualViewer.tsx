@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChatMessage } from '@/lib/whatsappParser';
+import { ensureBanglish } from '@/lib/bengaliTransliterate';
 
 interface WhatsAppVisualViewerProps {
   messages: ChatMessage[];
@@ -56,7 +57,7 @@ export default function WhatsAppVisualViewer({
       }
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const textToSearch = viewMode === 'banglish' ? (m.banglishText || m.text) : m.text;
+        const textToSearch = viewMode === 'banglish' ? ensureBanglish(m.banglishText || m.text) : m.text;
         return (
           textToSearch.toLowerCase().includes(query) ||
           m.sender.toLowerCase().includes(query) ||
@@ -310,7 +311,7 @@ export default function WhatsAppVisualViewer({
               }
 
               // Text to display: Banglish or Original
-              const displayText = viewMode === 'banglish' ? (msg.banglishText || msg.text) : msg.text;
+              const displayText = viewMode === 'banglish' ? ensureBanglish(msg.banglishText || msg.text) : msg.text;
 
               return (
                 <div key={msg.id} className="flex flex-col">

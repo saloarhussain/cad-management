@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { parseUploadedFile, parseWhatsAppChat, SAMPLE_CHAT_TEXT, ChatMessage } from '@/lib/whatsappParser';
+import { ensureBanglish, containsBengaliScript } from '@/lib/bengaliTransliterate';
 import WhatsAppVisualViewer from '@/components/whatsapp/WhatsAppVisualViewer';
 
 export default function WhatsAppBanglishPage() {
@@ -26,44 +27,64 @@ export default function WhatsAppBanglishPage() {
     try {
       // Process in batches of 40 to avoid token timeouts
       const batchSize = 40;
-      const updatedMessages = [...rawMessages];
+      const updatedMessages = rawMessages.map((m) => ({
+        ...m,
+        banglishText: ensureBanglish(m.banglishText || m.text),
+      }));
 
       for (let i = 0; i < rawMessages.length; i += batchSize) {
         const chunk = rawMessages.slice(i, i + batchSize);
         setStatusMessage(`Converting to Banglish... (${Math.min(i + batchSize, rawMessages.length)}/${rawMessages.length} messages)`);
 
-        const res = await fetch('/api/ai/whatsapp-banglish', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            messages: chunk.map((m) => ({
-              id: m.id,
-              sender: m.sender,
-              text: m.text,
-              isSystem: m.isSystem,
-            })),
-            tone: currentTone,
-          }),
-        });
+        try {
+          const res = await fetch('/api/ai/whatsapp-banglish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: chunk.map((m) => ({
+                id: m.id,
+                sender: m.sender,
+                text: m.text,
+                isSystem: m.isSystem,
+              })),
+              tone: currentTone,
+            }),
+          });
 
-        const data = await res.json();
-        if (data.translations) {
-          const map = new Map<string, string>(data.translations.map((t: any) => [t.id, t.banglishText]));
-          for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
-            const m = updatedMessages[j];
-            if (map.has(m.id)) {
-              m.banglishText = map.get(m.id);
+          const data = await res.json();
+          if (data.translations && Array.isArray(data.translations)) {
+            const map = new Map<string, string>(
+              data.translations.map((t: any) => [t.id, ensureBanglish(t.banglishText)])
+            );
+            for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
+              const m = updatedMessages[j];
+              if (map.has(m.id)) {
+                m.banglishText = ensureBanglish(map.get(m.id)!);
+              } else {
+                m.banglishText = ensureBanglish(m.text);
+              }
+            }
+          } else {
+            // Local fallback for this chunk
+            for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
+              updatedMessages[j].banglishText = ensureBanglish(updatedMessages[j].text);
             }
           }
-          // Update state incrementally so user sees live translation progress
-          setMessages([...updatedMessages]);
+        } catch (chunkErr) {
+          console.warn('Chunk translation error, using transliteration engine:', chunkErr);
+          for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
+            updatedMessages[j].banglishText = ensureBanglish(updatedMessages[j].text);
+          }
         }
+
+        // Update state incrementally so user sees live translation progress
+        setMessages([...updatedMessages]);
       }
 
       setStatusMessage('');
     } catch (err) {
       console.error('Translation error:', err);
-      setStatusMessage('Used local Banglish translation fallback');
+      setStatusMessage('');
     } finally {
       setIsTranslating(false);
     }
@@ -80,13 +101,20 @@ export default function WhatsAppBanglishPage() {
         setIsProcessing(false);
         return;
       }
-      setMessages(parsed.messages);
+
+      // Immediately initialize banglishText so Banglish tab never shows Bengali script
+      const initialMessages = parsed.messages.map((m) => ({
+        ...m,
+        banglishText: ensureBanglish(m.text),
+      }));
+
+      setMessages(initialMessages);
       setParticipants(parsed.participants);
       setChatTitle(parsed.chatTitle);
       setIsProcessing(false);
 
       // Translate all parsed messages to Banglish
-      await translateMessagesToBanglish(parsed.messages, tone);
+      await translateMessagesToBanglish(initialMessages, tone);
     } catch (err: any) {
       console.error('File parsing error:', err);
       alert(err.message || 'Failed to parse WhatsApp chat file');
@@ -99,12 +127,17 @@ export default function WhatsAppBanglishPage() {
     setIsProcessing(true);
     setStatusMessage('Loading sample WhatsApp conversation...');
     const parsed = parseWhatsAppChat(SAMPLE_CHAT_TEXT);
-    setMessages(parsed.messages);
+    const initialMessages = parsed.messages.map((m) => ({
+      ...m,
+      banglishText: ensureBanglish(m.text),
+    }));
+
+    setMessages(initialMessages);
     setParticipants(parsed.participants);
     setChatTitle('Diamond Ring CAD Brief');
     setIsProcessing(false);
 
-    await translateMessagesToBanglish(parsed.messages, tone);
+    await translateMessagesToBanglish(initialMessages, tone);
   };
 
   // Handle paste submission
@@ -121,12 +154,17 @@ export default function WhatsAppBanglishPage() {
       return;
     }
 
-    setMessages(parsed.messages);
+    const initialMessages = parsed.messages.map((m) => ({
+      ...m,
+      banglishText: ensureBanglish(m.text),
+    }));
+
+    setMessages(initialMessages);
     setParticipants(parsed.participants);
     setChatTitle(parsed.chatTitle);
     setIsProcessing(false);
 
-    await translateMessagesToBanglish(parsed.messages, tone);
+    await translateMessagesToBanglish(initialMessages, tone);
   };
 
   // Tone change
