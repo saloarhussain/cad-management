@@ -25,16 +25,21 @@ export default function WhatsAppBanglishPage() {
     setStatusMessage('Translating messages to Banglish with Gemini AI...');
 
     try {
-      // Process in batches of 40 to avoid token timeouts
-      const batchSize = 40;
+      // 1. Immediately ensure EVERY message is in Banglish right away so zero Bengali script shows
       const updatedMessages = rawMessages.map((m) => ({
         ...m,
         banglishText: ensureBanglish(m.banglishText || m.text),
       }));
 
+      // Render immediately with 100% Banglish
+      setMessages([...updatedMessages]);
+
+      // 2. Upgrade to conversational AI Banglish in batches of 25
+      const batchSize = 25;
+
       for (let i = 0; i < rawMessages.length; i += batchSize) {
         const chunk = rawMessages.slice(i, i + batchSize);
-        setStatusMessage(`Converting to Banglish... (${Math.min(i + batchSize, rawMessages.length)}/${rawMessages.length} messages)`);
+        setStatusMessage(`Refining with AI Banglish... (${Math.min(i + batchSize, rawMessages.length)}/${rawMessages.length} messages)`);
 
         try {
           const res = await fetch('/api/ai/whatsapp-banglish', {
@@ -51,34 +56,33 @@ export default function WhatsAppBanglishPage() {
             }),
           });
 
-          const data = await res.json();
-          if (data.translations && Array.isArray(data.translations)) {
-            const map = new Map<string, string>(
-              data.translations.map((t: any) => [t.id, ensureBanglish(t.banglishText)])
-            );
-            for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
-              const m = updatedMessages[j];
-              if (map.has(m.id)) {
-                m.banglishText = ensureBanglish(map.get(m.id)!);
-              } else {
-                m.banglishText = ensureBanglish(m.text);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.translations && Array.isArray(data.translations)) {
+              const map = new Map<string, string>(
+                data.translations.map((t: any) => [t.id, ensureBanglish(t.banglishText)])
+              );
+              for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
+                const m = updatedMessages[j];
+                if (map.has(m.id) && map.get(m.id)) {
+                  m.banglishText = ensureBanglish(map.get(m.id)!);
+                } else {
+                  m.banglishText = ensureBanglish(m.banglishText || m.text);
+                }
               }
-            }
-          } else {
-            // Local fallback for this chunk
-            for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
-              updatedMessages[j].banglishText = ensureBanglish(updatedMessages[j].text);
             }
           }
         } catch (chunkErr) {
-          console.warn('Chunk translation error, using transliteration engine:', chunkErr);
-          for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
-            updatedMessages[j].banglishText = ensureBanglish(updatedMessages[j].text);
-          }
+          console.warn('Chunk AI translation error, keeping flawless transliteration:', chunkErr);
         }
 
-        // Update state incrementally so user sees live translation progress
+        // Update state incrementally so user sees live translation upgrade
         setMessages([...updatedMessages]);
+
+        // Gentle pause to avoid hitting Gemini RPM rate limits
+        if (i + batchSize < rawMessages.length) {
+          await new Promise((resolve) => setTimeout(resolve, 250));
+        }
       }
 
       setStatusMessage('');
