@@ -6,6 +6,8 @@ import { getDb, getDesignerStatus } from '@/app/actions';
 import dynamic from 'next/dynamic';
 import { GLOBAL_CURRENCIES } from '@/lib/config';
 
+import HomePage from '@/components/HomePage';
+
 const DashboardContent = dynamic(() => import('./DashboardContent'), { 
   ssr: false,
   loading: () => null 
@@ -41,19 +43,14 @@ export default function DashboardPage() {
     setHasMounted(true);
   }, []);
 
-    useEffect(() => {
-      // Redirect to login if not authenticated (ONLY if not an invitation)
-      if (hasMounted && !authLoading) {
-        if (!isAuthenticated) {
-          const params = new URLSearchParams(window.location.search);
-          if (!params.has('email')) {
-            router.replace('/auth/login');
-          }
-        } else if (isDesigner) {
-          router.replace('/designer');
-        }
+  useEffect(() => {
+    // If authenticated designer, route to designer workstation
+    if (hasMounted && !authLoading) {
+      if (isAuthenticated && isDesigner) {
+        router.replace('/designer');
       }
-    }, [isAuthenticated, isDesigner, authLoading, hasMounted, router]);
+    }
+  }, [isAuthenticated, isDesigner, authLoading, hasMounted, router]);
 
   const [allRates, setAllRates] = useState<Record<string, number>>({ USD: 1, INR: 83.5 });
   const [displayCurrency, setDisplayCurrency] = useState('₹');
@@ -208,7 +205,27 @@ export default function DashboardPage() {
   }, [isAuthenticated, authLoading, isDesigner, hasMounted, filterMode, selectedDate, startDate, endDate, displayCurrency, allRates]);
 
 
-  if (!hasMounted || authLoading || isInitialLoad || !ratesLoaded) {
+  if (!hasMounted || authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing CADONCE...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // If visitor is not authenticated, show the CADONCE Homepage!
+  if (!isAuthenticated) {
+    return <HomePage />;
+  }
+
+  // If authenticated as designer, redirect to designer workstation
+  if (isDesigner) return null;
+
+  // For authenticated organization owners, wait for dashboard data
+  if (isInitialLoad || !ratesLoaded) {
     return (
       <div className="min-h-screen bg-[#161308] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -218,10 +235,6 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  // If we reach here and aren't authenticated or are a designer, the useEffect above will handle the redirect.
-  // We return null to avoid flashing the dashboard content.
-  if (!isAuthenticated || isDesigner) return null;
 
   return (
     <DashboardContent 
