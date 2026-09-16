@@ -539,7 +539,7 @@ export default function ProjectDetailsPage() {
 
       {/* TopAppBar */}
       <header className={`bg-[#1a1a17]/95 backdrop-blur-xl fixed top-0 left-0 ${isCollapsed ? 'md:left-20' : 'md:left-64'} right-0 z-[200] border-b border-white/5 shadow-2xl transition-all duration-300`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-[#fce003] active:scale-95 transition-all">
               <span className="material-symbols-outlined text-lg sm:text-xl">arrow_back</span>
@@ -564,7 +564,7 @@ export default function ProjectDetailsPage() {
         </div>
       </header>
 
-      <main className="pt-20 sm:pt-24 pb-28 md:pb-12 px-4 sm:px-6 max-w-7xl mx-auto text-left">
+      <main className="pt-20 sm:pt-24 pb-28 md:pb-12 px-4 sm:px-8 xl:px-12 w-full text-left">
         {loading ? (
           <div className="space-y-4">
             {/* Skeleton Primary Actions */}
@@ -589,7 +589,7 @@ export default function ProjectDetailsPage() {
           <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Content Area (Left) */}
-            <div className="lg:col-span-8 order-2 lg:order-1 space-y-6">
+            <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 order-2 lg:order-1 space-y-6">
               {/* Tab Navigation - Solid Sticky */}
               <nav className="flex p-1 bg-[#0c0a04] rounded-xl sticky top-[72px] sm:top-20 z-40 border border-white/5 shadow-2xl overflow-x-auto no-scrollbar whitespace-nowrap">
                 {['overview', 'render', 'financials', 'tracking', 'revisions', 'gallery', 'chat', 'feedback'].filter(t => {
@@ -925,108 +925,6 @@ export default function ProjectDetailsPage() {
                             )}
                           </div>
                         </section>
-
-                        {/* 3D Model & Assets Snapshot Card */}
-                        <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-lg space-y-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-8 h-8 rounded-lg bg-cyan-400/10 flex items-center justify-center border border-cyan-400/20">
-                                <span className="material-symbols-outlined text-cyan-400 text-sm">3d_rotation</span>
-                              </div>
-                              <div>
-                                <h3 className="text-xs font-black text-white uppercase tracking-tight">3D Model & Renders</h3>
-                                <p className="text-[8px] text-outline font-bold uppercase tracking-widest">Photorealistic assets & geometry</p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() => setActiveTab('render')}
-                              className="text-[9px] font-black text-cyan-400 hover:text-cyan-300 uppercase tracking-widest flex items-center gap-1 transition-colors"
-                            >
-                              Render Studio
-                              <span className="material-symbols-outlined text-xs">arrow_forward</span>
-                            </button>
-                          </div>
-
-                          {/* Preview Box */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                            {/* CAD File status box */}
-                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col justify-between space-y-3">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="material-symbols-outlined text-[#fce003] text-lg">view_in_ar</span>
-                                  <div>
-                                    <p className="text-[10px] font-bold text-white truncate max-w-[140px] sm:max-w-[160px]">
-                                      {project.cadFileName || (project.cadFile ? project.cadFile.split('/').pop() : 'No CAD file attached')}
-                                    </p>
-                                    <p className="text-[8px] text-neutral-500 font-bold uppercase">
-                                      {project.cadFile ? 'Direct Engine Compatible' : 'Upload in edit mode'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <span className={`w-2 h-2 rounded-full ${project.cadFile ? 'bg-cyan-400' : 'bg-neutral-600'}`}></span>
-                              </div>
-
-                              <div className="flex gap-2">
-                                <Link
-                                  href={`/projects/${params.id}/viewport`}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#fce003]/10 hover:bg-[#fce003]/20 border border-[#fce003]/30 text-[#fce003] text-[9px] font-black uppercase tracking-wider transition-all active:scale-95"
-                                >
-                                  <span className="material-symbols-outlined text-xs">open_in_new</span>
-                                  3D Viewport
-                                </Link>
-                                <button
-                                  onClick={() => setActiveTab('render')}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[9px] font-black uppercase tracking-wider transition-all active:scale-95"
-                                >
-                                  <span className="material-symbols-outlined text-xs">preview</span>
-                                  Render Tab
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Delivered Assets Thumbnails */}
-                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col justify-between space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[9px] font-black text-outline uppercase tracking-wider">Delivered Gallery</span>
-                                <span className="text-[8px] font-bold text-neutral-500 uppercase">{validAssets.length} Assets</span>
-                              </div>
-
-                              {validAssets.length > 0 ? (
-                                <div className="flex items-center gap-2">
-                                  {validAssets.slice(0, 3).map((asset: any, aidx: number) => (
-                                    <div 
-                                      key={aidx} 
-                                      onClick={() => setSelectedImage(asset.url)}
-                                      className="w-14 h-14 rounded-lg bg-stone-900 border border-white/10 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
-                                    >
-                                      <img src={asset.url} alt="Asset preview" className="w-full h-full object-cover" />
-                                    </div>
-                                  ))}
-                                  {validAssets.length > 3 && (
-                                    <div 
-                                      onClick={() => setActiveTab('gallery')}
-                                      className="w-14 h-14 rounded-lg bg-surface-container-high border border-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
-                                    >
-                                      <span className="text-xs font-black text-[#fce003]">+{validAssets.length - 3}</span>
-                                      <span className="text-[7px] font-bold text-neutral-500 uppercase">More</span>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <div className="py-2 text-center text-neutral-500 text-[9px] uppercase font-bold tracking-widest">
-                                  No gallery media uploaded yet
-                                </div>
-                              )}
-
-                              <button
-                                onClick={() => setActiveTab('gallery')}
-                                className="w-full py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] font-bold text-outline hover:text-white uppercase tracking-wider transition-colors text-center"
-                              >
-                                View Gallery Media
-                              </button>
-                            </div>
-                          </div>
-                        </section>
                       </div>
 
                       {/* Right Column (Secondary) */}
@@ -1238,6 +1136,145 @@ export default function ProjectDetailsPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Visual Assets & 3D Studio Showcase (Full-Width) */}
+                    <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-xl space-y-5">
+                      {/* Section Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-400/20">
+                            <span className="material-symbols-outlined text-cyan-400 text-xl">collections</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-black text-white uppercase tracking-tight">Delivered Renders & 3D Model</h3>
+                              <span className="px-2 py-0.5 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-[8px] font-black text-cyan-400 uppercase tracking-wider">
+                                {validAssets.length} Visual Assets
+                              </span>
+                            </div>
+                            <p className="text-[9px] text-outline font-bold uppercase tracking-widest mt-0.5">High-resolution presentation renders and 3D geometry engine</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setActiveTab('gallery')}
+                            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-black text-white uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-xs text-[#fce003]">photo_library</span>
+                            Open Gallery Tab
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('render')}
+                            className="px-3.5 py-2 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/30 text-[9px] font-black text-cyan-400 uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-xs">3d_rotation</span>
+                            Render Studio Tab
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 3D CAD Geometry Bar */}
+                      <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${project.cadFile ? 'bg-cyan-400/10 border-cyan-400/30 text-cyan-400' : 'bg-neutral-800/60 border-white/10 text-neutral-500'}`}>
+                            <span className="material-symbols-outlined text-xl">view_in_ar</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">
+                                {project.cadFileName || (project.cadFile ? project.cadFile.split('/').pop() : 'No 3D Model Attached Yet')}
+                              </span>
+                              <span className={`w-2 h-2 rounded-full ${project.cadFile ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'bg-neutral-600'}`}></span>
+                            </div>
+                            <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">
+                              {project.cadFile 
+                                ? 'STL / OBJ 3D Model Ready for Interactive Inspection & Annotations' 
+                                : 'Upload .stl or .obj 3D geometry files in project edit mode'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          {project.cadFile ? (
+                            <Link
+                              href={`/projects/${params.id}/viewport`}
+                              className="px-4 py-2 rounded-xl bg-[#fce003] hover:bg-[#fce003]/90 text-stone-900 text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">3d_rotation</span>
+                              Launch 3D Viewport
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/projects/${params.id}/edit`}
+                              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white hover:text-[#fce003] text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                            >
+                              <span className="material-symbols-outlined text-xs">upload_file</span>
+                              Attach 3D Model
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Delivered Renders Showcase Grid */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[9px] font-black text-outline uppercase tracking-widest">Delivered Renders Preview</span>
+                          <span className="text-[8px] font-bold text-neutral-500 uppercase">Click image to inspect in full resolution</span>
+                        </div>
+
+                        {validAssets.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
+                            {validAssets.map((asset: any, aidx: number) => {
+                              const isVideo = asset.type === 'video' || asset.url?.endsWith('.mp4') || asset.url?.includes('/video/upload/');
+                              return (
+                                <div
+                                  key={aidx}
+                                  onClick={() => setSelectedImage(asset.url)}
+                                  className="group relative aspect-square rounded-xl bg-stone-950 border border-white/10 overflow-hidden cursor-pointer shadow-md hover:border-[#fce003]/50 hover:shadow-yellow-400/10 transition-all duration-300"
+                                >
+                                  {isVideo ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900">
+                                      <span className="material-symbols-outlined text-[#fce003] text-2xl group-hover:scale-110 transition-transform">play_circle</span>
+                                      <span className="text-[7px] font-bold text-outline uppercase tracking-widest mt-1">Video Asset</span>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={asset.url}
+                                      alt={`Asset ${aidx + 1}`}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  )}
+
+                                  {/* Hover Overlay */}
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                                    <span className="material-symbols-outlined text-white text-base">zoom_in</span>
+                                    <span className="text-[8px] font-black text-white uppercase tracking-wider">Inspect</span>
+                                  </div>
+
+                                  {/* Badges */}
+                                  {project.thumbnailUrl === asset.url ? (
+                                    <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-[#fce003] text-stone-900 text-[7px] font-black uppercase tracking-tighter shadow-md">
+                                      Main Render
+                                    </div>
+                                  ) : (
+                                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-white/80 text-[7px] font-bold uppercase tracking-tighter border border-white/10">
+                                      #{aidx + 1}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-8 rounded-xl border border-dashed border-white/10 text-center space-y-2">
+                            <span className="material-symbols-outlined text-3xl text-neutral-600">collections</span>
+                            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">No visual assets delivered yet</p>
+                            <p className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest">Delivered render images and animations uploaded in the Gallery tab will appear here</p>
+                          </div>
+                        )}
+                      </div>
+                    </section>
                   </div>
                 );
               })()}
@@ -1867,7 +1904,7 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Sidebar Context Area (Right) */}
-            <aside className="lg:col-span-4 space-y-6 order-1 lg:order-2">
+            <aside className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-6 order-1 lg:order-2">
               <div className="lg:sticky lg:top-20 space-y-6">
                 {/* Primary Actions Bar */}
                 <div className="flex flex-col gap-2.5">
