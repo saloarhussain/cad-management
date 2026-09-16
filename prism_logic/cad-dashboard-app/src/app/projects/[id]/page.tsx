@@ -676,83 +676,567 @@ export default function ProjectDetailsPage() {
 
               {/* Tab Content: Overview */}
               {activeTab === 'overview' && (() => {
+                // Parse Gallery / Delivered Assets
+                let galleryItems: any[] = [];
+                const rawImages = project.images;
+                if (Array.isArray(rawImages)) {
+                  galleryItems = rawImages;
+                } else if (typeof rawImages === 'string' && rawImages) {
+                  if (rawImages.trim().startsWith('[') || rawImages.trim().startsWith('{')) {
+                    try {
+                      const parsed = JSON.parse(rawImages);
+                      galleryItems = Array.isArray(parsed) ? parsed : [parsed];
+                    } catch (e) {
+                      galleryItems = rawImages.split(/[\n,]+/).map(url => ({ url: url.trim(), type: 'image' }));
+                    }
+                  } else {
+                    galleryItems = rawImages.split(/[\n,]+/).map(url => ({ url: url.trim(), type: 'image' }));
+                  }
+                }
+                const validAssets = galleryItems.filter((i: any) => i && i.url);
+
+                // Revisions counts
+                const revisionsList = project.revisions || [];
+                const pendingRevs = revisionsList.filter((r: any) => r.status !== 'Fixed').length;
+                const fixedRevs = revisionsList.filter((r: any) => r.status === 'Fixed').length;
+                const latestRev = revisionsList.length > 0 ? revisionsList[revisionsList.length - 1] : null;
+
+                // Time tracking totals
+                const totalActiveSecs = timeLogs.reduce((acc, log) => acc + (log.active_seconds || 0), 0);
+                const trackedHours = Math.floor(totalActiveSecs / 3600);
+                const trackedMins = Math.floor((totalActiveSecs % 3600) / 60);
+                const timeString = totalActiveSecs > 0 ? `${trackedHours > 0 ? `${trackedHours}h ` : ''}${trackedMins}m` : '0m';
+
+                // Financial calculations
+                const revNum = parseFloat(project.revenue || '0');
+                const paidNum = parseFloat(project.paidAmount || '0');
+                const balanceDue = Math.max(0, revNum - paidNum);
+                const payPercent = revNum > 0 ? Math.min(100, Math.round((paidNum / revNum) * 100)) : 0;
+                const revCurrSymbol = getCurrencySymbol(project.revenueCurrency || 'USD');
+
+                // Deadline calculation
+                const getDeadlineInfo = (deadlineStr?: string) => {
+                  if (!deadlineStr) return null;
+                  const deadline = new Date(deadlineStr);
+                  if (isNaN(deadline.getTime())) return null;
+                  const now = new Date();
+                  const diffMs = deadline.getTime() - now.getTime();
+                  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                  if (diffDays < 0) {
+                    return { text: `${Math.abs(diffDays)}d Overdue`, isOverdue: true, color: 'text-error bg-error/10 border-error/20' };
+                  } else if (diffDays === 0) {
+                    return { text: 'Due Today', isOverdue: false, color: 'text-[#fce003] bg-[#fce003]/10 border-[#fce003]/20 animate-pulse' };
+                  } else {
+                    return { text: `${diffDays}d Remaining`, isOverdue: false, color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20' };
+                  }
+                };
+                const deadlineInfo = getDeadlineInfo(project.deadlineDate);
+
+                // Smart Specifications extraction from description text
+                const extractedSpecs: { icon: string; label: string; value: string }[] = [];
+                const fullText = `${project.title || ''} ${cleanDescription}`;
+                
+                // Ring Size
+                const sizeMatch = fullText.match(/size\s*[:\-]?\s*([0-9]+(\.[0-9]+)?)/i);
+                if (sizeMatch) extractedSpecs.push({ icon: 'straighten', label: 'Ring Size', value: `US ${sizeMatch[1]}` });
+                
+                // Metal
+                const metalMatch = fullText.match(/(10k|14k|18k|22k|24k|platinum|silver)\s*(white gold|yellow gold|rose gold|gold|pt)?/i);
+                if (metalMatch) extractedSpecs.push({ icon: 'diamond', label: 'Metal', value: metalMatch[0].toUpperCase() });
+                
+                // Band width
+                const bandMatch = fullText.match(/([0-9]+(\.[0-9]+)?\s*mm)\s*band/i);
+                if (bandMatch) extractedSpecs.push({ icon: 'panorama_horizontal', label: 'Band Width', value: bandMatch[1] });
+                
+                // Pave
+                const paveMatch = fullText.match(/([0-9]+(\.[0-9]+)?\s*mm)\s*(pave|pavé)/i);
+                if (paveMatch) extractedSpecs.push({ icon: 'auto_awesome', label: 'Pave Setting', value: paveMatch[0] });
+
+                // Stone Shape
+                const stoneMatch = fullText.match(/(oval|round|cushion|emerald|pear|marquise|radiant|princess)\s*(cut|stone|diamond|engagement)?/i);
+                if (stoneMatch) extractedSpecs.push({ icon: 'token', label: 'Center Stone', value: stoneMatch[1].toUpperCase() });
+
+                // Fit
+                if (/comfort fit/i.test(fullText)) {
+                  extractedSpecs.push({ icon: 'verified', label: 'Shank Fit', value: 'Comfort Fit' });
+                }
+
                 return (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {/* Description Card (Takes 2 columns if on large screen) */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <section className="bg-surface-container rounded-xl p-6 border border-white/5 shadow-sm h-full">
-                        <h3 className="text-xs font-bold uppercase tracking-tighter text-outline mb-4 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">description</span>
-                          Project Description
-                        </h3>
-                        <div className="max-w-none">
-                          <FormattedDescription text={cleanDescription} />
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {/* Top KPI Metrics Strip */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                      {/* Metric 1: Status & Order ID */}
+                      <div className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/20 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Order & Status</span>
+                          <span className={`w-2 h-2 rounded-full ${project.status === 'Completed' ? 'bg-success' : 'bg-[#fce003] animate-pulse'}`}></span>
                         </div>
-                        
-                        <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-2">
-                          {project.tags?.map((tag: string) => (
-                            <span key={tag} className="px-3 py-1 rounded-full bg-surface-container-high text-[10px] font-bold text-outline uppercase tracking-wider border border-white/10">
-                              {tag}
+                        <p className="text-xs font-mono font-bold text-primary truncate">{project.orderId || 'N/A'}</p>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${project.status === 'Completed' ? 'text-success' : 'text-[#fce003]'}`}>
+                            {project.status || 'Active'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Metric 2: Timeline / Deadline */}
+                      <div className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-cyan-400/20 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Timeline</span>
+                          <span className="material-symbols-outlined text-xs text-outline">schedule</span>
+                        </div>
+                        <p className="text-xs font-bold text-white truncate">
+                          {project.deadlineDate ? formatDate(project.deadlineDate) : (project.orderDate ? `Ordered ${formatDate(project.orderDate)}` : 'In Progress')}
+                        </p>
+                        <div className="mt-1">
+                          {deadlineInfo ? (
+                            <span className={`inline-block px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${deadlineInfo.color}`}>
+                              {deadlineInfo.text}
                             </span>
-                          )) || (
-                              <span className="px-3 py-1 rounded-full bg-surface-container-high text-[10px] font-bold text-outline uppercase tracking-wider border border-white/10">Standard 3D CAD</span>
-                            )}
+                          ) : (
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">On Schedule</span>
+                          )}
                         </div>
-                      </section>
+                      </div>
+
+                      {/* Metric 3: Financial or Revisions (Role-based) */}
+                      {!isDesigner ? (
+                        <div 
+                          onClick={() => setActiveTab('financials')}
+                          className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/30 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Settlement</span>
+                            <span className="material-symbols-outlined text-xs text-[#fce003] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                          </div>
+                          <p className="text-xs font-headline font-black text-white">
+                            {revCurrSymbol}{revNum.toLocaleString()}
+                          </p>
+                          <div className="mt-1 flex items-center justify-between">
+                            <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                              project.paymentStatus === 'Paid' ? 'bg-success/10 text-success' :
+                              project.paymentStatus === '50% Advance' ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'
+                            }`}>
+                              {project.paymentStatus || 'Unpaid'}
+                            </span>
+                            {revNum > 0 && (
+                              <span className="text-[8px] font-bold text-outline">{payPercent}%</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => setActiveTab('revisions')}
+                          className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/30 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Revisions</span>
+                            <span className="material-symbols-outlined text-xs text-[#fce003] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                          </div>
+                          <p className="text-xs font-bold text-white">{revisionsList.length} Total</p>
+                          <div className="mt-1">
+                            <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                              pendingRevs > 0 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-success/10 text-success'
+                            }`}>
+                              {pendingRevs > 0 ? `${pendingRevs} Pending` : 'All Clear'}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Metric 4: 3D CAD & Deliverables */}
+                      <div 
+                        onClick={() => setActiveTab(project.cadFile ? 'render' : 'gallery')}
+                        className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-cyan-400/30 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">3D / Media</span>
+                          <span className="material-symbols-outlined text-xs text-cyan-400 group-hover:scale-110 transition-transform">3d_rotation</span>
+                        </div>
+                        <p className="text-xs font-bold text-white truncate">
+                          {project.cadFile ? 'Model Attached' : `${validAssets.length} Assets`}
+                        </p>
+                        <div className="mt-1">
+                          <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                            project.cadFile ? 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20' : 'bg-white/5 text-neutral-400'
+                          }`}>
+                            {project.cadFile ? 'Engine Ready' : `${validAssets.length} Renders`}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Status & Meta Cards (Takes 1 column) */}
-                    <div className="space-y-6">
-                      {/* Escrow Card */}
-                      {escrowInfo && (
-                        <div className="bg-surface-container rounded-xl p-6 border border-green-500/20 relative overflow-hidden group shadow-lg">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-green-400">
-                            <span className="material-symbols-outlined text-5xl">shield</span>
+                    {/* Main Overview Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                      {/* Left Column (Primary) */}
+                      <div className="lg:col-span-7 space-y-6">
+                        {/* Project Description & Specifications Card */}
+                        <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-outline flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm text-[#fce003]">description</span>
+                              Project Description & Specs
+                            </h3>
+                            {!isDesigner && (
+                              <Link 
+                                href={`/projects/${params.id}/edit`}
+                                className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-bold text-outline hover:text-[#fce003] hover:border-[#fce003]/30 transition-all flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[11px]">edit</span>
+                                Edit
+                              </Link>
+                            )}
                           </div>
-                          <div className="relative z-20">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="material-symbols-outlined text-green-400 text-sm">verified_user</span>
-                              <h4 className="text-[10px] font-black uppercase tracking-widest text-green-400">Escrow Secured</h4>
-                            </div>
-                            <p className="text-[11px] text-on-surface leading-relaxed">
-                              {escrowInfo}
-                            </p>
-                          </div>
-                        </div>
-                      )}
 
-                      {/* Feedback Card */}
-                      {feedbackInfo && (
-                        <div className="bg-surface-container rounded-xl p-6 border border-yellow-500/20 relative overflow-hidden group shadow-lg">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400">
-                            <span className="material-symbols-outlined text-5xl">star</span>
-                          </div>
-                          <div className="relative z-20">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-yellow-400 text-sm">reviews</span>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Client Feedback</h4>
+                          {/* Extracted Specifications Chips */}
+                          {extractedSpecs.length > 0 && (
+                            <div className="mb-5 p-3.5 rounded-xl bg-black/40 border border-white/5">
+                              <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest block mb-2">Detected Specifications</span>
+                              <div className="flex flex-wrap gap-2">
+                                {extractedSpecs.map((spec, sidx) => (
+                                  <div key={sidx} className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-high rounded-lg border border-white/10 shadow-sm">
+                                    <span className="material-symbols-outlined text-xs text-[#fce003]">{spec.icon}</span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] text-neutral-500 font-bold uppercase">{spec.label}</span>
+                                      <span className="text-[10px] font-black text-white tracking-tight">{spec.value}</span>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-yellow-400 text-[10px] font-black">
-                                  {parseFloat(feedbackInfo.rating.split('/')[0] || '5').toFixed(1)}
+                            </div>
+                          )}
+
+                          {/* Full Formatted Description */}
+                          <div className="max-w-none">
+                            <FormattedDescription text={cleanDescription} />
+                          </div>
+
+                          {/* Tags Section */}
+                          <div className="mt-6 pt-5 border-t border-white/5 flex flex-wrap items-center gap-2">
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest mr-1">Tags:</span>
+                            {project.tags && project.tags.length > 0 ? (
+                              project.tags.map((tag: string) => (
+                                <span key={tag} className="px-2.5 py-1 rounded-md bg-surface-container-high text-[9px] font-bold text-outline uppercase tracking-wider border border-white/10">
+                                  {tag}
                                 </span>
-                                <div className="flex items-center gap-0.5">
-                                  {[...Array(5)].map((_, i) => (
-                                    <span key={i} className="material-symbols-outlined text-yellow-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                              ))
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-md bg-surface-container-high text-[9px] font-bold text-outline uppercase tracking-wider border border-white/10">Standard 3D CAD</span>
+                            )}
+                          </div>
+                        </section>
+
+                        {/* 3D Model & Assets Snapshot Card */}
+                        <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-lg space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-lg bg-cyan-400/10 flex items-center justify-center border border-cyan-400/20">
+                                <span className="material-symbols-outlined text-cyan-400 text-sm">3d_rotation</span>
+                              </div>
+                              <div>
+                                <h3 className="text-xs font-black text-white uppercase tracking-tight">3D Model & Renders</h3>
+                                <p className="text-[8px] text-outline font-bold uppercase tracking-widest">Photorealistic assets & geometry</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => setActiveTab('render')}
+                              className="text-[9px] font-black text-cyan-400 hover:text-cyan-300 uppercase tracking-widest flex items-center gap-1 transition-colors"
+                            >
+                              Render Studio
+                              <span className="material-symbols-outlined text-xs">arrow_forward</span>
+                            </button>
+                          </div>
+
+                          {/* Preview Box */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                            {/* CAD File status box */}
+                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col justify-between space-y-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-[#fce003] text-lg">view_in_ar</span>
+                                  <div>
+                                    <p className="text-[10px] font-bold text-white truncate max-w-[140px] sm:max-w-[160px]">
+                                      {project.cadFileName || (project.cadFile ? project.cadFile.split('/').pop() : 'No CAD file attached')}
+                                    </p>
+                                    <p className="text-[8px] text-neutral-500 font-bold uppercase">
+                                      {project.cadFile ? 'Direct Engine Compatible' : 'Upload in edit mode'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <span className={`w-2 h-2 rounded-full ${project.cadFile ? 'bg-cyan-400' : 'bg-neutral-600'}`}></span>
+                              </div>
+
+                              <div className="flex gap-2">
+                                <Link
+                                  href={`/projects/${params.id}/viewport`}
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-[#fce003]/10 hover:bg-[#fce003]/20 border border-[#fce003]/30 text-[#fce003] text-[9px] font-black uppercase tracking-wider transition-all active:scale-95"
+                                >
+                                  <span className="material-symbols-outlined text-xs">open_in_new</span>
+                                  3D Viewport
+                                </Link>
+                                <button
+                                  onClick={() => setActiveTab('render')}
+                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[9px] font-black uppercase tracking-wider transition-all active:scale-95"
+                                >
+                                  <span className="material-symbols-outlined text-xs">preview</span>
+                                  Render Tab
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Delivered Assets Thumbnails */}
+                            <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col justify-between space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-black text-outline uppercase tracking-wider">Delivered Gallery</span>
+                                <span className="text-[8px] font-bold text-neutral-500 uppercase">{validAssets.length} Assets</span>
+                              </div>
+
+                              {validAssets.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                  {validAssets.slice(0, 3).map((asset: any, aidx: number) => (
+                                    <div 
+                                      key={aidx} 
+                                      onClick={() => setSelectedImage(asset.url)}
+                                      className="w-14 h-14 rounded-lg bg-stone-900 border border-white/10 overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+                                    >
+                                      <img src={asset.url} alt="Asset preview" className="w-full h-full object-cover" />
+                                    </div>
                                   ))}
+                                  {validAssets.length > 3 && (
+                                    <div 
+                                      onClick={() => setActiveTab('gallery')}
+                                      className="w-14 h-14 rounded-lg bg-surface-container-high border border-white/10 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-colors"
+                                    >
+                                      <span className="text-xs font-black text-[#fce003]">+{validAssets.length - 3}</span>
+                                      <span className="text-[7px] font-bold text-neutral-500 uppercase">More</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="py-2 text-center text-neutral-500 text-[9px] uppercase font-bold tracking-widest">
+                                  No gallery media uploaded yet
+                                </div>
+                              )}
+
+                              <button
+                                onClick={() => setActiveTab('gallery')}
+                                className="w-full py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] font-bold text-outline hover:text-white uppercase tracking-wider transition-colors text-center"
+                              >
+                                View Gallery Media
+                              </button>
+                            </div>
+                          </div>
+                        </section>
+                      </div>
+
+                      {/* Right Column (Secondary) */}
+                      <div className="lg:col-span-5 space-y-6">
+                        {/* Financial Summary Card (Organization only) */}
+                        {!isDesigner && (
+                          <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm text-[#fce003]">account_balance_wallet</span>
+                                <h3 className="text-xs font-black text-white uppercase tracking-tight">Financial Progress</h3>
+                              </div>
+                              <button
+                                onClick={() => setActiveTab('financials')}
+                                className="text-[9px] font-black text-[#fce003] hover:underline uppercase tracking-widest flex items-center gap-0.5"
+                              >
+                                Full Breakdown
+                                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                              </button>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div>
+                              <div className="flex justify-between text-[9px] font-bold text-outline uppercase mb-1.5">
+                                <span>Paid: {revCurrSymbol}{paidNum.toLocaleString()}</span>
+                                <span>Total: {revCurrSymbol}{revNum.toLocaleString()}</span>
+                              </div>
+                              <div className="h-2 bg-stone-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-yellow-400 to-green-400 transition-all duration-500" 
+                                  style={{ width: `${payPercent}%` }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                              <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Balance Due</span>
+                                <p className={`text-sm font-black mt-0.5 ${balanceDue > 0 ? 'text-[#fce003]' : 'text-success'}`}>
+                                  {revCurrSymbol}{balanceDue.toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Status</span>
+                                <p className="text-sm font-black text-white mt-0.5 truncate">
+                                  {project.paymentStatus || 'Unpaid'}
+                                </p>
+                              </div>
+                            </div>
+                          </section>
+                        )}
+
+                        {/* Production & Revisions Snapshot Card */}
+                        <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm text-[#fce003]">engineering</span>
+                              <h3 className="text-xs font-black text-white uppercase tracking-tight">Production & Quality</h3>
+                            </div>
+                            <button
+                              onClick={() => setActiveTab('revisions')}
+                              className="text-[9px] font-black text-[#fce003] hover:underline uppercase tracking-widest flex items-center gap-0.5"
+                            >
+                              Revisions Tab
+                              <span className="material-symbols-outlined text-xs">chevron_right</span>
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div 
+                              onClick={() => setActiveTab('revisions')}
+                              className="p-3 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:border-white/10 transition-colors"
+                            >
+                              <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Active Revisions</span>
+                              <p className="text-sm font-black text-white mt-0.5">
+                                {pendingRevs} <span className="text-[9px] font-normal text-outline">({fixedRevs} fixed)</span>
+                              </p>
+                            </div>
+                            <div 
+                              onClick={() => setActiveTab('tracking')}
+                              className="p-3 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:border-white/10 transition-colors"
+                            >
+                              <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Tracked Time</span>
+                              <p className="text-sm font-black text-[#fce003] mt-0.5">{timeString}</p>
+                            </div>
+                          </div>
+
+                          {latestRev && (
+                            <div className="p-3 rounded-xl bg-surface-container-high/60 border border-white/5">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[8px] font-bold text-neutral-400 uppercase">Latest Request</span>
+                                <span className={`text-[7px] font-black uppercase px-1.5 py-0.2 rounded ${latestRev.status === 'Fixed' ? 'bg-success/20 text-success' : 'bg-[#fce003]/20 text-[#fce003]'}`}>
+                                  {latestRev.status || 'Pending'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-on-surface line-clamp-2 italic">
+                                "{cleanNote(latestRev.note)}"
+                              </p>
+                            </div>
+                          )}
+                        </section>
+
+                        {/* Team & Partner Quick Access Card */}
+                        <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                          <h3 className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-[#fce003]">group</span>
+                            Assigned Team & Partner
+                          </h3>
+
+                          <div className="space-y-3">
+                            {/* Assigned Designer */}
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full overflow-hidden border border-yellow-400/30 flex-shrink-0">
+                                  <img 
+                                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${project.designer || 'designer'}`} 
+                                    alt={project.designer} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-white">{project.designer || 'Unassigned'}</p>
+                                  <p className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">Lead CAD Designer</p>
                                 </div>
                               </div>
+                              <button
+                                onClick={() => setActiveTab('chat')}
+                                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] font-black text-[#fce003] uppercase tracking-wider flex items-center gap-1 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                Message
+                              </button>
                             </div>
-                            <p className="text-[11px] text-on-surface leading-relaxed italic">
-                              "{feedbackInfo.comment || 'Amazing Experience'}"
-                            </p>
-                            <p className="text-[9px] text-outline font-black uppercase tracking-widest mt-2">
-                              Rating: {feedbackInfo.rating}
-                            </p>
+
+                            {/* Client Profile */}
+                            {!isDesigner && (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-surface-container-high flex items-center justify-center border border-white/10 flex-shrink-0">
+                                    <span className="material-symbols-outlined text-sm text-outline">business</span>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-bold text-white truncate max-w-[130px] sm:max-w-[160px]">
+                                      {client?.companyName || client?.name || project.client || 'Authorized Client'}
+                                    </p>
+                                    <p className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">
+                                      {client?.country || 'Partner Client'}
+                                    </p>
+                                  </div>
+                                </div>
+                                {client?.mobile && (
+                                  <a
+                                    href={`https://wa.me/${client.mobile.replace(/[^0-9]/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-[9px] font-black text-green-400 uppercase tracking-wider flex items-center gap-1 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">send</span>
+                                    WhatsApp
+                                  </a>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      )}
+                        </section>
+
+                        {/* Escrow Card (if metadata present) */}
+                        {escrowInfo && (
+                          <div className="bg-surface-container rounded-2xl p-5 border border-green-500/20 relative overflow-hidden group shadow-lg">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-green-400">
+                              <span className="material-symbols-outlined text-5xl">shield</span>
+                            </div>
+                            <div className="relative z-20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="material-symbols-outlined text-green-400 text-sm">verified_user</span>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-green-400">Escrow Secured</h4>
+                              </div>
+                              <p className="text-[11px] text-on-surface leading-relaxed">
+                                {escrowInfo}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Feedback Card (if metadata present) */}
+                        {feedbackInfo && (
+                          <div className="bg-surface-container rounded-2xl p-5 border border-yellow-500/20 relative overflow-hidden group shadow-lg">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400">
+                              <span className="material-symbols-outlined text-5xl">star</span>
+                            </div>
+                            <div className="relative z-20">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-yellow-400 text-sm">reviews</span>
+                                  <h4 className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Client Feedback</h4>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-yellow-400 text-[10px] font-black">
+                                    {parseFloat(feedbackInfo.rating.split('/')[0] || '5').toFixed(1)}
+                                  </span>
+                                  <span className="material-symbols-outlined text-yellow-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-on-surface leading-relaxed italic">
+                                "{feedbackInfo.comment || 'Amazing Experience'}"
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
