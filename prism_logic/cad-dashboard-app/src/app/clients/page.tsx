@@ -268,7 +268,7 @@ export default function ClientsPage() {
           </div>
         ) : (
           <>
-            <main className="pb-32 px-6 max-w-7xl mx-auto pt-20">
+            <main className="pb-32 px-4 sm:px-8 xl:px-12 w-full pt-20">
           {/* Enhanced Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div>
@@ -342,7 +342,7 @@ export default function ClientsPage() {
           </div>
 
           {/* Strategic Client Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
             {filteredClients.map((client, idx) => (
               <Link 
                 key={client.id || idx} 
