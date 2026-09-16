@@ -204,7 +204,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <>
-          <div className="pt-20 pb-32 px-6 max-w-7xl mx-auto space-y-8">
+          <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="text-left">
@@ -278,7 +278,7 @@ export default function ProjectsPage() {
             </div>
           ) : (
             filteredProjects.map((project, idx) => (
-                <div key={project.id || idx} className="lg:col-span-4 flex flex-col">
+                <div key={project.id || idx} className="lg:col-span-4 2xl:col-span-3 flex flex-col">
                   <div className="bg-surface-container h-full rounded-lg border border-white/5 flex flex-col p-5 hover:border-primary/20 transition-all duration-300 relative overflow-hidden group">
                     <div className="space-y-4 flex-grow relative z-20">
                       {project.status !== 'Completed' && <DeadlineSection createdAt={project.createdAt} deadlineDate={project.deadlineDate} />}
