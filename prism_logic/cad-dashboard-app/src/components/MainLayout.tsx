@@ -11,7 +11,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   
   // Pages that should NEVER have sidebar padding (Auth, Setup, Public tools, etc.)
   const isAuthPage = pathname?.startsWith('/auth');
-  const isPublicStandalone = pathname === '/pricing' || pathname?.startsWith('/transfer') || pathname?.startsWith('/ai') || pathname === '/home';
+  const isPublicStandalone = pathname === '/pricing' || pathname?.startsWith('/transfer/') || pathname?.startsWith('/ai') || pathname === '/home';
   
   // Only apply padding if authenticated and NOT on a standalone or auth page
   const shouldHavePadding = isAuthenticated && !isAuthPage && !isPublicStandalone;

@@ -12,10 +12,10 @@ export function RoleBasedNavigation() {
 
   // Hide on Auth pages, public landing pages, or public AI standalone tools
   const isAuthPage = pathname?.startsWith('/auth');
-  const isPublicPage = pathname === '/pricing' || pathname?.startsWith('/transfer') || pathname?.startsWith('/ai') || pathname === '/home';
+  const isPublicPage = pathname === '/pricing' || pathname?.startsWith('/transfer/') || pathname?.startsWith('/ai') || pathname === '/home';
 
   // We only hide if definitely not authenticated OR on a special page
-  if (isAuthPage || (!loading && !isAuthenticated) || (isPublicPage && !loading && !isAuthenticated)) return null;
+  if (isAuthPage || (!loading && !isAuthenticated) || (pathname?.startsWith('/transfer/')) || (isPublicPage && !loading && !isAuthenticated)) return null;
 
 
   // Render navigation for both Organization owners and Designers

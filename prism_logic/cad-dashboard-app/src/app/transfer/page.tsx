@@ -359,7 +359,7 @@ export default function TransferPage() {
       )}
 
       {/* Main Centralized Content - Two Column Responsive Layout */}
-      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+      <main className="flex-1 w-full px-4 sm:px-8 xl:px-12 py-8 lg:py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Analytics & Ledger */}
@@ -490,13 +490,13 @@ export default function TransferPage() {
           </div>
 
           {/* Right Column: Upload Form */}
-          <div className="lg:col-span-5 w-full max-w-md mx-auto lg:mx-0 flex flex-col gap-8">
+          <div className="lg:col-span-5 w-full flex flex-col gap-8">
             {/* Upload Zone */}
             <div 
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
-              className="group relative aspect-square w-full rounded-xl flex flex-col items-center justify-center gap-6 p-8 bg-gradient-to-br from-[#1a1c1c] to-[#0c0a04] cursor-pointer transition-all hover:scale-[1.01] shadow-[0_10px_50px_rgba(0,0,0,0.5)]"
+              className="group relative aspect-square max-w-md w-full mx-auto lg:mx-0 rounded-xl flex flex-col items-center justify-center gap-6 p-8 bg-gradient-to-br from-[#1a1c1c] to-[#0c0a04] cursor-pointer transition-all hover:scale-[1.01] shadow-[0_10px_50px_rgba(0,0,0,0.5)]"
             >
               <input 
                 type="file" 
