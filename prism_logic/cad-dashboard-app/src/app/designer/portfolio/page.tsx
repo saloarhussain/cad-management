@@ -62,7 +62,7 @@ export default function DesignerPortfolio() {
           </div>
         )}
 
-        <main className="max-w-5xl mx-auto px-6 pt-24">
+        <main className="w-full px-4 sm:px-8 xl:px-12 pt-24">
           {/* Header */}
           <div className="flex justify-between items-center mb-10">
             <div>
@@ -139,7 +139,7 @@ export default function DesignerPortfolio() {
                 <p className="text-[10px] text-white/20 mt-1">Upload images of your best designs to impress organizations.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {portfolioItems.map(item => (
                   <div key={item.id} className="bg-white/5 border border-white/5 rounded-2xl overflow-hidden group hover:border-yellow-400/20 transition-all">
                     <div className="aspect-square bg-black/40 overflow-hidden relative">
