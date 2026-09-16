@@ -157,7 +157,7 @@ export default function TeamPage() {
         </div>
       ) : (
         <>
-          <main className="pb-32 px-6 max-w-7xl mx-auto pt-20">
+          <main className="pb-32 px-4 sm:px-8 xl:px-12 w-full pt-20">
         {/* Enhanced Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
           <div>
@@ -225,7 +225,7 @@ export default function TeamPage() {
         </div>
 
         {/* Strategic Team Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {filteredDesigners.map((designer, idx) => (
             <div key={designer.id || idx} className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-5 hover:bg-white/[0.05] hover:border-[#F59E0B]/30 transition-all duration-500 overflow-hidden shadow-2xl">
               <Link href={`/team/${designer.id}`} className="absolute inset-0 z-10"></Link>
