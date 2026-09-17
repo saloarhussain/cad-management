@@ -423,11 +423,12 @@ export default function SettingsPage() {
 
   return (
     <AuthGuard>
-      <div className="bg-background text-on-surface font-body min-h-screen pb-24 selection:bg-primary-fixed-dim selection:text-on-primary-fixed animate-in fade-in duration-700">
+      <div className="bg-background text-on-surface font-body min-h-screen pb-24 selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
         {/* Notification Toast */}
         {notification && (
-          <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 transition-all duration-300 ${notification.type === 'success' ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'
-            }`}>
+          <div className={`fixed top-20 left-1/2 -translate-x-1/2 z-[250] px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 transition-all duration-300 animate-in fade-in slide-in-from-top-4 ${
+            notification.type === 'success' ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'
+          }`}>
             <span className="material-symbols-outlined text-sm">
               {notification.type === 'success' ? 'check_circle' : 'error'}
             </span>
@@ -435,87 +436,179 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Top Header */}
-        <header className="fixed top-0 z-50 w-full bg-background/95 backdrop-blur-xl flex justify-between items-center px-6 py-4">
-          <div className="flex items-center gap-3">
-            {/* Spacing for universal back button in TopAppBar */}
-            <div className="w-8 h-8" />
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-black text-white uppercase">{organizationName || 'CAD Organization'}</div>
-              <div className="text-[10px] text-neutral-500">{user?.email}</div>
+        {/* Main Content Container - Full Width Consistent with Projects & Team */}
+        <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8 animate-in fade-in duration-700">
+          
+          {/* Top Page Header with Title, Role Context, and Immediate Save Button */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/5">
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg shadow-yellow-400/5 shrink-0">
+                  <span className="material-symbols-outlined text-2xl">tune</span>
+                </div>
+                <div>
+                  <h1 className="font-headline text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic leading-none">
+                    {loading ? '...' : (
+                      isDesigner ? (
+                        <>Designer <span className="text-[#F59E0B]">Workstation</span></>
+                      ) : (
+                        <>Organization <span className="text-[#F59E0B]">Dashboard</span></>
+                      )
+                    )}
+                  </h1>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1.5">
+                    {isDesigner ? 'Personal credentials, skill portfolio & payout settlement' : 'Command center, billing protocols & workspace configurations'}
+                  </p>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => logout()}
-              className="p-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-colors"
-              title="Logout"
-            >
-              <span className="material-symbols-outlined">logout</span>
-            </button>
+
+            {/* Header Right Actions */}
+            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                  {isDesigner ? 'Designer Mode' : 'Admin Authority'}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSaving}
+                className={`px-6 py-2.5 rounded-xl font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg active:scale-95 ${
+                  isSaving
+                    ? 'bg-yellow-400/20 text-yellow-400/40 cursor-wait'
+                    : 'bg-yellow-400 text-black hover:brightness-110 shadow-yellow-400/20'
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">
+                  {isSaving ? 'sync' : 'save'}
+                </span>
+                <span>{isSaving ? 'Synchronizing...' : 'Save Changes'}</span>
+              </button>
+            </div>
           </div>
-        </header>
 
-        {/* Main Content */}
-        <main className="pt-24 px-6 md:px-8 max-w-7xl mx-auto pb-32">
-          <div className="flex flex-col lg:flex-row gap-12 text-left">
-            {/* Sidebar / Left Column */}
-            <div className="w-full lg:w-1/4 shrink-0 space-y-8 lg:sticky lg:top-32 h-fit">
-              <section className="space-y-2">
-                <h2 className="text-[28px] font-black uppercase tracking-tighter leading-tight text-white">
-                  {loading ? '...' : (isDesigner ? 'Designer\nProfile' : 'Organization\nDashboard')}
-                </h2>
-                <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-2">
-                  {isDesigner ? 'Personal Workstation Credentials' : 'Command Center & API Protocol'}
-                </p>
-              </section>
-
-              {/* Tab Navigation */}
-              <div className="bg-zinc-900/40 border border-zinc-800 rounded-xl p-6 space-y-6">
+          {/* 12-Column Responsive Settings Architecture */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-start">
+            
+            {/* Left Navigation Column */}
+            <div className="lg:col-span-4 xl:col-span-3 space-y-6 lg:sticky lg:top-24 h-fit">
+              {/* Tab Navigation Card */}
+              <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-4 shadow-xl space-y-2">
+                <div className="px-3 py-2 text-[9px] font-black text-zinc-500 uppercase tracking-[0.25em]">
+                  Configuration Modules
+                </div>
                 {[
                   { id: 'user', label: 'User Setting', icon: 'person', desc: 'Profile & Global Preferences' },
                   { id: 'payment', label: 'Payment Method', icon: 'payments', desc: 'Billing Gateways & Addresses' },
                   { id: 'email', label: 'Notification', icon: 'notifications_active', desc: 'Email Protocols & Alerts' },
                   { id: 'alerts', label: 'Alert Integrations', icon: 'webhook', desc: 'Fiverr, Upwork, Phone Calls' },
                   { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet', desc: 'Ledger, Escrow & Withdrawals' }
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all group ${activeTab === tab.id
-                        ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/10'
-                        : 'text-zinc-500 hover:text-white'
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id as any)}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group text-left ${
+                        isActive
+                          ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/15 font-bold'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
                       }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 rounded flex items-center justify-center border ${activeTab === tab.id ? 'bg-black/10 border-transparent' : 'border-zinc-800 group-hover:border-zinc-700'}`}>
-                        <span className="material-symbols-outlined text-xl">{tab.icon}</span>
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
+                          isActive
+                            ? 'bg-black/15 border-transparent text-black'
+                            : 'bg-zinc-900/60 border-zinc-800 group-hover:border-zinc-700 text-zinc-400 group-hover:text-yellow-400'
+                        }`}>
+                          <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                        </div>
+                        <div className="min-w-0">
+                          <p className={`text-xs font-black uppercase tracking-tight truncate leading-tight ${isActive ? 'text-black' : 'text-zinc-200'}`}>
+                            {tab.label}
+                          </p>
+                          <p className={`text-[9px] font-semibold truncate mt-0.5 ${isActive ? 'text-black/70' : 'text-zinc-500'}`}>
+                            {tab.desc}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <p className="text-[10px] font-black uppercase tracking-tight leading-none mb-1">{tab.label}</p>
-                        <p className={`text-[8px] font-bold ${activeTab === tab.id ? 'text-black/60' : 'text-zinc-600'}`}>{tab.desc}</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined text-sm">chevron_right</span>
-                  </button>
-                ))}
+                      <span className={`material-symbols-outlined text-base transition-transform group-hover:translate-x-0.5 ${isActive ? 'text-black' : 'text-zinc-600'}`}>
+                        chevron_right
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Workstation Status & Security Card */}
+              <div className="bg-zinc-900/30 border border-zinc-800/60 rounded-2xl p-5 space-y-4 shadow-md">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Protocol Ledger</span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-green-500/10 text-green-400 border border-green-500/20 text-[8px] font-black uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                    Synchronized
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between pt-1">
+                  <div>
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Rewards Pool</p>
+                    <p className="text-xl font-black text-white tabular-nums tracking-tight">
+                      {pointsBalance.toLocaleString()} <span className="text-xs text-yellow-400 font-bold">PTS</span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Security</p>
+                    <p className="text-xs font-bold text-zinc-300">TLS 256-bit</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Danger Zone Quick Trigger */}
+              <div className="px-1">
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="w-full py-2.5 px-4 rounded-xl border border-red-500/20 bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:text-red-300 text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">delete_forever</span>
+                  Terminate Workstation
+                </button>
               </div>
             </div>
 
             {/* Right Content Column */}
-            <div className="flex-1 space-y-8">
+            <div className="lg:col-span-8 xl:col-span-9 space-y-8">
               <form onSubmit={handleSubmit} className="space-y-8 relative">
             {activeTab === 'user' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                
                 {/* Account Profile Card */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group">
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
                   <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#242424 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
                   
-                  <div className="relative z-10 flex flex-col md:flex-row gap-10">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60 relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                        <span className="material-symbols-outlined text-xl">badge</span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black uppercase tracking-tight text-white">Identity & Credentials</h3>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+                          {isDesigner ? 'Personal profile and verified contact handles' : 'Organization profile, owner verification and contact details'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
                     {/* Premium Profile Image Uploader */}
                     <div className="w-32 h-32 shrink-0 mx-auto md:mx-0">
-                      <div className="w-32 h-32 rounded-full border border-zinc-800 p-1 bg-zinc-900/50 relative overflow-hidden group/avatar">
+                      <div className="w-32 h-32 rounded-full border border-zinc-800 p-1 bg-zinc-900/50 relative overflow-hidden group/avatar shadow-lg">
                         <div className="w-full h-full rounded-full bg-zinc-800/40 flex items-center justify-center overflow-hidden relative">
                           {avatarUrl ? (
                             <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover grayscale group-hover/avatar:grayscale-0 transition-all duration-500" />
@@ -530,7 +623,7 @@ export default function SettingsPage() {
                           )}
                         </div>
 
-                        <label className="absolute inset-0 cursor-pointer flex items-center justify-center rounded-full bg-black/0 hover:bg-black/40 transition-all opacity-0 hover:opacity-100 group-hover/avatar:opacity-100 z-20">
+                        <label className="absolute inset-0 cursor-pointer flex items-center justify-center rounded-full bg-black/0 hover:bg-black/50 transition-all opacity-0 hover:opacity-100 group-hover/avatar:opacity-100 z-20">
                           <input
                             type="file"
                             accept="image/*"
@@ -569,14 +662,14 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-5">
                       {isDesigner ? (
-                        <div className="col-span-2 space-y-1.5">
+                        <div className="col-span-1 sm:col-span-2 space-y-1.5">
                           <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Professional Identity</label>
                           <input
                             value={designerFullName}
                             onChange={(e) => setDesignerFullName(e.target.value)}
-                            className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                            className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                             placeholder="Your Full Name"
                           />
                         </div>
@@ -587,7 +680,7 @@ export default function SettingsPage() {
                             <input
                               value={organizationTitle}
                               onChange={(e) => setOrganizationTitle(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="Organization"
                             />
                           </div>
@@ -596,7 +689,7 @@ export default function SettingsPage() {
                             <input
                               value={ownerName}
                               onChange={(e) => setOwnerName(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="Legal Name"
                             />
                           </div>
@@ -608,18 +701,18 @@ export default function SettingsPage() {
                         <input
                           value={whatsapp}
                           onChange={(e) => setWhatsapp(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                           placeholder="+91 00000 00000"
                         />
                       </div>
-                      <div className="space-y-1.5 opacity-60">
+                      <div className="space-y-1.5 opacity-70">
                         <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Email</label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
                             <span className="material-symbols-outlined text-sm">lock</span>
                           </div>
                           <input
-                            className="w-full bg-zinc-900/20 border border-zinc-800/50 rounded-lg py-3 pl-12 pr-4 text-sm font-medium text-zinc-500 cursor-not-allowed"
+                            className="w-full bg-zinc-900/30 border border-zinc-800/60 rounded-xl py-3 pl-12 pr-4 text-sm font-medium text-zinc-400 cursor-not-allowed"
                             readOnly
                             value={user?.email || ''}
                           />
@@ -627,82 +720,22 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-                  
-                  {!isDesigner && (
-                    <div className="relative z-10 pt-8 mt-8 border-t border-zinc-800/50">
-                        <h4 className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-6">Organization Invoice Details</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Country</label>
-                            <CountrySearch 
-                              name="orgCountry"
-                              defaultValue={orgCountry} 
-                              onChange={(val) => setOrgCountry(val)} 
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">{getTaxIdLabel(orgCountry).toUpperCase()}</label>
-                            <input
-                              value={orgTaxId}
-                              onChange={(e) => setOrgTaxId(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder={`Enter ${getTaxIdLabel(orgCountry)}`}
-                            />
-                          </div>
-                          <div className="space-y-1.5 md:col-span-2">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Address</label>
-                            <input
-                              value={orgAddress}
-                              onChange={(e) => setOrgAddress(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="123 Business St"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">City</label>
-                            <input
-                              value={orgCity}
-                              onChange={(e) => setOrgCity(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="City"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">State / Province</label>
-                            <input
-                              value={orgState}
-                              onChange={(e) => setOrgState(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="State"
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Pincode / Zip</label>
-                            <input
-                              value={orgPincode}
-                              onChange={(e) => setOrgPincode(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="Zip Code"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                  )}
 
+                  {/* Designer Skills */}
                   {isDesigner && (
-                    <div className="mt-6 pt-6 border-t border-white/5">
-                      <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest mb-3">Skills & Expertise</p>
+                    <div className="mt-8 pt-6 border-t border-zinc-800/60 relative z-10">
+                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Skills & Expertise</p>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {designerSkills.map((skill: string) => (
                           <div key={skill} className="group/skill relative">
-                            <span className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold text-white uppercase tracking-tighter flex items-center gap-2">
+                            <span className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-white uppercase tracking-tighter flex items-center gap-2">
                               {skill}
                               <button
                                 type="button"
                                 onClick={() => setDesignerSkills(designerSkills.filter(s => s !== skill))}
                                 className="opacity-40 hover:opacity-100 hover:text-red-400 transition-all"
                               >
-                                <span className="material-symbols-outlined text-[12px]">close</span>
+                                <span className="material-symbols-outlined text-[14px]">close</span>
                               </button>
                             </span>
                           </div>
@@ -722,7 +755,7 @@ export default function SettingsPage() {
                             }
                           }}
                           placeholder="Add Skill (Press Enter)"
-                          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-[10px] text-white focus:ring-1 focus:ring-yellow-400 outline-none transition-all uppercase tracking-widest"
+                          className="flex-1 bg-black/40 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs text-white focus:ring-1 focus:ring-yellow-400 outline-none transition-all uppercase tracking-widest"
                         />
                         <button
                           type="button"
@@ -732,38 +765,118 @@ export default function SettingsPage() {
                               setNewSkill('');
                             }
                           }}
-                          className="p-2 bg-yellow-400 text-black rounded-xl hover:scale-105 active:scale-95 transition-all"
+                          className="px-4 py-2.5 bg-yellow-400 text-black rounded-xl hover:scale-105 active:scale-95 transition-all font-black text-xs"
                         >
-                          <span className="material-symbols-outlined">add</span>
+                          <span className="material-symbols-outlined text-sm">add</span>
                         </button>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* DASHBOARD DISPLAY CARD */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative">
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h3 className="text-2xl font-black uppercase tracking-tighter text-white">Dashboard Display</h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">Configure financial metric conversion and visibility</p>
+                {/* Organization Invoice Details Card */}
+                {!isDesigner && (
+                  <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                          <span className="material-symbols-outlined text-xl">receipt_long</span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black uppercase tracking-tight text-white">Invoice Details & Legal Registration</h3>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+                            Official legal and billing details used on client project invoices & GST compliance
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="p-2 bg-zinc-900 rounded-lg border border-zinc-800/30">
-                      <span className="material-symbols-outlined text-yellow-400">trending_up</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Country</label>
+                        <CountrySearch 
+                          name="orgCountry"
+                          defaultValue={orgCountry} 
+                          onChange={(val) => setOrgCountry(val)} 
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">{getTaxIdLabel(orgCountry).toUpperCase()}</label>
+                        <input
+                          value={orgTaxId}
+                          onChange={(e) => setOrgTaxId(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder={`Enter ${getTaxIdLabel(orgCountry)}`}
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Address</label>
+                        <input
+                          value={orgAddress}
+                          onChange={(e) => setOrgAddress(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="123 Business Boulevard, Suite 100"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">City</label>
+                        <input
+                          value={orgCity}
+                          onChange={(e) => setOrgCity(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="City"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">State / Province</label>
+                        <input
+                          value={orgState}
+                          onChange={(e) => setOrgState(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="State / Province"
+                        />
+                      </div>
+                      <div className="space-y-1.5 md:col-span-2">
+                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Pincode / Zip Code</label>
+                        <input
+                          value={orgPincode}
+                          onChange={(e) => setOrgPincode(e.target.value)}
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          placeholder="Pincode / Zip Code"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* DASHBOARD DISPLAY CARD */}
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative">
+                  <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                        <span className="material-symbols-outlined text-xl">currency_exchange</span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black uppercase tracking-tight text-white">Dashboard Display & Currency</h3>
+                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Configure financial metric conversion and visibility</p>
+                      </div>
+                    </div>
+                    <div className="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 text-yellow-400">
+                      <span className="material-symbols-outlined text-lg">trending_up</span>
                     </div>
                   </div>
 
-                  <div className="bg-zinc-900/40 border border-zinc-800/30 rounded-xl p-6">
+                  <div className="bg-black/30 border border-zinc-800/50 rounded-xl p-6">
                     <div className="mb-4">
                       <p className="text-[10px] text-zinc-300 font-black uppercase">Primary Currency</p>
-                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Used for all global totals</p>
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Used for all global project and invoice totals</p>
                     </div>
 
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                        className="w-full flex items-center justify-between px-5 py-3 bg-black border border-zinc-800 hover:border-yellow-400/30 rounded-lg transition-all"
+                        className="w-full flex items-center justify-between px-5 py-3.5 bg-black border border-zinc-800 hover:border-yellow-400/40 rounded-xl transition-all"
                       >
                         <span className="text-sm font-bold text-white">
                           {GLOBAL_CURRENCIES.find(c => c.symbol === currentCurrency)?.code || 'CURRENCY'} ({currentCurrency}) - {GLOBAL_CURRENCIES.find(c => c.symbol === currentCurrency)?.label}
@@ -817,21 +930,20 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-
                 {/* Designer Payout Information Section - Only for Designers */}
                 {isDesigner && (
-                  <div className="group relative mt-8 bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 hover:border-yellow-400/20 transition-all duration-500 overflow-hidden shadow-2xl">
-                    <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400">
+                  <div className="group relative bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 hover:border-yellow-400/30 transition-all duration-300 overflow-hidden shadow-xl">
+                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400 pointer-events-none">
                       <span className="material-symbols-outlined text-7xl">payments</span>
                     </div>
 
                     <div className="relative z-20">
-                      <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">Payout Settlement</h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Where you receive your earnings</p>
+                      <h3 className="text-lg font-black text-white uppercase tracking-tight mb-1">Payout Settlement</h3>
+                      <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Where you receive your project earnings and payouts</p>
                       
-                      <div className="mt-8 p-6 bg-yellow-400/5 rounded-xl border border-yellow-400/10 mb-8">
-                        <p className="text-[10px] text-yellow-400/80 font-black leading-relaxed uppercase tracking-widest flex items-center gap-3">
-                          <span className="material-symbols-outlined text-sm">info</span>
+                      <div className="mt-6 p-5 bg-yellow-400/5 rounded-xl border border-yellow-400/10 mb-6">
+                        <p className="text-[10px] text-yellow-400/90 font-black leading-relaxed uppercase tracking-widest flex items-center gap-3">
+                          <span className="material-symbols-outlined text-base">info</span>
                           Manage your settlement protocols in the "Payment Method" tab to ensure synchronized global payouts.
                         </p>
                       </div>
@@ -839,9 +951,9 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setActiveTab('payment')}
-                        className="w-full py-4 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-black text-white uppercase tracking-widest hover:border-yellow-400/50 transition-all flex items-center justify-center gap-3"
+                        className="w-full py-3.5 rounded-xl bg-zinc-900 border border-zinc-800 text-[10px] font-black text-white uppercase tracking-widest hover:border-yellow-400/50 transition-all flex items-center justify-center gap-2.5"
                       >
-                        <span className="material-symbols-outlined text-sm">settings_suggest</span>
+                        <span className="material-symbols-outlined text-base text-yellow-400">settings_suggest</span>
                         Configure Receiving Protocols
                       </button>
                     </div>
@@ -853,42 +965,51 @@ export default function SettingsPage() {
             {activeTab === 'email' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* SMTP / Notification Protocol Card */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group shadow-xl">
-                  <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400">
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400 pointer-events-none">
                     <span className="material-symbols-outlined text-7xl">notifications_active</span>
                   </div>
 
                   <div className="relative z-20">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">Notification Protocol</h3>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Configure your email gateway for client and designer alerts</p>
+                    <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                          <span className="material-symbols-outlined text-xl">notifications_active</span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black uppercase tracking-tight text-white">Notification Protocol</h3>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Configure your email gateway for client and designer alerts</p>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="col-span-2 md:col-span-1 space-y-1.5">
                         <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">SMTP Host</label>
                         <input
                           value={smtpHost}
                           onChange={(e) => setSmtpHost(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                           placeholder="smtp.gmail.com"
                         />
                       </div>
-                      <div className="col-span-2 md:col-span-1 grid grid-cols-2 gap-6">
+                      <div className="col-span-2 md:col-span-1 grid grid-cols-2 gap-5">
                         <div className="space-y-1.5">
                           <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">SMTP Port</label>
                           <input
                             value={smtpPort}
                             onChange={(e) => setSmtpPort(e.target.value)}
-                            className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                            className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                             placeholder="465"
                           />
                         </div>
                         <div className="space-y-1.5 flex flex-col justify-end">
-                          <label className="flex items-center gap-2 cursor-pointer h-[46px] bg-black/40 border border-zinc-800 rounded-lg px-4 text-sm text-white font-semibold hover:border-yellow-400/50 transition-all">
+                          <label className="flex items-center gap-2.5 cursor-pointer h-[46px] bg-black/40 border border-zinc-800 rounded-xl px-4 text-sm text-white font-semibold hover:border-yellow-400/50 transition-all">
                             <input 
                               type="checkbox" 
                               checked={smtpSecure}
                               onChange={(e) => setSmtpSecure(e.target.checked)}
-                              className="accent-yellow-400 w-4 h-4"
+                              className="accent-yellow-400 w-4 h-4 rounded"
                             />
                             <span className="text-[10px] uppercase tracking-widest mt-0.5">Secure SSL</span>
                           </label>
@@ -900,7 +1021,7 @@ export default function SettingsPage() {
                         <input
                           value={senderName}
                           onChange={(e) => setSenderName(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                           placeholder="My CAD Organization"
                         />
                       </div>
@@ -911,7 +1032,7 @@ export default function SettingsPage() {
                           type="email"
                           value={gmailUser}
                           onChange={(e) => setGmailUser(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                           placeholder="alerts@domain.com"
                         />
                       </div>
@@ -922,18 +1043,18 @@ export default function SettingsPage() {
                           type="password"
                           value={gmailAppPassword}
                           onChange={(e) => setGmailAppPassword(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                           placeholder="••••••••••••••••"
                         />
                       </div>
-                      <div className="col-span-2 mt-4 pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="col-span-2 mt-4 pt-4 border-t border-zinc-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div>
-                          <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold">Google API Integration</p>
-                          <p className="text-[9px] text-zinc-600 font-medium">Connect via OAuth to read inbox and auto-send transfer links</p>
+                          <p className="text-[10px] text-zinc-300 uppercase tracking-widest font-bold">Google API Integration</p>
+                          <p className="text-[9px] text-zinc-500 font-medium">Connect via OAuth to read inbox and auto-send transfer links</p>
                         </div>
                         <a
                           href="/api/gmail/auth"
-                          className="px-6 py-2.5 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-lg hover:brightness-90 transition-all flex items-center gap-2"
+                          className="px-6 py-2.5 bg-white text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:brightness-90 transition-all flex items-center gap-2"
                         >
                           <span className="material-symbols-outlined text-sm">link</span>
                           Connect Google Account
@@ -947,36 +1068,45 @@ export default function SettingsPage() {
 
             {activeTab === 'alerts' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group shadow-xl">
-                  <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400">
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400 pointer-events-none">
                     <span className="material-symbols-outlined text-7xl">webhook</span>
                   </div>
 
                   <div className="relative z-20">
-                    <h3 className="text-xl font-black text-white uppercase tracking-tight mb-1">External Alert Integrations</h3>
-                    <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Connect Fiverr, Upwork, Binance P2P and Phone Call Alerts</p>
+                    <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                          <span className="material-symbols-outlined text-xl">webhook</span>
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-black uppercase tracking-tight text-white">External Alert Integrations</h3>
+                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Connect Fiverr, Upwork, Binance P2P and Automated Phone Calls</p>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="mt-8 space-y-10">
+                    <div className="space-y-8">
                       
                       {/* Fiverr & Upwork */}
-                      <div className="space-y-6 border-b border-white/5 pb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center text-green-500">
-                            <span className="material-symbols-outlined text-sm">mail</span>
+                      <div className="space-y-5 border-b border-zinc-800/60 pb-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
+                            <span className="material-symbols-outlined text-base">mail</span>
                           </div>
                           <div>
                             <h4 className="text-sm font-black text-white uppercase tracking-widest">Freelance Platforms (Fiverr/Upwork)</h4>
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Connect your email to parse incoming order notifications automatically</p>
+                            <p className="text-[10px] text-zinc-500 font-medium">Connect your email to parse incoming order notifications automatically</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div className="space-y-1.5">
                             <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Email ID</label>
                             <input
                               type="email"
                               value={freelanceEmail}
                               onChange={(e) => setFreelanceEmail(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="freelance@domain.com"
                             />
                           </div>
@@ -986,7 +1116,7 @@ export default function SettingsPage() {
                               type="password"
                               value={freelanceAppPassword}
                               onChange={(e) => setFreelanceAppPassword(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="••••••••••••••••"
                             />
                           </div>
@@ -994,20 +1124,23 @@ export default function SettingsPage() {
                       </div>
 
                       {/* Binance P2P */}
-                      <div className="space-y-6 border-b border-white/5 pb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400">
-                            <span className="material-symbols-outlined text-sm">currency_bitcoin</span>
+                      <div className="space-y-5 border-b border-zinc-800/60 pb-8">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                            <span className="material-symbols-outlined text-base">currency_bitcoin</span>
                           </div>
-                          <h4 className="text-sm font-black text-white uppercase tracking-widest">Binance P2P Notifications</h4>
+                          <div>
+                            <h4 className="text-sm font-black text-white uppercase tracking-widest">Binance P2P Notifications</h4>
+                            <p className="text-[10px] text-zinc-500 font-medium">Synchronize wallet and crypto payment alerts</p>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div className="space-y-1.5">
                             <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Binance API Key</label>
                             <input
                               value={binanceApiKey}
                               onChange={(e) => setBinanceApiKey(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="Key..."
                             />
                           </div>
@@ -1017,7 +1150,7 @@ export default function SettingsPage() {
                               type="password"
                               value={binanceApiSecret}
                               onChange={(e) => setBinanceApiSecret(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="Secret..."
                             />
                           </div>
@@ -1025,23 +1158,23 @@ export default function SettingsPage() {
                       </div>
 
                       {/* Phone Call Alerts (Twilio) */}
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500">
-                            <span className="material-symbols-outlined text-sm">call</span>
+                      <div className="space-y-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                            <span className="material-symbols-outlined text-base">call</span>
                           </div>
                           <div>
                             <h4 className="text-sm font-black text-white uppercase tracking-widest">Phone Call Alerts</h4>
-                            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">Receive automated calls from the platform when urgent alerts trigger</p>
+                            <p className="text-[10px] text-zinc-500 font-medium">Receive automated voice calls from CADONCE when critical alerts trigger</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div className="space-y-1.5 md:col-span-2 max-w-xl">
                             <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Your Phone Number (To Receive Calls)</label>
                             <input
                               value={twilioPhoneTo}
                               onChange={(e) => setTwilioPhoneTo(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                               placeholder="+1987654321"
                             />
                           </div>
@@ -1057,16 +1190,16 @@ export default function SettingsPage() {
             {activeTab === 'payment' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {/* Unified Payment Protocols Header */}
-                <section className="space-y-4">
-                  <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-8 relative group shadow-xl">
+                <section className="space-y-6">
+                  <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 relative group shadow-xl">
                     <div className="flex items-center justify-between relative z-10">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-yellow-400 shadow-lg">
-                          <span className="material-symbols-outlined">payments</span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg">
+                          <span className="material-symbols-outlined text-xl">payments</span>
                         </div>
                         <div>
-                          <h2 className="text-xl font-black tracking-tight text-white uppercase">Payment Protocols</h2>
-                          <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Select & Configure Gateways</p>
+                          <h2 className="text-lg font-black tracking-tight text-white uppercase">Payment Protocols</h2>
+                          <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Select & Configure Billing Gateways</p>
                         </div>
                       </div>
 
@@ -1074,7 +1207,7 @@ export default function SettingsPage() {
                         <button
                           type="button"
                           onClick={() => setShowGatewayDropdown(!showGatewayDropdown)}
-                          className="flex items-center gap-3 px-6 py-3 bg-yellow-400 text-black rounded-lg font-black text-[10px] uppercase tracking-widest hover:brightness-110 transition-all"
+                          className="flex items-center gap-2 px-5 py-2.5 bg-yellow-400 text-black rounded-xl font-black text-xs uppercase tracking-wider hover:brightness-110 transition-all shadow-md active:scale-95"
                         >
                           <span className="material-symbols-outlined text-sm">add_circle</span>
                           Add Protocol
@@ -1163,9 +1296,9 @@ export default function SettingsPage() {
                   {/* Active Methods List */}
                   <div className="grid grid-cols-1 gap-6">
                     {paymentMethods.length === 0 && (
-                      <div className="bg-zinc-900/20 border border-dashed border-zinc-800 rounded-2xl p-12 text-center">
+                      <div className="bg-zinc-900/30 border border-dashed border-zinc-800 rounded-2xl p-12 text-center">
                         <span className="material-symbols-outlined text-zinc-700 text-5xl mb-4">account_balance_wallet</span>
-                        <p className="text-[12px] font-bold text-zinc-500 uppercase tracking-[0.2em]">No Active Gateways</p>
+                        <p className="text-[12px] font-bold text-zinc-400 uppercase tracking-[0.2em]">No Active Gateways</p>
                         <p className="text-[9px] text-zinc-600 uppercase tracking-widest mt-2">Add a gateway above to begin configuration</p>
                       </div>
                     )}
@@ -1173,19 +1306,19 @@ export default function SettingsPage() {
                       const isBank = method.type.toLowerCase().includes('bank account');
 
                       return (
-                        <div key={method.id} className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-8 relative group hover:border-yellow-400/20 transition-all">
+                        <div key={method.id} className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 relative group hover:border-yellow-400/30 transition-all shadow-xl">
                           {/* Remove Button */}
                           <button
                             type="button"
                             onClick={() => removePaymentMethod(method.id)}
-                            className="absolute top-6 right-6 w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20 shadow-lg"
+                            className="absolute top-6 right-6 w-8 h-8 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all z-20 shadow-md"
                           >
                             <span className="material-symbols-outlined text-sm">close</span>
                           </button>
 
-                          <div className="flex flex-col md:flex-row gap-8">
-                            <div className="w-16 h-16 bg-black border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-500 group-hover:text-yellow-400 transition-colors shrink-0">
-                              <span className="material-symbols-outlined text-3xl">
+                          <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-14 h-14 bg-black border border-zinc-800 rounded-xl flex items-center justify-center text-zinc-400 group-hover:text-yellow-400 transition-colors shrink-0 shadow-inner">
+                              <span className="material-symbols-outlined text-2xl">
                                 {method.type === 'Binance' ? 'currency_bitcoin' :
                                   method.type === 'PayPal' ? 'payments' :
                                     method.type === 'Payoneer' ? 'language' :
@@ -1195,21 +1328,21 @@ export default function SettingsPage() {
                             </div>
                             <div className="flex-1 space-y-6">
                               <div>
-                                <label className="text-[10px] font-black text-white tracking-[0.2em] uppercase block mb-1">{method.type}</label>
+                                <label className="text-xs font-black text-white tracking-wider uppercase block mb-1">{method.type}</label>
                                 <div className="flex gap-2">
-                                  {method.type === 'PayPal' && <span className="text-[8px] font-black bg-red-500/10 text-red-500 px-2 py-0.5 rounded uppercase">Protocol Fee: +6%</span>}
-                                  {method.type === 'Binance' && <span className="text-[8px] font-black bg-green-500/10 text-green-400 px-2 py-0.5 rounded uppercase">Protocol Fee: 0%</span>}
+                                  {method.type === 'PayPal' && <span className="text-[8px] font-black bg-red-500/10 text-red-400 px-2 py-0.5 rounded-md uppercase">Protocol Fee: +6%</span>}
+                                  {method.type === 'Binance' && <span className="text-[8px] font-black bg-green-500/10 text-green-400 px-2 py-0.5 rounded-md uppercase">Protocol Fee: 0%</span>}
                                 </div>
                               </div>
 
                               {isBank ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                   <div className="space-y-1.5">
                                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Account Holder</p>
                                     <input
                                       value={method.holder || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, holder: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="Full Name"
                                     />
                                   </div>
@@ -1218,7 +1351,7 @@ export default function SettingsPage() {
                                     <input
                                       value={method.value || ''}
                                       onChange={(e) => updateMethodValue(method.id, e.target.value)}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="Account #"
                                     />
                                   </div>
@@ -1232,7 +1365,7 @@ export default function SettingsPage() {
                                     <input
                                       value={method.routing || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, routing: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder={(method.type.includes('India') || isDesigner) ? 'IFSC Code (e.g. SBIN0...)' : 'Code'}
                                     />
                                   </div>
@@ -1241,19 +1374,19 @@ export default function SettingsPage() {
                                     <input
                                       value={method.bankName || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, bankName: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="Bank Name"
                                     />
                                   </div>
                                 </div>
                                ) : method.type === 'Razorpay' ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                   <div className="space-y-1.5">
                                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Razorpay Key ID</p>
                                     <input
                                       value={method.key_id || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, key_id: e.target.value, value: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="rzp_live_..."
                                     />
                                   </div>
@@ -1263,19 +1396,19 @@ export default function SettingsPage() {
                                       type="password"
                                       value={method.key_secret || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, key_secret: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="••••••••••••••••"
                                     />
                                   </div>
                                 </div>
                               ) : method.type === 'Stripe' ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                   <div className="space-y-1.5">
                                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Stripe Publishable Key</p>
                                     <input
                                       value={method.publishable_key || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, publishable_key: e.target.value, value: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="pk_live_..."
                                     />
                                   </div>
@@ -1285,19 +1418,19 @@ export default function SettingsPage() {
                                       type="password"
                                       value={method.secret_key || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, secret_key: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="sk_live_..."
                                     />
                                   </div>
                                 </div>
                               ) : method.type === 'PayPal' ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                                   <div className="space-y-1.5">
                                     <p className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">PayPal Email</p>
                                     <input
                                       value={method.email || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, email: e.target.value, value: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="paypal@example.com"
                                     />
                                   </div>
@@ -1306,7 +1439,7 @@ export default function SettingsPage() {
                                     <input
                                       value={method.client_id || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, client_id: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="Client ID (Optional)"
                                     />
                                   </div>
@@ -1316,7 +1449,7 @@ export default function SettingsPage() {
                                       type="password"
                                       value={method.client_secret || ''}
                                       onChange={(e) => setPaymentMethods(paymentMethods.map(m => m.id === method.id ? { ...m, client_secret: e.target.value } : m))}
-                                      className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                      className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                       placeholder="Client Secret (Optional)"
                                     />
                                   </div>
@@ -1327,7 +1460,7 @@ export default function SettingsPage() {
                                   <input
                                     value={method.value}
                                     onChange={(e) => updateMethodValue(method.id, e.target.value)}
-                                    className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-mono text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                                    className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-mono text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
                                     placeholder={method.type.includes('UPI') ? 'Enter UPI ID (e.g. name@bank)' : `Enter ${method.type} address...`}
                                   />
                                 </div>
@@ -1346,50 +1479,50 @@ export default function SettingsPage() {
             {activeTab === 'wallet' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {/* Points Mastercard */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400">
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 relative overflow-hidden group shadow-xl">
+                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity text-yellow-400 pointer-events-none">
                     <span className="material-symbols-outlined text-8xl">toll</span>
                   </div>
 
-                  <div className="relative">
-                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mb-2">Global Rewards Balance</p>
-                    <h2 className="text-5xl font-black text-white flex items-baseline gap-3 tabular-nums uppercase tracking-tighter">
+                  <div className="relative z-10">
+                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-2">Global Rewards Balance</p>
+                    <h2 className="text-4xl sm:text-5xl font-black text-white flex items-baseline gap-3 tabular-nums uppercase tracking-tighter">
                       {pointsBalance.toLocaleString()}
                       <span className="text-xl text-yellow-400 font-bold tracking-tight">Points</span>
                     </h2>
-                    <div className="mt-8 flex gap-4">
-                      <div className="px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center gap-2">
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_#4ade80]" />
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Protocol Active</span>
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Protocol Active</span>
                       </div>
-                      <div className="px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-xs text-yellow-400">shield</span>
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Secure Ledger</span>
+                      <div className="px-3.5 py-1.5 rounded-xl bg-zinc-900/80 border border-zinc-800 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm text-yellow-400">shield</span>
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Secure Ledger</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Transfer Station */}
-                  <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 space-y-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400">
-                        <span className="material-symbols-outlined">send</span>
+                  <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                    <div className="flex items-center gap-3 pb-4 border-b border-zinc-800/60">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <span className="material-symbols-outlined text-xl">send</span>
                       </div>
                       <div>
-                        <h4 className="text-[12px] font-black text-white uppercase tracking-widest">Transfer Station</h4>
-                        <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Pay others with Cadonce points</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Transfer Station</h4>
+                        <p className="text-[10px] text-zinc-500 font-medium">Send CADONCE reward points to other verified accounts</p>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Recipient Identity (Email)</label>
                         <input
                           value={transferEmail}
                           onChange={(e) => setTransferEmail(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 transition-all outline-none"
                           placeholder="user@example.com"
                         />
                       </div>
@@ -1398,7 +1531,7 @@ export default function SettingsPage() {
                         <input
                           value={transferAmount}
                           onChange={(e) => setTransferAmount(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 transition-all outline-none"
                           placeholder="0.00"
                           type="number"
                         />
@@ -1425,7 +1558,7 @@ export default function SettingsPage() {
                             setIsProcessingWallet(false);
                           }
                         }}
-                        className="w-full py-4 rounded-lg bg-yellow-400 text-black font-black text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                        className="w-full py-3.5 rounded-xl bg-yellow-400 text-black font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-md"
                       >
                         Initiate P2P Transfer
                       </button>
@@ -1433,24 +1566,24 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Withdrawal Terminal */}
-                  <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 space-y-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-green-400">
-                        <span className="material-symbols-outlined">account_balance</span>
+                  <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                    <div className="flex items-center gap-3 pb-4 border-b border-zinc-800/60">
+                      <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400">
+                        <span className="material-symbols-outlined text-xl">account_balance</span>
                       </div>
                       <div>
-                        <h4 className="text-[12px] font-black text-white uppercase tracking-widest">Withdrawal Terminal</h4>
-                        <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Convert points to cash</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Withdrawal Terminal</h4>
+                        <p className="text-[10px] text-zinc-500 font-medium">Convert accumulated points into liquid cash payouts</p>
                       </div>
                     </div>
 
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       <div className="space-y-1.5">
                         <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Withdrawal Amount</label>
                         <input
                           value={withdrawAmount}
                           onChange={(e) => setWithdrawAmount(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 transition-all"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 transition-all outline-none"
                           placeholder="0.00"
                           type="number"
                         />
@@ -1460,7 +1593,7 @@ export default function SettingsPage() {
                         <textarea
                           value={bankDetails}
                           onChange={(e) => setBankDetails(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-lg px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 transition-all resize-none h-24"
+                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 transition-all resize-none h-20 outline-none"
                           placeholder="Enter Bank details or UPI ID..."
                         />
                       </div>
@@ -1486,7 +1619,7 @@ export default function SettingsPage() {
                             setIsProcessingWallet(false);
                           }
                         }}
-                        className="w-full py-4 rounded-lg bg-yellow-400 text-black font-black text-[10px] uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                        className="w-full py-3.5 rounded-xl bg-yellow-400 text-black font-black text-xs uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 shadow-md"
                       >
                         Request Cash Conversion
                       </button>
@@ -1495,47 +1628,47 @@ export default function SettingsPage() {
                 </div>
 
                 {/* PROJECT ESCROW TERMINAL */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 space-y-8">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-orange-400">
-                        <span className="material-symbols-outlined">lock</span>
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                  <div className="flex items-center justify-between pb-4 border-b border-zinc-800/60">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-orange-400/10 border border-orange-400/20 flex items-center justify-center text-orange-400">
+                        <span className="material-symbols-outlined text-xl">lock</span>
                       </div>
                       <div>
-                        <h4 className="text-[12px] font-black text-white uppercase tracking-widest">Project Escrow Terminal</h4>
-                        <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Project funds currently held in platform trust</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Project Escrow Terminal</h4>
+                        <p className="text-[10px] text-zinc-500 font-medium">Project funds currently held in verified platform escrow</p>
                       </div>
                     </div>
-                    <span className="px-4 py-1.5 rounded-lg bg-orange-400/10 border border-orange-400/20 text-[10px] font-black text-orange-400 uppercase tracking-widest">
-                      {[...(organizationEscrows || []), ...(designerEscrows || [])].length} SECURED PROJECTS
+                    <span className="px-3 py-1 rounded-lg bg-orange-400/10 border border-orange-400/20 text-[10px] font-black text-orange-400 uppercase tracking-widest">
+                      {[...(organizationEscrows || []), ...(designerEscrows || [])].length} SECURED
                     </span>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[...(organizationEscrows || []), ...(designerEscrows || [])].length === 0 ? (
-                      <div className="py-12 text-center border border-dashed border-zinc-800 rounded-2xl">
+                      <div className="py-10 text-center border border-dashed border-zinc-800 rounded-xl">
                         <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">No Active Escrows</p>
                       </div>
                     ) : (
                       [...(organizationEscrows || []), ...(designerEscrows || [])].map((escrow: any) => (
-                        <div key={escrow.id} className="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/30 flex items-center justify-between group hover:border-orange-400/30 transition-all duration-300">
-                          <div className="flex items-center gap-5">
-                            <div className="w-12 h-12 rounded-lg bg-black border border-zinc-800 flex items-center justify-center text-orange-400">
-                              <span className="material-symbols-outlined">lock</span>
+                        <div key={escrow.id} className="p-4 sm:p-5 rounded-xl bg-black/30 border border-zinc-800/60 flex items-center justify-between group hover:border-orange-400/30 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-black border border-zinc-800 flex items-center justify-center text-orange-400">
+                              <span className="material-symbols-outlined text-lg">lock</span>
                             </div>
                             <div>
-                              <div className="text-[12px] font-black text-white uppercase tracking-tight">Project #{escrow.project_id.slice(-6)}</div>
-                              <div className="flex items-center gap-2 mt-1">
-                                <div className={`w-2 h-2 rounded-full ${escrow.status === 'released' ? 'bg-green-400' : 'bg-orange-400 shadow-[0_0_10px_#fb923c]'}`} />
+                              <div className="text-xs font-black text-white uppercase tracking-tight">Project #{escrow.project_id.slice(-6)}</div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <div className={`w-1.5 h-1.5 rounded-full ${escrow.status === 'released' ? 'bg-green-400' : 'bg-orange-400 shadow-[0_0_8px_#fb923c]'}`} />
                                 <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{escrow.status === 'released' ? 'Funds Released' : 'Held in Escrow'}</div>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-lg font-black text-white">
+                            <div className="text-base font-black text-white">
                               {escrow.currency}{parseFloat(escrow.amount).toLocaleString()}
                             </div>
-                            <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mt-1">{new Date(escrow.created_at).toLocaleDateString()}</div>
+                            <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">{new Date(escrow.created_at).toLocaleDateString()}</div>
                           </div>
                         </div>
                       ))
@@ -1544,41 +1677,41 @@ export default function SettingsPage() {
                 </div>
 
                 {/* TRANSACTION LEDGER */}
-                <div className="bg-zinc-900/40 border border-zinc-800/50 rounded-2xl p-10 space-y-8">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-purple-400">
-                      <span className="material-symbols-outlined">receipt_long</span>
+                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 space-y-6 shadow-xl">
+                  <div className="flex items-center gap-3 pb-4 border-b border-zinc-800/60">
+                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                      <span className="material-symbols-outlined text-xl">receipt_long</span>
                     </div>
                     <div>
-                      <h4 className="text-[12px] font-black text-white uppercase tracking-widest">Rewards Ledger</h4>
-                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest">Historical audit of your CADONCE points</p>
+                      <h4 className="text-sm font-black text-white uppercase tracking-widest">Rewards Ledger</h4>
+                      <p className="text-[10px] text-zinc-500 font-medium">Historical audit of your CADONCE points and conversions</p>
                     </div>
                   </div>
 
-                  <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                  <div className="space-y-2.5 max-h-[400px] overflow-y-auto custom-scrollbar pr-1">
                     {ledger.length === 0 ? (
-                      <div className="py-12 text-center border border-dashed border-zinc-800 rounded-2xl">
+                      <div className="py-10 text-center border border-dashed border-zinc-800 rounded-xl">
                         <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-[0.2em]">No Transactions Logged</p>
                       </div>
                     ) : (
                       ledger.map((entry) => (
-                        <div key={entry.id} className="p-6 rounded-xl bg-zinc-900/40 border border-zinc-800/30 flex items-center justify-between group hover:border-purple-500/30 transition-all duration-300">
-                          <div className="flex items-center gap-5">
-                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center border transition-all ${entry.amount > 0 ? 'bg-green-500/5 border-green-500/10 text-green-400' : 'bg-red-500/5 border-red-500/10 text-red-400'}`}>
-                              <span className="material-symbols-outlined text-lg">
+                        <div key={entry.id} className="p-4 rounded-xl bg-black/30 border border-zinc-800/60 flex items-center justify-between group hover:border-purple-500/30 transition-all duration-300">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center border transition-all ${entry.amount > 0 ? 'bg-green-500/5 border-green-500/10 text-green-400' : 'bg-red-500/5 border-red-500/10 text-red-400'}`}>
+                              <span className="material-symbols-outlined text-base">
                                 {entry.type === 'earn' ? 'auto_awesome' : entry.type === 'transfer' ? 'send' : 'payments'}
                               </span>
                             </div>
                             <div>
-                              <div className="text-[12px] font-black text-white uppercase tracking-tight">{entry.description}</div>
-                              <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">{entry.type}</div>
+                              <div className="text-xs font-black text-white uppercase tracking-tight">{entry.description}</div>
+                              <div className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest mt-0.5">{entry.type}</div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className={`text-lg font-black ${entry.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <div className={`text-sm font-black ${entry.amount > 0 ? 'text-green-400' : 'text-red-400'}`}>
                               {entry.amount > 0 ? '+' : ''}{entry.amount.toLocaleString()}
                             </div>
-                            <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mt-1">{new Date(entry.created_at).toLocaleDateString()}</div>
+                            <div className="text-[8px] font-bold text-zinc-600 uppercase tracking-widest mt-0.5">{new Date(entry.created_at).toLocaleDateString()}</div>
                           </div>
                         </div>
                       ))
@@ -1590,42 +1723,57 @@ export default function SettingsPage() {
 
 
             {/* Danger Zone */}
-            <div className="pt-12 mt-12 border-t border-red-500/10">
-              <div className="bg-red-500/5 rounded-3xl p-8 border border-red-500/10 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+            <div className="pt-8 border-t border-red-500/10">
+              <div className="bg-red-500/5 rounded-2xl p-6 sm:p-8 border border-red-500/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
                   <span className="material-symbols-outlined text-6xl text-red-500">dangerous</span>
                 </div>
 
-                <h3 className="text-xl font-headline font-black text-red-400 uppercase tracking-tight mb-2">Danger Zone</h3>
-                <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest mb-6">Irreversible Action: Permanently terminate your workstation access and purge all project data.</p>
-
-                <button
-                  type="button"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="w-full py-4 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] font-black text-red-400 uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                >
-                  <span className="material-symbols-outlined text-sm">delete_forever</span>
-                  Permanently Delete Account
-                </button>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                  <div>
+                    <h3 className="text-lg font-headline font-black text-red-400 uppercase tracking-tight mb-1">Danger Zone</h3>
+                    <p className="text-xs text-neutral-400 font-medium">Irreversible Action: Permanently terminate workstation access and purge all project data.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteModal(true)}
+                    className="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-[10px] font-black text-red-400 uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 shrink-0 self-start sm:self-auto shadow-lg"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete_forever</span>
+                    Permanently Delete Account
+                  </button>
+                </div>
               </div>
             </div>
+
             {/* Global Save Action */}
-            <div className="pt-8 pb-12 flex justify-end border-t border-zinc-800/30">
+            <div className="pt-6 pb-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-zinc-800/60 bg-zinc-900/30 p-6 rounded-2xl border">
+              <div className="flex items-center gap-3 text-zinc-400">
+                <div className="w-9 h-9 rounded-lg bg-yellow-400/10 flex items-center justify-center text-yellow-400 shrink-0">
+                  <span className="material-symbols-outlined text-base">cloud_done</span>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-white uppercase tracking-wider">Synchronize Workstation</p>
+                  <p className="text-[10px] text-zinc-500 font-medium">All configurations and API protocols are updated instantaneously across CADONCE</p>
+                </div>
+              </div>
               <button
                 type="submit"
                 disabled={isSaving}
-                className={`px-8 py-3 font-black uppercase italic tracking-tighter text-sm rounded shadow-lg transition-all ${isSaving
+                className={`w-full sm:w-auto px-8 py-3.5 font-black uppercase italic tracking-tighter text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] ${
+                  isSaving
                     ? 'bg-yellow-400/20 text-yellow-400/40 cursor-wait'
-                    : 'bg-yellow-400 text-black hover:brightness-110 active:scale-[0.98] shadow-yellow-400/20'
-                  }`}
+                    : 'bg-yellow-400 text-black hover:brightness-110 shadow-yellow-400/20'
+                }`}
               >
-                {isSaving ? 'Synchronizing...' : 'Commit Changes'}
+                <span className="material-symbols-outlined text-base">{isSaving ? 'sync' : 'done_all'}</span>
+                <span>{isSaving ? 'Synchronizing...' : 'Commit Changes'}</span>
               </button>
             </div>
           </form>
-          </div>
-          </div>
-        </main>
+        </div>
+      </div>
+    </div>
 
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
