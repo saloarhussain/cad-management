@@ -7,6 +7,59 @@ import { useAuth } from '@/components/AuthProvider';
 import { createPortfolioProject } from '@/app/actions';
 import { supabase } from '@/lib/supabase';
 
+interface SoftwareOption {
+  id: string;
+  name: string;
+  logo?: string;
+  icon?: string;
+  description?: string;
+}
+
+const AVAILABLE_SOFTWARES: SoftwareOption[] = [
+  { 
+    id: 'Rhino 3D', 
+    name: 'Rhino 3D', 
+    logo: '/rhino-logo.png',
+    description: 'NURBS & Computational CAD'
+  },
+  { 
+    id: 'SolidWorks', 
+    name: 'SolidWorks', 
+    icon: 'settings', 
+    description: 'Mechanical Parametric Design'
+  },
+  { 
+    id: 'KeyShot', 
+    name: 'KeyShot', 
+    icon: 'lightbulb', 
+    description: 'Real-Time Ray-Tracing'
+  },
+  { 
+    id: 'ZBrush', 
+    name: 'ZBrush', 
+    icon: 'brush', 
+    description: 'High-Poly Digital Sculpting'
+  },
+  { 
+    id: 'JewelCAD', 
+    name: 'JewelCAD', 
+    icon: 'diamond', 
+    description: 'Jewelry CAD & Stone Settings'
+  },
+  { 
+    id: 'MatrixGold', 
+    name: 'MatrixGold', 
+    icon: 'token', 
+    description: 'Parametric Jewelry Suite'
+  },
+  { 
+    id: 'Blender', 
+    name: 'Blender', 
+    icon: 'deployed_code', 
+    description: '3D Mesh & Shader Pipeline'
+  }
+];
+
 export default function AddPortfolioPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -22,9 +75,33 @@ export default function AddPortfolioPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSoftwareChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-    setFormData({ ...formData, software: selectedOptions });
+  const toggleSoftware = (swId: string) => {
+    setFormData(prev => {
+      const isRhino = swId.toLowerCase().includes('rhino');
+      const exists = prev.software.some(s => 
+        s.toLowerCase() === swId.toLowerCase() || (isRhino && s.toLowerCase().includes('rhino'))
+      );
+      if (exists) {
+        return {
+          ...prev,
+          software: prev.software.filter(s => 
+            s.toLowerCase() !== swId.toLowerCase() && !(isRhino && s.toLowerCase().includes('rhino'))
+          )
+        };
+      } else {
+        return {
+          ...prev,
+          software: [...prev.software, swId]
+        };
+      }
+    });
+  };
+
+  const isSoftwareSelected = (swId: string) => {
+    const isRhino = swId.toLowerCase().includes('rhino');
+    return formData.software.some(s => 
+      s.toLowerCase() === swId.toLowerCase() || (isRhino && s.toLowerCase().includes('rhino'))
+    );
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, field: 'renders' | 'cadFile') => {
@@ -102,21 +179,25 @@ export default function AddPortfolioPage() {
   };
 
   return (
-    <div className="bg-[#121414] text-[#e2e2e2] font-sans min-h-screen pb-32">
-      {/* TopAppBar */}
-      <header className="bg-[#1a1c1c] flex justify-between items-center px-4 h-16 w-full fixed top-0 z-50 border-b border-[#262626]">
-        <div className="flex items-center gap-4">
-          <Link href="/designer/profile" className="text-white hover:bg-[#37393a] transition-colors p-2 rounded-lg active:scale-90 transition-transform">
-            <span className="material-symbols-outlined">arrow_back</span>
-          </Link>
-          <h1 className="font-headline text-lg tracking-tight font-bold text-white">Add Project</h1>
-        </div>
-        <button className="text-white hover:bg-[#37393a] transition-colors p-2 rounded-lg active:scale-90 transition-transform">
-          <span className="material-symbols-outlined">more_vert</span>
-        </button>
-      </header>
-
+    <div className="bg-[#121414] text-[#e2e2e2] font-sans min-h-screen pb-20">
       <main className="pt-24 px-4 max-w-2xl mx-auto space-y-8">
+        {/* Page Heading & Back Action */}
+        <div className="flex items-center justify-between pb-4 border-b border-white/5">
+          <div className="flex items-center gap-3">
+            <Link 
+              href="/designer/profile" 
+              className="p-2 -ml-2 text-stone-400 hover:text-white hover:bg-white/5 rounded-lg transition-all"
+              title="Back to profile"
+            >
+              <span className="material-symbols-outlined text-xl">arrow_back</span>
+            </Link>
+            <div>
+              <h1 className="font-headline text-2xl font-black text-white tracking-tight">Add Portfolio Project</h1>
+              <p className="text-xs text-[#cec7ab]/70 mt-0.5">Showcase your high-fidelity CAD renders, 3D assets, and specifications.</p>
+            </div>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Form Section: Project Identity */}
           <section className="space-y-6">
@@ -153,26 +234,98 @@ export default function AddPortfolioPage() {
                   </select>
                 </div>
 
-                <div className="group relative">
-                  <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] mb-2 ml-1">Software Used</label>
-                  <div className="relative">
-                    <select 
-                      className="w-full bg-[#0c0f0f] border border-[#4b4732] rounded-lg px-4 py-3 text-[#e2e2e2] transition-all min-h-[140px] focus:outline-none focus:border-[#F59E0B]" 
-                      multiple
-                      value={formData.software}
-                      onChange={handleSoftwareChange}
-                    >
-                      <option className="py-2 px-2 flex items-center gap-2" value="rhino">🦏 Rhino 3D</option>
-                      <option className="py-2 px-2 flex items-center gap-2" value="solidworks">⚙️ SolidWorks</option>
-                      <option className="py-2 px-2 flex items-center gap-2" value="keyshot">💡 KeyShot</option>
-                      <option className="py-2 px-2 flex items-center gap-2" value="zbrush">🎨 ZBrush</option>
-                      <option className="py-2 px-2 flex items-center gap-2" value="jewelcad">💎 JewelCAD</option>
-                    </select>
-                    <div className="absolute right-3 top-3 pointer-events-none text-[#cec7ab]">
-                      <span className="material-symbols-outlined text-sm">unfold_more</span>
-                    </div>
+                {/* Software Used with official Rhino logo and CAD options */}
+                <div className="group space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] uppercase tracking-widest text-[#cec7ab] ml-1">
+                      Software Used <span className="text-[#F59E0B]">*</span>
+                    </label>
+                    <span className="text-[9px] text-[#cec7ab]/60">Click software to toggle</span>
                   </div>
-                  <p className="mt-2 text-[10px] text-[#cec7ab] italic">Hold Ctrl/Cmd to select multiple softwares</p>
+
+                  <div className="bg-[#0c0f0f] border border-[#4b4732] rounded-xl p-2.5 space-y-1.5 max-h-64 overflow-y-auto [scrollbar-width:thin] [scrollbar-color:#F59E0B_transparent]">
+                    {AVAILABLE_SOFTWARES.map((sw) => {
+                      const selected = isSoftwareSelected(sw.id);
+                      return (
+                        <button
+                          key={sw.id}
+                          type="button"
+                          onClick={() => toggleSoftware(sw.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg border transition-all text-left group ${
+                            selected 
+                              ? 'bg-[#F59E0B]/10 border-[#F59E0B] shadow-[0_0_15px_rgba(245,158,11,0.15)] text-white' 
+                              : 'bg-[#141717] border-white/5 text-stone-300 hover:border-[#4b4732] hover:bg-[#1a1d1d] hover:text-white'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            {sw.logo ? (
+                              <div className="w-7 h-7 rounded-md bg-black border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform p-0.5 shadow-sm">
+                                <img src={sw.logo} alt={sw.name} className="w-full h-full object-contain" />
+                              </div>
+                            ) : (
+                              <div className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 transition-colors ${
+                                selected 
+                                  ? 'bg-[#F59E0B]/20 border-[#F59E0B]/40 text-[#F59E0B]' 
+                                  : 'bg-white/5 border-white/10 text-stone-400 group-hover:text-amber-400 group-hover:border-amber-400/30'
+                              }`}>
+                                <span className="material-symbols-outlined text-base">{sw.icon}</span>
+                              </div>
+                            )}
+                            <div className="truncate">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold tracking-wide">{sw.name}</span>
+                                {sw.id === 'Rhino 3D' && (
+                                  <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-red-400">
+                                    Rhinoceros
+                                  </span>
+                                )}
+                              </div>
+                              {sw.description && (
+                                <p className="text-[10px] text-stone-400 truncate mt-0.5">{sw.description}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className={`w-5 h-5 rounded flex items-center justify-center border transition-all shrink-0 ml-3 ${
+                            selected 
+                              ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-sm' 
+                              : 'border-white/20 group-hover:border-white/40'
+                          }`}>
+                            {selected && <span className="material-symbols-outlined text-xs font-black">check</span>}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active selection pills */}
+                  {formData.software.length > 0 && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#cec7ab] mr-1">Active:</span>
+                      {formData.software.map((s, idx) => {
+                        const isRhino = s.toLowerCase().includes('rhino');
+                        return (
+                          <span 
+                            key={idx} 
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B]"
+                          >
+                            {isRhino && (
+                              <img src="/rhino-logo.png" alt="Rhino" className="w-3.5 h-3.5 object-contain rounded-sm" />
+                            )}
+                            <span>{s}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleSoftware(s)}
+                              className="hover:text-white transition-colors ml-0.5 text-xs leading-none"
+                              title="Remove"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -274,30 +427,6 @@ export default function AddPortfolioPage() {
           </div>
         </form>
       </main>
-
-      {/* BottomNavBar */}
-      <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-2 py-3 bg-[#333535]/80 backdrop-blur-2xl z-50 shadow-[0_-4px_20px_rgba(252,224,3,0.12)] border-t border-[#4b4732]">
-        <Link className="flex flex-col items-center justify-center text-[#cec7ab] opacity-70 hover:text-white transition-all active:scale-95 duration-200" href="/designer/portfolio">
-          <span className="material-symbols-outlined">grid_view</span>
-          <span className="text-[10px] uppercase tracking-widest mt-1">Portfolio</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-[#cec7ab] opacity-70 hover:text-white transition-all active:scale-95 duration-200" href="/projects">
-          <span className="material-symbols-outlined">precision_manufacturing</span>
-          <span className="text-[10px] uppercase tracking-widest mt-1">Projects</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-white font-bold scale-110 active:scale-95 duration-200" href="/designer/portfolio/new">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add_box</span>
-          <span className="text-[10px] uppercase tracking-widest mt-1">Add</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-[#cec7ab] opacity-70 hover:text-white transition-all active:scale-95 duration-200" href="/clients">
-          <span className="material-symbols-outlined">group</span>
-          <span className="text-[10px] uppercase tracking-widest mt-1">Clients</span>
-        </Link>
-        <Link className="flex flex-col items-center justify-center text-[#cec7ab] opacity-70 hover:text-white transition-all active:scale-95 duration-200" href="/designer/profile">
-          <span className="material-symbols-outlined">person</span>
-          <span className="text-[10px] uppercase tracking-widest mt-1">Profile</span>
-        </Link>
-      </nav>
     </div>
   );
 }

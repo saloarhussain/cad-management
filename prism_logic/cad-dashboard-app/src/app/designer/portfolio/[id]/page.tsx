@@ -104,9 +104,17 @@ export default function PortfolioDetailPage() {
                   <h3 className="text-xs font-bold uppercase tracking-widest text-[#ffe30c] mb-2">Software Used</h3>
                   <div className="flex flex-wrap gap-2">
                     {software.length > 0 ? (
-                      software.map((sw: string, idx: number) => (
-                        <span key={idx} className="px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs font-semibold border border-[#262626]">{sw}</span>
-                      ))
+                      software.map((sw: string, idx: number) => {
+                        const isRhino = sw.toLowerCase().includes('rhino');
+                        return (
+                          <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs font-semibold border border-[#262626]">
+                            {isRhino && (
+                              <img src="/rhino-logo.png" alt="Rhino" className="w-3.5 h-3.5 object-contain rounded-sm" />
+                            )}
+                            <span>{sw}</span>
+                          </span>
+                        );
+                      })
                     ) : (
                       <span className="text-xs text-gray-600">No software listed</span>
                     )}

@@ -417,14 +417,21 @@ export default function ExplorePage() {
                   <div className="space-y-2">
                     <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Software Used</h4>
                     <div className="flex gap-1.5 flex-wrap">
-                      {parsed.software.split(',').map((sw: string) => (
-                        <span 
-                          key={sw}
-                          className="px-2.5 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[9px] font-bold text-white/80 uppercase tracking-tight"
-                        >
-                          {sw.trim()}
-                        </span>
-                      ))}
+                      {parsed.software.split(',').map((sw: string) => {
+                        const trimmed = sw.trim();
+                        const isRhino = trimmed.toLowerCase().includes('rhino');
+                        return (
+                          <span 
+                            key={sw}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[9px] font-bold text-white/80 uppercase tracking-tight"
+                          >
+                            {isRhino && (
+                              <img src="/rhino-logo.png" alt="Rhino" className="w-3 h-3 object-contain rounded-sm" />
+                            )}
+                            <span>{trimmed}</span>
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
