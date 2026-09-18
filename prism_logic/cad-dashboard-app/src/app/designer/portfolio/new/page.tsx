@@ -55,7 +55,7 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'Blender', 
     name: 'Blender', 
-    icon: 'deployed_code', 
+    logo: '/blender-logo.png',
     description: '3D Mesh & Shader Pipeline'
   }
 ];
