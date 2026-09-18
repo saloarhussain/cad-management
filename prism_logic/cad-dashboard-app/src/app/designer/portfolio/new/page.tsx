@@ -37,7 +37,7 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'ZBrush', 
     name: 'ZBrush', 
-    icon: 'brush', 
+    logo: '/zbrush-logo.jpg',
     description: 'High-Poly Digital Sculpting'
   },
   { 
@@ -392,18 +392,14 @@ export default function AddPortfolioPage() {
                       <span className="text-[9px] font-black uppercase tracking-wider text-stone-500 mr-1">Active Stack:</span>
                       {formData.software.map((s, idx) => {
                         const isRhino = s.toLowerCase().includes('rhino');
-                        const isKeyShot = s.toLowerCase() === 'keyshot';
                         const swData = AVAILABLE_SOFTWARES.find(sw => sw.id === s);
                         return (
                           <span 
                             key={idx} 
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-400/15 border border-amber-400/40 text-amber-400 animate-in zoom-in-95 duration-150"
                           >
-                            {isRhino && (
-                              <img src="/rhino-logo.png" alt="Rhinoceros" className="w-3.5 h-3.5 object-contain rounded-sm" />
-                            )}
-                            {isKeyShot && (
-                              <img src="/keyshot-logo.jpg" alt="KeyShot" className="w-3.5 h-3.5 object-contain rounded-sm" />
+                            {swData?.logo && (
+                              <img src={swData.logo} alt={swData.name} className="w-3.5 h-3.5 object-contain rounded-sm" />
                             )}
                             <span>{isRhino ? 'Rhinoceros' : s}</span>
                             <button 
