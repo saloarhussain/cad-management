@@ -197,7 +197,7 @@ export default function AddPortfolioPage() {
         <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-cyan-500/5 rounded-full blur-[150px]" />
       </div>
 
-      <main className="relative z-10 pt-20 px-4 sm:px-6 lg:px-10 max-w-7xl mx-auto space-y-8">
+      <main className="relative z-10 pt-20 px-4 sm:px-6 lg:px-8 xl:px-10 w-full space-y-8">
         {/* Header with Breadcrumbs & Action Deck */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/5">
           <div className="space-y-1.5">
