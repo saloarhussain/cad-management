@@ -43,13 +43,13 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'JewelCAD', 
     name: 'JewelCAD', 
-    icon: 'diamond', 
+    logo: '/jewelcad-logo.webp',
     description: 'Jewelry CAD & Stone Settings'
   },
   { 
     id: 'MatrixGold', 
     name: 'MatrixGold', 
-    icon: 'token', 
+    logo: '/matrixgold-logo.png',
     description: 'Parametric Jewelry Suite'
   },
   { 
