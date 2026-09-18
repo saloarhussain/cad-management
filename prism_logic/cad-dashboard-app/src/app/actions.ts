@@ -1542,29 +1542,31 @@ export async function getDesignerPortfolio() {
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // 1. Fetch Designer Profile to get full name
-    const { data: designers } = await adminSupabase
-      .from('designers')
-      .select('fullName')
-      .ilike('email', user.email);
-
-    if (!designers || designers.length === 0) return { projects: [], portfolioItems: [] };
-    const fullName = designers[0].fullName;
-
-    // 2. Fetch all completed projects for this designer across all orgs
-    const { data: projects } = await adminSupabase
-      .from('projects')
-      .select('*')
-      .eq('designer', fullName)
-      .in('status', ['Completed', 'Approved', 'Complete']);
-
-    // 3. Fetch custom portfolio items
+    // 1. Fetch custom portfolio items by auth user id (always, independently)
     const { data: portfolioItems } = await adminSupabase
       .from('designer_portfolio_items')
       .select('*')
       .eq('designer_id', user.id);
 
-    return { projects: projects || [], portfolioItems: portfolioItems || [] };
+    // 2. Fetch Designer Profile to get full name (for completed projects)
+    const { data: designers } = await adminSupabase
+      .from('designers')
+      .select('fullName')
+      .ilike('email', user.email);
+
+    // 3. Fetch completed projects only if designer profile found
+    let projects: any[] = [];
+    if (designers && designers.length > 0) {
+      const fullName = designers[0].fullName;
+      const { data: projectData } = await adminSupabase
+        .from('projects')
+        .select('*')
+        .eq('designer', fullName)
+        .in('status', ['Completed', 'Approved', 'Complete']);
+      projects = projectData || [];
+    }
+
+    return { projects, portfolioItems: portfolioItems || [] };
   } catch (err) {
     console.error('[getDesignerPortfolio] Error:', err);
     return { projects: [], portfolioItems: [] };
