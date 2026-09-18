@@ -1973,10 +1973,23 @@ export async function getDesignerStatus() {
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    const { data: designers } = await adminSupabase
+    // Try email match first, then fallback to user_id match
+    let designers: any[] | null = null;
+    const { data: byEmail } = await adminSupabase
       .from('designers')
       .select('*')
       .ilike('email', user.email);
+
+    if (byEmail && byEmail.length > 0) {
+      designers = byEmail;
+    } else {
+      // Fallback: match by user_id (handles email mismatch between auth and designers table)
+      const { data: byUserId } = await adminSupabase
+        .from('designers')
+        .select('*')
+        .eq('user_id', user.id);
+      designers = byUserId;
+    }
 
     if (!designers || designers.length === 0) {
       return {
