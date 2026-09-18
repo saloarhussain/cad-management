@@ -347,8 +347,8 @@ export default function AddPortfolioPage() {
                         >
                           <div className="flex items-center gap-3 min-w-0">
                             {sw.logo ? (
-                              <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform p-0.5 shadow-sm">
-                                <img src={sw.logo} alt={sw.name} className="w-full h-full object-contain" />
+                              <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                                <img src={sw.logo} alt={sw.name} className="w-full h-full object-cover rounded-lg" />
                               </div>
                             ) : (
                               <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 transition-colors ${
