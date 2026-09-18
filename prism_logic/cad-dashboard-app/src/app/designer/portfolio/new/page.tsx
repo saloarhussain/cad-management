@@ -43,7 +43,7 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'JewelCAD', 
     name: 'JewelCAD', 
-    logo: '/jewelcad-logo.webp',
+    logo: '/jewelcad-logo.png',
     description: 'Jewelry CAD & Stone Settings'
   },
   { 
