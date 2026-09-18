@@ -31,7 +31,7 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'KeyShot', 
     name: 'KeyShot', 
-    icon: 'lightbulb', 
+    logo: '/keyshot-logo.jpg',
     description: 'Real-Time Ray-Tracing'
   },
   { 
@@ -392,6 +392,8 @@ export default function AddPortfolioPage() {
                       <span className="text-[9px] font-black uppercase tracking-wider text-stone-500 mr-1">Active Stack:</span>
                       {formData.software.map((s, idx) => {
                         const isRhino = s.toLowerCase().includes('rhino');
+                        const isKeyShot = s.toLowerCase() === 'keyshot';
+                        const swData = AVAILABLE_SOFTWARES.find(sw => sw.id === s);
                         return (
                           <span 
                             key={idx} 
@@ -399,6 +401,9 @@ export default function AddPortfolioPage() {
                           >
                             {isRhino && (
                               <img src="/rhino-logo.png" alt="Rhinoceros" className="w-3.5 h-3.5 object-contain rounded-sm" />
+                            )}
+                            {isKeyShot && (
+                              <img src="/keyshot-logo.jpg" alt="KeyShot" className="w-3.5 h-3.5 object-contain rounded-sm" />
                             )}
                             <span>{isRhino ? 'Rhinoceros' : s}</span>
                             <button 
