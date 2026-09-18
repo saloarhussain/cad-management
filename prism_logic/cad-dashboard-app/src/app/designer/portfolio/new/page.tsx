@@ -177,7 +177,7 @@ export default function AddPortfolioPage() {
       
       if (res.success) {
         alert('Portfolio project published successfully!');
-        router.push('/designer/profile');
+        router.push('/designer/portfolio');
       } else {
         alert('Failed to publish project: ' + res.error);
       }
