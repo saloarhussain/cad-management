@@ -141,7 +141,7 @@ const ClientSearchSelect = ({
         </label>
         <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
           <span className="material-symbols-outlined text-[11px]">search</span>
-          Searchable
+          Searchable ({clients.length})
         </span>
       </div>
 
@@ -190,7 +190,7 @@ const ClientSearchSelect = ({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-[#14120c] border border-white/15 rounded-2xl shadow-2xl p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-full left-0 right-0 mt-2 z-[250] bg-[#12100a] border border-amber-400/30 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
               search
@@ -214,18 +214,23 @@ const ClientSearchSelect = ({
             )}
           </div>
 
-          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+          <div className="flex items-center justify-between px-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/5">
+            <span>All Available Clients ({filtered.length})</span>
+            {search && <span className="text-amber-400 text-[9px]">Filtered</span>}
+          </div>
+
+          <div className="max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar [scrollbar-width:thin] [scrollbar-color:#F59E0B_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-amber-400/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-black/40">
             {filtered.length === 0 ? (
               <div className="py-6 text-center text-stone-500 text-xs font-medium">
                 No clients found matching &quot;{search}&quot;
               </div>
             ) : (
-              filtered.map((c) => {
+              filtered.map((c, idx) => {
                 const label = c.companyName || c.name;
                 const isSelected = selectedClient === label;
                 return (
                   <div
-                    key={c.id}
+                    key={c.id || idx}
                     onClick={() => {
                       onSelect(label);
                       setIsOpen(false);
@@ -238,7 +243,7 @@ const ClientSearchSelect = ({
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
-                        {label.slice(0, 2).toUpperCase()}
+                        {(label || '??').slice(0, 2).toUpperCase()}
                       </div>
                       <div className="truncate text-left">
                         <p className="text-xs font-bold text-white truncate leading-tight">{label}</p>
@@ -307,14 +312,14 @@ const DesignerSearchSelect = ({
     const q = search.toLowerCase().trim();
     if (!q) return designers;
     return designers.filter((d) => {
-      const name = (d.fullName || '').toLowerCase();
+      const name = (d.fullName || d.name || '').toLowerCase();
       const spec = (d.specialty || '').toLowerCase();
       const emp = (d.employmentType || '').toLowerCase();
       return name.includes(q) || spec.includes(q) || emp.includes(q);
     });
   }, [designers, search]);
 
-  const activeObj = designers.find(d => d.fullName === selectedDesigner);
+  const activeObj = designers.find(d => (d.fullName || d.name) === selectedDesigner);
 
   return (
     <div className="space-y-2 relative" ref={dropdownRef}>
@@ -325,7 +330,7 @@ const DesignerSearchSelect = ({
         </label>
         <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
           <span className="material-symbols-outlined text-[11px]">search</span>
-          Searchable
+          Searchable ({designers.length})
         </span>
       </div>
 
@@ -383,7 +388,7 @@ const DesignerSearchSelect = ({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-[#14120c] border border-white/15 rounded-2xl shadow-2xl p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute top-full left-0 right-0 mt-2 z-[250] bg-[#12100a] border border-amber-400/30 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
               search
@@ -407,19 +412,25 @@ const DesignerSearchSelect = ({
             )}
           </div>
 
-          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+          <div className="flex items-center justify-between px-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/5">
+            <span>All Available Designers ({filtered.length})</span>
+            {search && <span className="text-amber-400 text-[9px]">Filtered</span>}
+          </div>
+
+          <div className="max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar [scrollbar-width:thin] [scrollbar-color:#F59E0B_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-amber-400/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-black/40">
             {filtered.length === 0 ? (
               <div className="py-6 text-center text-stone-500 text-xs font-medium">
                 No designers found matching &quot;{search}&quot;
               </div>
             ) : (
-              filtered.map((d) => {
-                const isSelected = selectedDesigner === d.fullName;
+              filtered.map((d, idx) => {
+                const label = d.fullName || d.name || 'CAD Designer';
+                const isSelected = selectedDesigner === label;
                 return (
                   <div
-                    key={d.id}
+                    key={d.id || idx}
                     onClick={() => {
-                      onSelect(d.fullName);
+                      onSelect(label);
                       setIsOpen(false);
                     }}
                     className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
@@ -430,11 +441,11 @@ const DesignerSearchSelect = ({
                   >
                     <div className="flex items-center gap-2.5 truncate">
                       <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
-                        {d.fullName.slice(0, 2).toUpperCase()}
+                        {label.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="truncate text-left">
                         <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-white truncate leading-tight">{d.fullName}</p>
+                          <p className="text-xs font-bold text-white truncate leading-tight">{label}</p>
                           {d.employmentType && (
                             <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 text-stone-400 uppercase">
                               {d.employmentType}
@@ -483,9 +494,51 @@ export default function NewProjectPage() {
   useEffect(() => {
     router.prefetch('/projects');
     const fetchData = async () => {
-      const db = await getDb();
-      setDesigners(db.designers || []);
-      setClients(db.clients || []);
+      try {
+        const db = await getDb();
+        const dbClients: any[] = [...(db.clients || [])];
+        const dbDesigners: any[] = [...(db.designers || [])];
+        const dbProjects: any[] = db.projects || [];
+
+        // Merge any clients from projects that might not be in clients table
+        const existingClientNames = new Set(
+          dbClients.map((c: any) => (c.companyName || c.name || '').toLowerCase().trim())
+        );
+        dbProjects.forEach((p: any) => {
+          const pClient = (p.client || p.clientCompany || '').trim();
+          if (pClient && !existingClientNames.has(pClient.toLowerCase())) {
+            existingClientNames.add(pClient.toLowerCase());
+            dbClients.push({
+              id: `proj-client-${pClient}`,
+              name: pClient,
+              companyName: pClient
+            });
+          }
+        });
+
+        // Merge any designers from projects that might not be in designers table
+        const existingDesignerNames = new Set(
+          dbDesigners.map((d: any) => (d.fullName || d.name || '').toLowerCase().trim())
+        );
+        dbProjects.forEach((p: any) => {
+          const pDesigner = (p.designer || '').trim();
+          if (pDesigner && !existingDesignerNames.has(pDesigner.toLowerCase())) {
+            existingDesignerNames.add(pDesigner.toLowerCase());
+            dbDesigners.push({
+              id: `proj-designer-${pDesigner}`,
+              fullName: pDesigner,
+              name: pDesigner,
+              specialty: 'CAD Designer',
+              employmentType: 'In-House'
+            });
+          }
+        });
+
+        setDesigners(dbDesigners);
+        setClients(dbClients);
+      } catch (err) {
+        console.error('Error fetching clients and designers:', err);
+      }
     };
     fetchData();
     setMounted(true);
@@ -634,7 +687,7 @@ export default function NewProjectPage() {
             <div className="lg:col-span-8 space-y-8">
               
               {/* Project Identity & Assignment Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
+              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-xl relative z-30 group">
                 <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
