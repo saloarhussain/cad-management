@@ -25,7 +25,7 @@ const AVAILABLE_SOFTWARES: SoftwareOption[] = [
   { 
     id: 'SolidWorks', 
     name: 'SolidWorks', 
-    icon: 'settings', 
+    logo: '/solidworks-logo.png',
     description: 'Mechanical Parametric Design'
   },
   { 
