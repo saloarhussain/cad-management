@@ -1930,6 +1930,25 @@ export async function getPublicDesignerStatus(designerEmail: string) {
   }
 }
 
+export async function getPublicPortfolioItems(designerId: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    const { data, error } = await adminSupabase
+      .from('designer_portfolio_items')
+      .select('*')
+      .eq('designer_id', designerId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return { items: data || [] };
+  } catch (err: any) {
+    console.error('[getPublicPortfolioItems] Error:', err.message);
+    return { items: [] };
+  }
+}
+
 export async function getDesignerByEmail(email: string) {
   try {
     const { createAdminClient } = await import('@/lib/supabaseServer');

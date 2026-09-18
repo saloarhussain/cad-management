@@ -84,6 +84,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [orgCount, setOrgCount] = useState(0);
   const [projects, setProjects] = useState<any[]>([]);
   const [designer, setDesigner] = useState<any>(null);
+  const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -134,6 +135,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         if (db.designers && db.designers.length > 0) {
           setDesigner(db.designers[0]);
         }
+
+        // Fetch portfolio items from designer_portfolio_items table
+        const { getPublicPortfolioItems } = await import('@/app/actions');
+        const { items } = await getPublicPortfolioItems(params.id);
+        setPortfolioItems(items);
       }
     };
     loadData();
@@ -239,7 +245,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   {/* Metrics Section with Subtle Dividers */}
                   <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
                     <div className="border-r border-[#262626]">
-                      <div className="font-bold text-lg">{products.length}</div>
+                      <div className="font-bold text-lg">{portfolioItems.length + products.length}</div>
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Posts</div>
                     </div>
                     <div className="border-r border-[#262626]">
@@ -301,25 +307,46 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             {/* Content */}
             {activeTab === 'portfolio' ? (
               <section className="grid grid-cols-3 gap-0.5 bg-[#0a0a0a]" data-purpose="portfolio-showcase">
-                {projects.length > 0 ? (
-                  projects.flatMap(p => {
-                    try {
-                      const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                      return Array.isArray(imgs) ? imgs : [];
-                    } catch (e) {
-                      return [];
-                    }
-                  }).map((img: any, idx: number) => (
-                    <div key={idx} className="aspect-square relative overflow-hidden bg-[#0a0a0a]">
-                      <img alt="Jewelry Project" className="w-full h-full object-cover" src={img.url || img} />
-                      {img.type === 'video' && (
-                        <div className="absolute top-2 right-2">
-                          <span className="material-symbols-outlined text-white text-sm drop-shadow-md">videocam</span>
+                {portfolioItems.length === 0 && projects.length === 0 ? (
+                  <div className="col-span-3 py-20 text-center">
+                    <span className="material-symbols-outlined text-white/20 text-4xl block mb-3">image_not_supported</span>
+                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">No portfolio items yet</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* designer_portfolio_items */}
+                    {portfolioItems.flatMap((item: any, i: number) =>
+                      (Array.isArray(item.images) ? item.images : []).map((img: string, j: number) => (
+                        <div key={`pi-${i}-${j}`} className="aspect-square relative overflow-hidden bg-[#0a0a0a] group">
+                          <img alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src={img} />
+                          {j === 0 && item.title && (
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                              <p className="text-white text-[10px] font-bold uppercase truncate">{item.title}</p>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ))
-                ) : null}
+                      ))
+                    )}
+                    {/* legacy project images */}
+                    {projects.flatMap(p => {
+                      try {
+                        const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
+                        return Array.isArray(imgs) ? imgs : [];
+                      } catch (e) {
+                        return [];
+                      }
+                    }).map((img: any, idx: number) => (
+                      <div key={`proj-${idx}`} className="aspect-square relative overflow-hidden bg-[#0a0a0a]">
+                        <img alt="Jewelry Project" className="w-full h-full object-cover" src={img.url || img} />
+                        {img.type === 'video' && (
+                          <div className="absolute top-2 right-2">
+                            <span className="material-symbols-outlined text-white text-sm drop-shadow-md">videocam</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
               </section>
             ) : (
               <div className="p-4 bg-[#0a0a0a]" data-purpose="shop-showcase">
