@@ -76,12 +76,12 @@ export default function DesignerPortfolio() {
             
             <button
               onClick={async () => {
-                const { sharePortfolio } = await import('@/app/actions');
-                const res = await sharePortfolio();
-                if (res.success) {
-                  setNotification({ message: 'Portfolio shared with linked organizations! 🚀', type: 'success' });
-                } else {
-                  setNotification({ message: res.error || 'Failed to share portfolio.', type: 'error' });
+                try {
+                  const publicUrl = `${window.location.origin}/portfolio/${user?.id}`;
+                  await navigator.clipboard.writeText(publicUrl);
+                  setNotification({ message: 'Portfolio link copied to clipboard! 🔗', type: 'success' });
+                } catch {
+                  setNotification({ message: 'Failed to copy link.', type: 'error' });
                 }
                 setTimeout(() => setNotification(null), 5000);
               }}
