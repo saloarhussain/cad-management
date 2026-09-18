@@ -80,11 +80,392 @@ const DatePickerFacade = ({ label, isDeadline, name }: { label: string; isDeadli
   );
 };
 
+const ClientSearchSelect = ({
+  clients,
+  selectedClient,
+  onSelect
+}: {
+  clients: any[];
+  selectedClient: string;
+  onSelect: (val: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return clients;
+    return clients.filter((c) => {
+      const name = (c.name || '').toLowerCase();
+      const comp = (c.companyName || '').toLowerCase();
+      const email = (c.email || '').toLowerCase();
+      return name.includes(q) || comp.includes(q) || email.includes(q);
+    });
+  }, [clients, search]);
+
+  const activeObj = clients.find(c => (c.companyName || c.name) === selectedClient);
+
+  return (
+    <div className="space-y-2 relative" ref={dropdownRef}>
+      <input type="hidden" name="client" value={selectedClient} required />
+      <div className="flex items-center justify-between">
+        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
+          Assigned Client <span className="text-amber-400">*</span>
+        </label>
+        <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
+          <span className="material-symbols-outlined text-[11px]">search</span>
+          Searchable
+        </span>
+      </div>
+
+      <div
+        onClick={() => setIsOpen(prev => !prev)}
+        className={`w-full bg-black/40 border ${
+          isOpen 
+            ? 'border-[#F59E0B] ring-1 ring-[#F59E0B]/30' 
+            : 'border-white/10 hover:border-white/25 focus-within:border-[#F59E0B]'
+        } rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition-all shadow-inner select-none`}
+      >
+        <div className="flex items-center gap-3 truncate">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedClient ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' : 'bg-white/5 text-stone-500'}`}>
+            <span className="material-symbols-outlined text-base">corporate_fare</span>
+          </div>
+          {selectedClient ? (
+            <div className="text-left truncate">
+              <p className="text-white text-sm font-bold truncate leading-tight">{selectedClient}</p>
+              {activeObj?.name && activeObj.name !== activeObj.companyName && (
+                <p className="text-[10px] text-zinc-400 truncate leading-none mt-0.5">Contact: {activeObj.name}</p>
+              )}
+            </div>
+          ) : (
+            <span className="text-stone-500 text-sm font-medium">Search &amp; select client account...</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 text-stone-400">
+          {selectedClient && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect('');
+              }}
+              className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-xs text-stone-400 hover:text-white transition-colors mr-1"
+              title="Clear selection"
+            >
+              ✕
+            </button>
+          )}
+          <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-400' : ''}`}>
+            expand_more
+          </span>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-[#14120c] border border-white/15 rounded-2xl shadow-2xl p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
+              search
+            </span>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Type to search company, client or email..."
+              className="w-full bg-black/60 border border-white/10 rounded-xl pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+            {filtered.length === 0 ? (
+              <div className="py-6 text-center text-stone-500 text-xs font-medium">
+                No clients found matching &quot;{search}&quot;
+              </div>
+            ) : (
+              filtered.map((c) => {
+                const label = c.companyName || c.name;
+                const isSelected = selectedClient === label;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => {
+                      onSelect(label);
+                      setIsOpen(false);
+                    }}
+                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-amber-400/15 border border-amber-400/30 text-amber-300' 
+                        : 'hover:bg-white/5 text-stone-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
+                        {label.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="truncate text-left">
+                        <p className="text-xs font-bold text-white truncate leading-tight">{label}</p>
+                        {c.name && c.companyName && c.name !== c.companyName && (
+                          <p className="text-[10px] text-stone-400 truncate leading-tight">Attn: {c.name}</p>
+                        )}
+                        {c.email && (
+                          <p className="text-[9px] text-stone-500 font-mono truncate leading-tight">{c.email}</p>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="material-symbols-outlined text-amber-400 text-sm shrink-0">check_circle</span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const DesignerSearchSelect = ({
+  designers,
+  selectedDesigner,
+  onSelect
+}: {
+  designers: any[];
+  selectedDesigner: string;
+  onSelect: (val: string) => void;
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => searchInputRef.current?.focus(), 50);
+    } else {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return designers;
+    return designers.filter((d) => {
+      const name = (d.fullName || '').toLowerCase();
+      const spec = (d.specialty || '').toLowerCase();
+      const emp = (d.employmentType || '').toLowerCase();
+      return name.includes(q) || spec.includes(q) || emp.includes(q);
+    });
+  }, [designers, search]);
+
+  const activeObj = designers.find(d => d.fullName === selectedDesigner);
+
+  return (
+    <div className="space-y-2 relative" ref={dropdownRef}>
+      <input type="hidden" name="designer" value={selectedDesigner} required />
+      <div className="flex items-center justify-between">
+        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
+          Assigned CAD Designer <span className="text-amber-400">*</span>
+        </label>
+        <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
+          <span className="material-symbols-outlined text-[11px]">search</span>
+          Searchable
+        </span>
+      </div>
+
+      <div
+        onClick={() => setIsOpen(prev => !prev)}
+        className={`w-full bg-black/40 border ${
+          isOpen 
+            ? 'border-[#F59E0B] ring-1 ring-[#F59E0B]/30' 
+            : 'border-white/10 hover:border-white/25 focus-within:border-[#F59E0B]'
+        } rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition-all shadow-inner select-none`}
+      >
+        <div className="flex items-center gap-3 truncate">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedDesigner ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' : 'bg-white/5 text-stone-500'}`}>
+            <span className="material-symbols-outlined text-base">badge</span>
+          </div>
+          {selectedDesigner ? (
+            <div className="text-left truncate">
+              <div className="flex items-center gap-2">
+                <p className="text-white text-sm font-bold truncate leading-tight">{selectedDesigner}</p>
+                {activeObj?.employmentType && (
+                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
+                    activeObj.employmentType === 'Freelancer' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
+                  }`}>
+                    {activeObj.employmentType}
+                  </span>
+                )}
+              </div>
+              {activeObj?.specialty && (
+                <p className="text-[10px] text-zinc-400 truncate leading-none mt-0.5">{activeObj.specialty}</p>
+              )}
+            </div>
+          ) : (
+            <span className="text-stone-500 text-sm font-medium">Search &amp; select CAD specialist...</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 text-stone-400">
+          {selectedDesigner && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect('');
+              }}
+              className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-xs text-stone-400 hover:text-white transition-colors mr-1"
+              title="Clear selection"
+            >
+              ✕
+            </button>
+          )}
+          <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-400' : ''}`}>
+            expand_more
+          </span>
+        </div>
+      </div>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-[100] bg-[#14120c] border border-white/15 rounded-2xl shadow-2xl p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
+              search
+            </span>
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Type to search designer name or CAD software..."
+              className="w-full bg-black/60 border border-white/10 rounded-xl pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+            {filtered.length === 0 ? (
+              <div className="py-6 text-center text-stone-500 text-xs font-medium">
+                No designers found matching &quot;{search}&quot;
+              </div>
+            ) : (
+              filtered.map((d) => {
+                const isSelected = selectedDesigner === d.fullName;
+                return (
+                  <div
+                    key={d.id}
+                    onClick={() => {
+                      onSelect(d.fullName);
+                      setIsOpen(false);
+                    }}
+                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'bg-amber-400/15 border border-amber-400/30 text-amber-300' 
+                        : 'hover:bg-white/5 text-stone-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
+                        {d.fullName.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="truncate text-left">
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-white truncate leading-tight">{d.fullName}</p>
+                          {d.employmentType && (
+                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 text-stone-400 uppercase">
+                              {d.employmentType}
+                            </span>
+                          )}
+                        </div>
+                        {d.specialty && (
+                          <p className="text-[10px] text-amber-400/80 truncate leading-tight mt-0.5">{d.specialty}</p>
+                        )}
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <span className="material-symbols-outlined text-amber-400 text-sm shrink-0">check_circle</span>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function NewProjectPage() {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [designers, setDesigners] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [selectedClient, setSelectedClient] = useState("");
   const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [gallery, setGallery] = useState<any[]>([]);
@@ -123,14 +504,25 @@ export default function NewProjectPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!isAuthenticated || saving) return;
-    setSaving(true);
 
     const formData = new FormData(e.currentTarget);
-    formData.append('tags', JSON.stringify(skills));
-
-    const clientVal = (formData.get('client') as string) || '';
-    const designerVal = (formData.get('designer') as string) || '';
+    const clientVal = (formData.get('client') as string) || selectedClient || '';
+    const designerVal = (formData.get('designer') as string) || selectedDesignerName || '';
     const titleVal = (formData.get('title') as string) || '';
+
+    if (!clientVal.trim()) {
+      alert('Please select an assigned client account.');
+      return;
+    }
+    if (!designerVal.trim()) {
+      alert('Please select an assigned CAD designer.');
+      return;
+    }
+
+    setSaving(true);
+    formData.set('client', clientVal);
+    formData.set('designer', designerVal);
+    formData.append('tags', JSON.stringify(skills));
 
     const tempProject = {
       id: Date.now().toString(),
@@ -283,58 +675,19 @@ export default function NewProjectPage() {
                     </div>
                   </div>
 
-                  {/* Client & Designer Selectors */}
+                  {/* Client & Designer Searchable Selectors */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Client Selection */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                          Assigned Client <span className="text-amber-400">*</span>
-                        </label>
-                        <span className="text-[9px] text-zinc-500 font-bold uppercase">Company</span>
-                      </div>
-                      <div className="relative group">
-                        <select 
-                          name="client" 
-                          required 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 pr-10 text-white font-medium text-sm focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all appearance-none cursor-pointer shadow-inner"
-                        >
-                          <option value="" className="bg-[#14120c] text-stone-400">Select Client Account...</option>
-                          {clients.map((c) => (
-                            <option key={c.id} value={c.companyName || c.name} className="bg-[#14120c] text-white">
-                              {c.companyName || c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400 group-hover:text-amber-400 transition-colors">corporate_fare</span>
-                      </div>
-                    </div>
+                    <ClientSearchSelect
+                      clients={clients}
+                      selectedClient={selectedClient}
+                      onSelect={(val) => setSelectedClient(val)}
+                    />
 
-                    {/* Designer Selection */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                          Assigned CAD Designer <span className="text-amber-400">*</span>
-                        </label>
-                        <span className="text-[9px] text-zinc-500 font-bold uppercase">Specialist</span>
-                      </div>
-                      <div className="relative group">
-                        <select 
-                          name="designer" 
-                          required 
-                          onChange={(e) => setSelectedDesignerName(e.target.value)}
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 pr-10 text-white font-medium text-sm focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all appearance-none cursor-pointer shadow-inner"
-                        >
-                          <option value="" className="bg-[#14120c] text-stone-400">Assign Workstation Designer...</option>
-                          {designers.map((d) => (
-                            <option key={d.id} value={d.fullName} className="bg-[#14120c] text-white">
-                              {d.fullName} {d.specialty ? `(${d.specialty})` : ''} {d.employmentType ? `• ${d.employmentType}` : ''}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-stone-400 group-hover:text-amber-400 transition-colors">badge</span>
-                      </div>
-                    </div>
+                    <DesignerSearchSelect
+                      designers={designers}
+                      selectedDesigner={selectedDesignerName}
+                      onSelect={(val) => setSelectedDesignerName(val)}
+                    />
                   </div>
 
                   {/* Order ID & Tag */}
