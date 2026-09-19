@@ -1949,6 +1949,45 @@ export async function getPublicPortfolioItems(designerId: string) {
   }
 }
 
+/**
+ * Given a designer's auth user ID (from the shareable portfolio URL),
+ * returns their profile: name, specialty, skills, avatar, and email.
+ * Strategy: look up the auth user by ID → get their email → find their
+ * designer record in the designers table by email.
+ */
+export async function getPublicDesignerProfile(userId: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // 1. Get auth user to retrieve their email
+    const { data: { user }, error: authError } = await adminSupabase.auth.admin.getUserById(userId);
+    if (authError || !user?.email) {
+      return { designer: null };
+    }
+
+    const email = user.email;
+
+    // 2. Find their designer profile record (stored by orgs who added them)
+    const { data: designerRecords } = await adminSupabase
+      .from('designers')
+      .select('*')
+      .ilike('email', email)
+      .limit(1);
+
+    if (designerRecords && designerRecords.length > 0) {
+      return { designer: { ...designerRecords[0], email } };
+    }
+
+    // 3. Fallback: return basic profile from auth metadata
+    const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
+    return { designer: { fullName, email, specialty: '', skills: [] } };
+  } catch (err: any) {
+    console.error('[getPublicDesignerProfile] Error:', err.message);
+    return { designer: null };
+  }
+}
+
 export async function getDesignerByEmail(email: string) {
   try {
     const { createAdminClient } = await import('@/lib/supabaseServer');

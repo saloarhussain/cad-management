@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
-import { getPublicPortfolioItems, getPublicDesignerStatus } from '@/app/actions';
+import { getPublicPortfolioItems, getPublicDesignerStatus, getPublicDesignerProfile } from '@/app/actions';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -113,6 +113,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   useEffect(() => {
     const loadData = async () => {
       if (params.id) {
+        // Load products and projects via readDb (uses user_id — works for org-owned data)
         const { readDb } = await import('@/lib/db');
         const db = await readDb(params.id);
         if (db.products && db.products.length > 0) {
@@ -133,8 +134,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         if (db.projects && db.projects.length > 0) {
           setProjects(db.projects);
         }
-        if (db.designers && db.designers.length > 0) {
-          setDesigner(db.designers[0]);
+
+        // Fetch designer profile by auth user ID (NOT by user_id/org owner)
+        const { designer: designerProfile } = await getPublicDesignerProfile(params.id);
+        if (designerProfile) {
+          setDesigner(designerProfile);
         }
 
         // Fetch portfolio items from designer_portfolio_items table
