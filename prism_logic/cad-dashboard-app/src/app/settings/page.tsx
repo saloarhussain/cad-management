@@ -436,28 +436,28 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Main Content Container - Full Width Consistent with Projects & Team */}
-        <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8 animate-in fade-in duration-700">
+        {/* Main Content Container - Executive SaaS Layout */}
+        <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8 animate-in fade-in duration-500">
           
-          {/* Top Page Header with Title, Role Context, and Immediate Save Button */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/5">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-lg shadow-yellow-400/5 shrink-0">
-                  <span className="material-symbols-outlined text-2xl">tune</span>
+          {/* Top Page Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-zinc-800/80">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400/20 to-yellow-600/10 border border-yellow-400/30 flex items-center justify-center text-yellow-400 shadow-md shadow-yellow-400/5 shrink-0">
+                  <span className="material-symbols-outlined text-xl">tune</span>
                 </div>
                 <div>
-                  <h1 className="font-headline text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic leading-none">
+                  <h1 className="font-headline text-2xl sm:text-3xl font-black tracking-tight text-white uppercase leading-none">
                     {loading ? '...' : (
                       isDesigner ? (
-                        <>Designer <span className="text-[#F59E0B]">Workstation</span></>
+                        <>Designer <span className="text-yellow-400">Settings</span></>
                       ) : (
-                        <>Organization <span className="text-[#F59E0B]">Dashboard</span></>
+                        <>Organization <span className="text-yellow-400">Settings</span></>
                       )
                     )}
                   </h1>
-                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1.5">
-                    {isDesigner ? 'Personal credentials, skill portfolio & payout settlement' : 'Command center, billing protocols & workspace configurations'}
+                  <p className="text-zinc-400 text-xs font-medium tracking-wide mt-1">
+                    {isDesigner ? 'Personal credentials, skill portfolio and payout settlement' : 'Manage your organization profile, billing gateways and workspace configuration'}
                   </p>
                 </div>
               </div>
@@ -465,9 +465,9 @@ export default function SettingsPage() {
 
             {/* Header Right Actions */}
             <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-              <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/80 border border-zinc-800 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+              <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-zinc-900/90 border border-zinc-800 shadow-inner">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
+                <span className="text-[11px] font-bold text-zinc-300 uppercase tracking-wider">
                   {isDesigner ? 'Designer Mode' : 'Admin Authority'}
                 </span>
               </div>
@@ -476,16 +476,16 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSaving}
-                className={`px-6 py-2.5 rounded-xl font-black uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg active:scale-95 ${
+                className={`px-6 py-2.5 rounded-xl font-bold uppercase text-xs tracking-wider flex items-center gap-2 transition-all shadow-lg active:scale-95 ${
                   isSaving
                     ? 'bg-yellow-400/20 text-yellow-400/40 cursor-wait'
-                    : 'bg-yellow-400 text-black hover:brightness-110 shadow-yellow-400/20'
+                    : 'bg-yellow-400 text-black hover:bg-yellow-300 shadow-yellow-400/20 hover:shadow-yellow-400/30 font-black'
                 }`}
               >
                 <span className="material-symbols-outlined text-base">
-                  {isSaving ? 'sync' : 'save'}
+                  {isSaving ? 'sync' : 'check_circle'}
                 </span>
-                <span>{isSaving ? 'Synchronizing...' : 'Save Changes'}</span>
+                <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
           </div>
@@ -494,18 +494,18 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full items-start">
             
             {/* Left Navigation Column */}
-            <div className="lg:col-span-4 xl:col-span-3 space-y-6 lg:sticky lg:top-24 h-fit">
+            <div className="lg:col-span-4 xl:col-span-3 space-y-5 lg:sticky lg:top-24 h-fit">
               {/* Tab Navigation Card */}
-              <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-4 shadow-xl space-y-2">
-                <div className="px-3 py-2 text-[9px] font-black text-zinc-500 uppercase tracking-[0.25em]">
+              <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-3 shadow-xl space-y-1.5">
+                <div className="px-3 py-2 text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
                   Configuration Modules
                 </div>
                 {[
-                  { id: 'user', label: 'User Setting', icon: 'person', desc: 'Profile & Global Preferences' },
-                  { id: 'payment', label: 'Payment Method', icon: 'payments', desc: 'Billing Gateways & Addresses' },
-                  { id: 'email', label: 'Notification', icon: 'notifications_active', desc: 'Email Protocols & Alerts' },
-                  { id: 'alerts', label: 'Alert Integrations', icon: 'webhook', desc: 'Fiverr, Upwork, Phone Calls' },
-                  { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet', desc: 'Ledger, Escrow & Withdrawals' }
+                  { id: 'user', label: 'Identity & Profile', icon: 'person', desc: 'Organization Profile & Contact' },
+                  { id: 'payment', label: 'Payment Methods', icon: 'payments', desc: 'Bank Accounts & Gateways' },
+                  { id: 'email', label: 'Notifications', icon: 'notifications_active', desc: 'Email Protocols & Alerts' },
+                  { id: 'alerts', label: 'Platform Alerts', icon: 'webhook', desc: 'Fiverr, Upwork & Phone' },
+                  { id: 'wallet', label: 'Wallet & Rewards', icon: 'wallet', desc: 'Points Ledger & Escrows' }
                 ].map((tab) => {
                   const isActive = activeTab === tab.id;
                   return (
@@ -515,28 +515,28 @@ export default function SettingsPage() {
                       onClick={() => setActiveTab(tab.id as any)}
                       className={`w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group text-left ${
                         isActive
-                          ? 'bg-yellow-400 text-black shadow-lg shadow-yellow-400/15 font-bold'
-                          : 'text-zinc-400 hover:text-white hover:bg-white/[0.04]'
+                          ? 'bg-zinc-800/90 text-white border-l-4 border-l-yellow-400 border-y border-r border-zinc-700/60 shadow-lg shadow-black/30'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 border-l-4 border-l-transparent'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border transition-colors ${
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
                           isActive
-                            ? 'bg-black/15 border-transparent text-black'
-                            : 'bg-zinc-900/60 border-zinc-800 group-hover:border-zinc-700 text-zinc-400 group-hover:text-yellow-400'
+                            ? 'bg-yellow-400/10 text-yellow-400'
+                            : 'bg-zinc-800/60 text-zinc-400 group-hover:text-yellow-400'
                         }`}>
-                          <span className="material-symbols-outlined text-lg">{tab.icon}</span>
+                          <span className="material-symbols-outlined text-base">{tab.icon}</span>
                         </div>
                         <div className="min-w-0">
-                          <p className={`text-xs font-black uppercase tracking-tight truncate leading-tight ${isActive ? 'text-black' : 'text-zinc-200'}`}>
+                          <p className={`text-xs font-bold tracking-tight truncate leading-tight ${isActive ? 'text-white' : 'text-zinc-300'}`}>
                             {tab.label}
                           </p>
-                          <p className={`text-[9px] font-semibold truncate mt-0.5 ${isActive ? 'text-black/70' : 'text-zinc-500'}`}>
+                          <p className="text-[10px] font-medium truncate text-zinc-500 mt-0.5">
                             {tab.desc}
                           </p>
                         </div>
                       </div>
-                      <span className={`material-symbols-outlined text-base transition-transform group-hover:translate-x-0.5 ${isActive ? 'text-black' : 'text-zinc-600'}`}>
+                      <span className={`material-symbols-outlined text-base transition-transform group-hover:translate-x-0.5 ${isActive ? 'text-yellow-400' : 'text-zinc-600'}`}>
                         chevron_right
                       </span>
                     </button>
@@ -587,18 +587,17 @@ export default function SettingsPage() {
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 
                 {/* Account Profile Card */}
-                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
-                  <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#242424 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden group">
                   
                   {/* Card Header */}
-                  <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60 relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                  <div className="flex items-center justify-between pb-5 mb-6 border-b border-zinc-800/80 relative z-10">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-md shadow-yellow-400/5">
                         <span className="material-symbols-outlined text-xl">badge</span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-black uppercase tracking-tight text-white">Identity & Credentials</h3>
-                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
+                        <h3 className="text-base font-bold text-white tracking-tight">Identity & Credentials</h3>
+                        <p className="text-xs text-zinc-400 font-normal mt-0.5">
                           {isDesigner ? 'Personal profile and verified contact handles' : 'Organization profile, owner verification and contact details'}
                         </p>
                       </div>
@@ -606,24 +605,24 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
-                    {/* Premium Profile Image Uploader */}
-                    <div className="w-32 h-32 shrink-0 mx-auto md:mx-0">
-                      <div className="w-32 h-32 rounded-full border border-zinc-800 p-1 bg-zinc-900/50 relative overflow-hidden group/avatar shadow-lg">
-                        <div className="w-full h-full rounded-full bg-zinc-800/40 flex items-center justify-center overflow-hidden relative">
+                    {/* Profile Image Uploader */}
+                    <div className="w-32 shrink-0 flex flex-col items-center mx-auto md:mx-0 gap-2">
+                      <div className="w-28 h-28 rounded-2xl border-2 border-zinc-700/60 p-1 bg-zinc-950/60 relative overflow-hidden group/avatar shadow-xl hover:border-yellow-400/60 transition-all duration-300">
+                        <div className="w-full h-full rounded-xl bg-zinc-900 flex items-center justify-center overflow-hidden relative">
                           {avatarUrl ? (
-                            <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover grayscale group-hover/avatar:grayscale-0 transition-all duration-500" />
+                            <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover transition-all duration-500" />
                           ) : (
                             <span className="material-symbols-outlined text-4xl text-zinc-600">person</span>
                           )}
 
                           {uploadingImage && (
-                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center z-10">
-                              <span className="animate-spin material-symbols-outlined text-white">progress_activity</span>
+                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-10">
+                              <span className="animate-spin material-symbols-outlined text-yellow-400">progress_activity</span>
                             </div>
                           )}
                         </div>
 
-                        <label className="absolute inset-0 cursor-pointer flex items-center justify-center rounded-full bg-black/0 hover:bg-black/50 transition-all opacity-0 hover:opacity-100 group-hover/avatar:opacity-100 z-20">
+                        <label className="absolute inset-0 cursor-pointer flex flex-col items-center justify-center rounded-xl bg-black/60 opacity-0 hover:opacity-100 group-hover/avatar:opacity-100 transition-all z-20">
                           <input
                             type="file"
                             accept="image/*"
@@ -658,61 +657,63 @@ export default function SettingsPage() {
                             }}
                           />
                           <span className="material-symbols-outlined text-white text-xl">photo_camera</span>
+                          <span className="text-[9px] font-bold text-white uppercase tracking-wider mt-0.5">Upload</span>
                         </label>
                       </div>
+                      <span className="text-[10px] text-zinc-500 font-medium text-center">Square image / logo</span>
                     </div>
 
                     <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-5">
                       {isDesigner ? (
                         <div className="col-span-1 sm:col-span-2 space-y-1.5">
-                          <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Professional Identity</label>
+                          <label className="text-xs font-semibold text-zinc-300 ml-0.5">Professional Identity</label>
                           <input
                             value={designerFullName}
                             onChange={(e) => setDesignerFullName(e.target.value)}
-                            className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                            className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                             placeholder="Your Full Name"
                           />
                         </div>
                       ) : (
                         <>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Organization Name</label>
+                            <label className="text-xs font-semibold text-zinc-300 ml-0.5">Organization Name</label>
                             <input
                               value={organizationTitle}
                               onChange={(e) => setOrganizationTitle(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="Organization"
+                              className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
+                              placeholder="e.g. Minecom Studios"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Owner Name</label>
+                            <label className="text-xs font-semibold text-zinc-300 ml-0.5">Owner / Director Name</label>
                             <input
                               value={ownerName}
                               onChange={(e) => setOwnerName(e.target.value)}
-                              className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                              placeholder="Legal Name"
+                              className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
+                              placeholder="Legal Full Name"
                             />
                           </div>
                         </>
                       )}
 
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Official WhatsApp</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">Official WhatsApp</label>
                         <input
                           value={whatsapp}
                           onChange={(e) => setWhatsapp(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                           placeholder="+91 00000 00000"
                         />
                       </div>
-                      <div className="space-y-1.5 opacity-70">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Email</label>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-400 ml-0.5">Registered Email (Read Only)</label>
                         <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500">
-                            <span className="material-symbols-outlined text-sm">lock</span>
+                          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">
+                            <span className="material-symbols-outlined text-base">lock</span>
                           </div>
                           <input
-                            className="w-full bg-zinc-900/30 border border-zinc-800/60 rounded-xl py-3 pl-12 pr-4 text-sm font-medium text-zinc-400 cursor-not-allowed"
+                            className="w-full bg-zinc-900/40 border border-zinc-800/60 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-zinc-400 cursor-not-allowed"
                             readOnly
                             value={user?.email || ''}
                           />
@@ -776,16 +777,16 @@ export default function SettingsPage() {
 
                 {/* Organization Invoice Details Card */}
                 {!isDesigner && (
-                  <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
-                    <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                  <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-5 mb-6 border-b border-zinc-800/80">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-md shadow-yellow-400/5">
                           <span className="material-symbols-outlined text-xl">receipt_long</span>
                         </div>
                         <div>
-                          <h3 className="text-lg font-black uppercase tracking-tight text-white">Invoice Details & Legal Registration</h3>
-                          <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">
-                            Official legal and billing details used on client project invoices & GST compliance
+                          <h3 className="text-base font-bold text-white tracking-tight">Invoice Details & Legal Registration</h3>
+                          <p className="text-xs text-zinc-400 font-normal mt-0.5">
+                            Official billing details used on client project invoices & GST compliance
                           </p>
                         </div>
                       </div>
@@ -793,7 +794,7 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Country</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">Country</label>
                         <CountrySearch 
                           name="orgCountry"
                           defaultValue={orgCountry} 
@@ -801,48 +802,48 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">{getTaxIdLabel(orgCountry).toUpperCase()}</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">{getTaxIdLabel(orgCountry).toUpperCase()}</label>
                         <input
                           value={orgTaxId}
                           onChange={(e) => setOrgTaxId(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                           placeholder={`Enter ${getTaxIdLabel(orgCountry)}`}
                         />
                       </div>
                       <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Registered Address</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">Registered Address</label>
                         <input
                           value={orgAddress}
                           onChange={(e) => setOrgAddress(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                           placeholder="123 Business Boulevard, Suite 100"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">City</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">City</label>
                         <input
                           value={orgCity}
                           onChange={(e) => setOrgCity(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                           placeholder="City"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">State / Province</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">State / Province</label>
                         <input
                           value={orgState}
                           onChange={(e) => setOrgState(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
                           placeholder="State / Province"
                         />
                       </div>
                       <div className="space-y-1.5 md:col-span-2">
-                        <label className="text-[10px] text-zinc-400 uppercase tracking-widest font-bold ml-1">Pincode / Zip Code</label>
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">Pincode / Postal Code</label>
                         <input
                           value={orgPincode}
                           onChange={(e) => setOrgPincode(e.target.value)}
-                          className="w-full bg-black/40 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold text-sm focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400/20 outline-none transition-all"
-                          placeholder="Pincode / Zip Code"
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
+                          placeholder="Pincode / Postal Code"
                         />
                       </div>
                     </div>
@@ -850,33 +851,33 @@ export default function SettingsPage() {
                 )}
 
                 {/* DASHBOARD DISPLAY CARD */}
-                <div className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-xl relative">
-                  <div className="flex items-center justify-between pb-6 mb-6 border-b border-zinc-800/60">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400">
+                <div className="bg-zinc-900/60 backdrop-blur-xl border border-zinc-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl relative">
+                  <div className="flex items-center justify-between pb-5 mb-6 border-b border-zinc-800/80">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-xl bg-yellow-400/10 border border-yellow-400/20 flex items-center justify-center text-yellow-400 shadow-md shadow-yellow-400/5">
                         <span className="material-symbols-outlined text-xl">currency_exchange</span>
                       </div>
                       <div>
-                        <h3 className="text-lg font-black uppercase tracking-tight text-white">Dashboard Display & Currency</h3>
-                        <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-0.5">Configure financial metric conversion and visibility</p>
+                        <h3 className="text-base font-bold text-white tracking-tight">Dashboard Display & Currency</h3>
+                        <p className="text-xs text-zinc-400 font-normal mt-0.5">Configure global financial metric conversion and display currency</p>
                       </div>
                     </div>
-                    <div className="p-2.5 bg-zinc-900 rounded-xl border border-zinc-800 text-yellow-400">
-                      <span className="material-symbols-outlined text-lg">trending_up</span>
+                    <div className="p-2 bg-zinc-800/60 rounded-xl border border-zinc-700/60 text-yellow-400">
+                      <span className="material-symbols-outlined text-base">trending_up</span>
                     </div>
                   </div>
 
-                  <div className="bg-black/30 border border-zinc-800/50 rounded-xl p-6">
-                    <div className="mb-4">
-                      <p className="text-[10px] text-zinc-300 font-black uppercase">Primary Currency</p>
-                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Used for all global project and invoice totals</p>
+                  <div className="bg-zinc-950/50 border border-zinc-800/80 rounded-xl p-5">
+                    <div className="mb-3">
+                      <p className="text-xs font-bold text-zinc-200">Primary Currency</p>
+                      <p className="text-[11px] text-zinc-500 font-normal mt-0.5">Applied to all project estimations, client invoices, and metrics</p>
                     </div>
 
                     <div className="relative">
                       <button
                         type="button"
                         onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                        className="w-full flex items-center justify-between px-5 py-3.5 bg-black border border-zinc-800 hover:border-yellow-400/40 rounded-xl transition-all"
+                        className="w-full flex items-center justify-between px-4 py-3 bg-zinc-900/80 border border-zinc-800 hover:border-zinc-700 rounded-xl transition-all shadow-inner"
                       >
                         <span className="text-sm font-bold text-white">
                           {GLOBAL_CURRENCIES.find(c => c.symbol === currentCurrency)?.code || 'CURRENCY'} ({currentCurrency}) - {GLOBAL_CURRENCIES.find(c => c.symbol === currentCurrency)?.label}

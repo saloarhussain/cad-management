@@ -227,27 +227,30 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             animation: bonfire 1.5s ease-in-out infinite;
           }
         `}</style>
-        {/* MainContainer */}
-        <div className="max-w-6xl mx-auto h-screen flex flex-col relative overflow-hidden">
+        {/* MainContainer - Expansive modern widescreen container eliminating empty side margins */}
+        <div className="w-full max-w-[1720px] mx-auto min-h-screen flex flex-col relative">
           {/* TopHeader */}
-          <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md px-4 py-3 flex justify-between items-center border-b border-[#262626]">
-            <div className="flex gap-5">
-              <button className="hover:text-[#ffe30c] transition-colors">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                </svg>
-              </button>
-              <button className="hover:text-[#ffe30c] transition-colors">
-                <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
-                </svg>
+          <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md px-4 sm:px-8 xl:px-12 py-3 flex justify-between items-center border-b border-[#262626]">
+            <div className="flex items-center gap-3">
+              <Link href="/explore" className="text-zinc-400 hover:text-yellow-400 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
+                <span className="material-symbols-outlined text-sm">arrow_back</span>
+                Explore Studios
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={handleShare}
+                className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-lg shadow-yellow-400/10"
+              >
+                <span className="material-symbols-outlined text-sm">share</span>
+                Share Portfolio
               </button>
             </div>
           </header>
           {/* END: TopHeader */}
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 flex-1 px-4 py-6 overflow-y-auto">
-            <main className="col-span-1 md:col-span-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 px-4 sm:px-8 xl:px-12 py-8">
+            <main className="col-span-1 md:col-span-8 xl:col-span-9 space-y-6">
               {/* BEGIN: ProfileHeader Mobile Only */}
               <div className="block md:hidden">
                 <section className="px-4 pt-8 pb-6 text-center" data-purpose="user-stats">
@@ -344,11 +347,12 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
             {/* Content */}
             {activeTab === 'portfolio' ? (
-              <section className="grid grid-cols-3 gap-0.5 bg-[#0a0a0a]" data-purpose="portfolio-showcase">
+              <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-purpose="portfolio-showcase">
                 {portfolioItems.length === 0 && projects.length === 0 ? (
-                  <div className="col-span-3 py-20 text-center">
-                    <span className="material-symbols-outlined text-white/20 text-4xl block mb-3">image_not_supported</span>
-                    <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">No portfolio items yet</p>
+                  <div className="col-span-full py-28 text-center bg-zinc-900/30 border border-zinc-800/80 rounded-3xl p-12">
+                    <span className="material-symbols-outlined text-white/20 text-5xl block mb-3">image_not_supported</span>
+                    <p className="text-xs font-black text-white/40 uppercase tracking-widest">No portfolio items yet</p>
+                    <p className="text-[11px] text-white/20 mt-1">Upload showcase items to highlight your studio's finest creations.</p>
                   </div>
                 ) : (
                   <>
@@ -369,16 +373,19 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                       const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
 
                       return (
-                        <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden bg-[#141414] group border border-white/5 hover:border-yellow-400/30 transition-all">
-                          <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src={mainImage} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                            <p className="text-white text-xs font-bold tracking-wide uppercase truncate">{item.title}</p>
-                            {itemImages.length > 1 && (
-                              <span className="text-[9px] text-yellow-400 font-semibold mt-0.5 flex items-center gap-1">
-                                <span className="material-symbols-outlined text-xs">collections</span>
-                                {itemImages.length} images
-                              </span>
-                            )}
+                        <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:shadow-2xl hover:shadow-yellow-400/10 hover:scale-[1.015]">
+                          <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={mainImage} />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                            <p className="text-white text-sm font-black tracking-wide uppercase truncate drop-shadow-md">{item.title}</p>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">3D CAD Model</span>
+                              {itemImages.length > 1 && (
+                                <span className="text-[9px] text-yellow-400 font-black flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
+                                  <span className="material-symbols-outlined text-xs">collections</span>
+                                  {itemImages.length}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
@@ -392,11 +399,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         return [];
                       }
                     }).map((img: any, idx: number) => (
-                      <div key={`proj-${idx}`} className="aspect-square relative overflow-hidden bg-[#0a0a0a]">
-                        <img alt="Jewelry Project" className="w-full h-full object-cover" src={img.url || img} />
+                      <div key={`proj-${idx}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:scale-[1.015]">
+                        <img alt="Jewelry Project" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={img.url || img} />
                         {img.type === 'video' && (
-                          <div className="absolute top-2 right-2">
-                            <span className="material-symbols-outlined text-white text-sm drop-shadow-md">videocam</span>
+                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm p-1.5 rounded-lg border border-white/10">
+                            <span className="material-symbols-outlined text-white text-sm">videocam</span>
                           </div>
                         )}
                       </div>
@@ -521,9 +528,9 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           </main>
           
           {/* Right Sidebar for Desktop */}
-          <aside className="hidden md:block col-span-1 md:col-span-4 space-y-6 sticky top-24 self-start">
+          <aside className="hidden md:block col-span-1 md:col-span-4 xl:col-span-3 space-y-6 sticky top-24 self-start">
             {/* Profile Info Card (Desktop Only) */}
-            <div className="bg-[#121212] rounded-xl border border-[#262626] p-6 text-center">
+            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 text-center shadow-xl">
               {/* Profile Avatar */}
               <div className="flex flex-col items-center mb-4">
                 <div className="relative w-24 h-24 mb-4">
@@ -597,24 +604,30 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             </div>
 
             {/* Skills & Tools */}
-            <div className="bg-[#121212] rounded-xl border border-[#262626] p-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-[#ffe30c] mb-4">Skills & Tools</h3>
+            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 shadow-xl">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#ffe30c] mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">build</span>
+                Skills & Tools
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {designer?.skills?.length > 0 ? (
                   designer.skills.map((skill: string, idx: number) => (
-                    <span key={idx} className="px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs font-semibold border border-[#262626]">{skill}</span>
+                    <span key={idx} className="px-3 py-1.5 bg-zinc-800/60 rounded-xl text-xs font-bold border border-zinc-700/60 text-zinc-300">{skill}</span>
                   ))
                 ) : (
-                  <span className="text-xs text-gray-600">No skills listed</span>
+                  <span className="text-xs text-zinc-500">No skills listed</span>
                 )}
               </div>
             </div>
 
             {/* Client Reviews */}
-            <div className="bg-[#121212] rounded-xl border border-[#262626] p-6">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-[#ffe30c] mb-4">Client Reviews</h3>
+            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 shadow-xl">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#ffe30c] mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">reviews</span>
+                Client Reviews
+              </h3>
               <div className="space-y-4">
-                <p className="text-xs text-gray-500 text-center">No reviews yet.</p>
+                <p className="text-xs text-zinc-500 text-center py-4">No reviews yet.</p>
               </div>
             </div>
           </aside>
