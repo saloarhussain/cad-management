@@ -112,10 +112,28 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
   useEffect(() => {
     const loadData = async () => {
-      if (params.id) {
+      // Robust ID extraction: extract valid UUID from params, pathname, or logged-in user
+      let targetId = params.id;
+      if (typeof window !== 'undefined') {
+        const match = window.location.pathname.match(/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}/);
+        if (match) {
+          targetId = match[0];
+        } else {
+          const rawClean = window.location.pathname.replace(/^\/portfolio\/?/i, '').replace(/[^0-9a-fA-F-]/g, '');
+          if (rawClean.length >= 30) {
+            targetId = rawClean;
+          }
+        }
+      }
+
+      if ((!targetId || targetId.length < 20) && user?.id) {
+        targetId = user.id;
+      }
+
+      if (targetId) {
         // Fetch designer profile + portfolio items via API route (reliable, no env var issues)
         try {
-          const res = await fetch(`/api/portfolio/${params.id}`);
+          const res = await fetch(`/api/portfolio/${targetId}`);
           const data = await res.json();
           if (data.designer) setDesigner(data.designer);
           if (data.items && data.items.length > 0) setPortfolioItems(data.items);
@@ -126,7 +144,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         // Load shop products via readDb
         try {
           const { readDb } = await import('@/lib/db');
-          const db = await readDb(params.id);
+          const db = await readDb(targetId);
           if (db.products && db.products.length > 0) {
             setProducts(db.products.map((p: any) => ({
               ...p,
@@ -164,10 +182,20 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   }, [designer?.email]);
 
   const handleShare = async () => {
+    let cleanId = params.id;
+    if (typeof window !== 'undefined') {
+      const match = window.location.pathname.match(/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}/);
+      if (match) cleanId = match[0];
+    }
+    if ((!cleanId || cleanId.length < 20) && user?.id) {
+      cleanId = user.id;
+    }
+    const cleanUrl = `${window.location.origin}/portfolio/${cleanId}`;
+
     const shareData = {
       title: 'Check out my 3D Jewelry Portfolio',
       text: 'I create custom 3D jewelry designs. Check out my portfolio!',
-      url: window.location.href,
+      url: cleanUrl,
     };
 
     if (navigator.share) {
@@ -178,7 +206,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
       }
     } else {
       try {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(cleanUrl);
         alert('Portfolio link copied to clipboard!');
       } catch (err) {
         alert('Failed to copy link: ' + err);

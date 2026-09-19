@@ -14,11 +14,12 @@ export async function GET(
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    let authUserId = rawId;
+    const cleanId = rawId.replace(/[^0-9a-fA-F-]/g, '');
+    let authUserId = cleanId;
     let designerProfile: any = null;
 
     try {
-      const { data: { user } } = await supabase.auth.admin.getUserById(rawId);
+      const { data: { user } } = await supabase.auth.admin.getUserById(cleanId);
       if (user?.id) {
         authUserId = user.id;
         const { data: records } = await supabase
