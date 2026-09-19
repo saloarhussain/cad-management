@@ -286,8 +286,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   {/* Metrics Section with Subtle Dividers */}
                   <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
                     <div className="border-r border-[#262626]">
-                      <div className="font-bold text-lg">{portfolioItems.length + products.length}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Posts</div>
+                      <div className="font-bold text-lg">{portfolioItems.length}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
                     </div>
                     <div className="border-r border-[#262626]">
                       <div className="font-bold text-lg">{orgCount}</div>
@@ -348,67 +348,46 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             {/* Content */}
             {activeTab === 'portfolio' ? (
               <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-purpose="portfolio-showcase">
-                {portfolioItems.length === 0 && projects.length === 0 ? (
+                {portfolioItems.length === 0 ? (
                   <div className="col-span-full py-28 text-center bg-zinc-900/30 border border-zinc-800/80 rounded-3xl p-12">
                     <span className="material-symbols-outlined text-white/20 text-5xl block mb-3">image_not_supported</span>
                     <p className="text-xs font-black text-white/40 uppercase tracking-widest">No portfolio items yet</p>
-                    <p className="text-[11px] text-white/20 mt-1">Upload showcase items to highlight your studio's finest creations.</p>
+                    <p className="text-[11px] text-white/20 mt-1">Upload showcase items from your portfolio manager to highlight your studio's creations.</p>
                   </div>
                 ) : (
-                  <>
-                    {/* designer_portfolio_items */}
-                    {portfolioItems.map((item: any, i: number) => {
-                      let itemImages: string[] = [];
-                      if (Array.isArray(item.images)) {
-                        itemImages = item.images;
-                      } else if (typeof item.images === 'string') {
-                        try {
-                          const parsed = JSON.parse(item.images);
-                          itemImages = Array.isArray(parsed) ? parsed : [item.images];
-                        } catch {
-                          itemImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
-                        }
+                  portfolioItems.map((item: any, i: number) => {
+                    let itemImages: string[] = [];
+                    if (Array.isArray(item.images)) {
+                      itemImages = item.images;
+                    } else if (typeof item.images === 'string') {
+                      try {
+                        const parsed = JSON.parse(item.images);
+                        itemImages = Array.isArray(parsed) ? parsed : [item.images];
+                      } catch {
+                        itemImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
                       }
-                      
-                      const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
+                    }
+                    
+                    const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
 
-                      return (
-                        <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:shadow-2xl hover:shadow-yellow-400/10 hover:scale-[1.015]">
-                          <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={mainImage} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                            <p className="text-white text-sm font-black tracking-wide uppercase truncate drop-shadow-md">{item.title}</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">3D CAD Model</span>
-                              {itemImages.length > 1 && (
-                                <span className="text-[9px] text-yellow-400 font-black flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
-                                  <span className="material-symbols-outlined text-xs">collections</span>
-                                  {itemImages.length}
-                                </span>
-                              )}
-                            </div>
+                    return (
+                      <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:shadow-2xl hover:shadow-yellow-400/10 hover:scale-[1.015]">
+                        <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={mainImage} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
+                          <p className="text-white text-sm font-black tracking-wide uppercase truncate drop-shadow-md">{item.title}</p>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">3D CAD Model</span>
+                            {itemImages.length > 1 && (
+                              <span className="text-[9px] text-yellow-400 font-black flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
+                                <span className="material-symbols-outlined text-xs">collections</span>
+                                {itemImages.length}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      );
-                    })}
-                    {/* legacy project images */}
-                    {projects.flatMap(p => {
-                      try {
-                        const imgs = typeof p.images === 'string' ? JSON.parse(p.images) : p.images;
-                        return Array.isArray(imgs) ? imgs : [];
-                      } catch (e) {
-                        return [];
-                      }
-                    }).map((img: any, idx: number) => (
-                      <div key={`proj-${idx}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:scale-[1.015]">
-                        <img alt="Jewelry Project" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={img.url || img} />
-                        {img.type === 'video' && (
-                          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm p-1.5 rounded-lg border border-white/10">
-                            <span className="material-symbols-outlined text-white text-sm">videocam</span>
-                          </div>
-                        )}
                       </div>
-                    ))}
-                  </>
+                    );
+                  })
                 )}
               </section>
             ) : (
@@ -563,8 +542,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
               {/* Metrics Section with Subtle Dividers */}
               <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
                 <div className="border-r border-[#262626]">
-                  <div className="font-bold text-lg">{portfolioItems.length + products.length}</div>
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Posts</div>
+                  <div className="font-bold text-lg">{portfolioItems.length}</div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
                 </div>
                 <div className="border-r border-[#262626]">
                   <div className="font-bold text-lg">{orgCount}</div>
