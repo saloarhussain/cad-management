@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/AuthProvider';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
+import { getPublicPortfolioItems, getPublicDesignerStatus } from '@/app/actions';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -137,7 +138,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         }
 
         // Fetch portfolio items from designer_portfolio_items table
-        const { getPublicPortfolioItems } = await import('@/app/actions');
         const { items } = await getPublicPortfolioItems(params.id);
         setPortfolioItems(items);
       }
@@ -150,7 +150,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   useEffect(() => {
     const fetchStatus = async () => {
       if (designer?.email) {
-        const { getPublicDesignerStatus } = await import('@/app/actions');
         const status = await getPublicDesignerStatus(designer.email);
         setOrgCount(status.organizations?.length || 0);
       }
@@ -495,7 +494,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
               {/* Metrics Section with Subtle Dividers */}
               <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
                 <div className="border-r border-[#262626]">
-                  <div className="font-bold text-lg">{products.length}</div>
+                  <div className="font-bold text-lg">{portfolioItems.length + products.length}</div>
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Posts</div>
                 </div>
                 <div className="border-r border-[#262626]">
