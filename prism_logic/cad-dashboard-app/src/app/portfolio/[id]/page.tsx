@@ -83,6 +83,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 export default function PublicPortfolio({ params }: { params: { id: string } }) {
   const { user } = useAuth();
   const [orgCount, setOrgCount] = useState(0);
+  const [jobsCount, setJobsCount] = useState(0);
   const [projects, setProjects] = useState<any[]>([]);
   const [designer, setDesigner] = useState<any>(null);
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
@@ -137,6 +138,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           const data = await res.json();
           if (data.designer) setDesigner(data.designer);
           if (data.items && data.items.length > 0) setPortfolioItems(data.items);
+          if (typeof data.completedJobsCount === 'number') setJobsCount(data.completedJobsCount);
         } catch (e) {
           console.error('[portfolio] API fetch failed:', e);
         }
@@ -290,8 +292,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                       <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
                     </div>
                     <div className="border-r border-[#262626]">
-                      <div className="font-bold text-lg">{orgCount}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Organizations</div>
+                      <div className="font-bold text-lg">{jobsCount}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Jobs</div>
                     </div>
                     <div>
                       <div className="font-bold text-lg">-<span className="text-sm font-normal text-gray-400 ml-0.5">/5</span></div>
@@ -546,8 +548,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
                 </div>
                 <div className="border-r border-[#262626]">
-                  <div className="font-bold text-lg">{orgCount}</div>
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Organizations</div>
+                  <div className="font-bold text-lg">{jobsCount}</div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Jobs</div>
                 </div>
                 <div>
                   <div className="font-bold text-lg">-<span className="text-sm font-normal text-gray-400 ml-0.5">/5</span></div>

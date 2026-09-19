@@ -73,9 +73,33 @@ export async function GET(
 
     if (error) throw error;
 
-    return NextResponse.json({ items: items || [], designer: designerProfile, authUserId });
+    // Calculate total completed jobs from projects table
+    let completedJobsCount = 0;
+    try {
+      const { data: projectsData } = await supabase
+        .from("projects")
+        .select("status")
+        .eq("user_id", authUserId);
+
+      if (projectsData && projectsData.length > 0) {
+        completedJobsCount = projectsData.filter((p: any) => {
+          const s = (p.status || "").toLowerCase();
+          return s === "completed" || s === "delivered" || s === "approved" || s === "done";
+        }).length;
+        if (completedJobsCount === 0) completedJobsCount = projectsData.length;
+      }
+    } catch (jobErr) {
+      console.error("[portfolio api] jobs count error:", jobErr);
+    }
+
+    return NextResponse.json({
+      items: items || [],
+      designer: designerProfile,
+      authUserId,
+      completedJobsCount
+    });
   } catch (err: any) {
     console.error("[portfolio api] error:", err.message);
-    return NextResponse.json({ items: [], designer: null, authUserId: rawId }, { status: 500 });
+    return NextResponse.json({ items: [], designer: null, authUserId: rawId, completedJobsCount: 0 }, { status: 500 });
   }
 }
