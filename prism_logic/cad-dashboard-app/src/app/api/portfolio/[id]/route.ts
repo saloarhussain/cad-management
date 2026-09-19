@@ -8,10 +8,10 @@ const SUPABASE_SERVICE_KEY =
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: rawId } = await params;
   try {
-    const rawId = params.id;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
     let authUserId = rawId;
@@ -49,6 +49,6 @@ export async function GET(
     return NextResponse.json({ items: items || [], designer: designerProfile, authUserId });
   } catch (err: any) {
     console.error("[portfolio api] error:", err.message);
-    return NextResponse.json({ items: [], designer: null, authUserId: params.id }, { status: 500 });
+    return NextResponse.json({ items: [], designer: null, authUserId: rawId }, { status: 500 });
   }
 }
