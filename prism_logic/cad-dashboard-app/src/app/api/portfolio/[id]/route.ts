@@ -27,12 +27,38 @@ export async function GET(
           .ilike("email", user.email || "")
           .limit(1);
 
-        if (records && records.length > 0) {
-          designerProfile = { ...records[0], email: user.email };
-        } else {
-          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || (user.email || "").split("@")[0];
-          designerProfile = { fullName, email: user.email, specialty: "", skills: [] };
-        }
+        const { data: settings } = await supabase
+          .from("settings")
+          .select("*")
+          .eq("user_id", authUserId)
+          .limit(1);
+
+        const s = settings?.[0] || {};
+        const fullName =
+          s.owner_name ||
+          records?.[0]?.fullName ||
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          (user.email || "").split("@")[0];
+
+        const organizationName = s.organization_name || user.user_metadata?.organization_name;
+        const avatarUrl = s.avatar_url || records?.[0]?.avatar_url || user.user_metadata?.avatar_url;
+        const specialty =
+          records?.[0]?.specialty ||
+          (user.user_metadata?.role === "admin" || user.user_metadata?.role === "organization"
+            ? `${organizationName || "CAD Studio"} Portfolio`
+            : "Professional 3D CAD Designer");
+
+        const skills = records?.[0]?.skills || ["3D CAD Modeling", "Jewelry Design", "Rendering", "Rhino 3D"];
+
+        designerProfile = {
+          fullName,
+          organizationName,
+          avatarUrl,
+          email: user.email,
+          specialty,
+          skills
+        };
       }
     } catch (e) {
       console.error("[portfolio api] auth lookup failed:", e);

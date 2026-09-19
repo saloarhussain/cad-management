@@ -228,22 +228,27 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     <div className="relative w-24 h-24 mb-4">
                       <div className="absolute -inset-2 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire blur-[5px]"></div>
                       <div className="absolute inset-0 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire"></div>
-                      <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5">
+                      <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5 overflow-hidden">
                         <img 
                           alt="Profile Avatar" 
-                          className="w-full h-full rounded-full object-cover grayscale brightness-110" 
-                          src="https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw" 
+                          className="w-full h-full rounded-full object-cover brightness-110" 
+                          src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"} 
                         />
                       </div>
                       <div className="absolute bottom-1 right-1 w-[22px] h-[22px] bg-[#23a55a] border-4 border-[#0a0a0a] rounded-full shadow-[0_0_10px_rgba(35,165,90,0.5)]"></div>
                     </div>
                     {/* Designer Name and Tag */}
                     <div className="flex items-center justify-center gap-1 mb-1">
-                      <h2 className="font-bold text-2xl tracking-tight">{designer?.fullName || 'anyx3d'}</h2>
+                      <h2 className="font-bold text-2xl tracking-tight">{designer?.organizationName || designer?.fullName || 'Portfolio'}</h2>
                       <span className="material-symbols-outlined text-[#ff73fa] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
                     </div>
+                    {designer?.fullName && designer?.organizationName && (
+                      <p className="text-xs text-white/50 mb-1">{designer.fullName}</p>
+                    )}
                     <div className="inline-flex items-center px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10 mt-1">
-                      <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">Professional Designer</span>
+                      <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">
+                        {designer?.organizationName ? 'Studio & Organization' : 'Professional Designer'}
+                      </span>
                     </div>
                   </div>
                   
@@ -320,18 +325,36 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 ) : (
                   <>
                     {/* designer_portfolio_items */}
-                    {portfolioItems.flatMap((item: any, i: number) =>
-                      (Array.isArray(item.images) ? item.images : []).map((img: string, j: number) => (
-                        <div key={`pi-${i}-${j}`} className="aspect-square relative overflow-hidden bg-[#0a0a0a] group">
-                          <img alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src={img} />
-                          {j === 0 && item.title && (
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                              <p className="text-white text-[10px] font-bold uppercase truncate">{item.title}</p>
-                            </div>
-                          )}
+                    {portfolioItems.map((item: any, i: number) => {
+                      let itemImages: string[] = [];
+                      if (Array.isArray(item.images)) {
+                        itemImages = item.images;
+                      } else if (typeof item.images === 'string') {
+                        try {
+                          const parsed = JSON.parse(item.images);
+                          itemImages = Array.isArray(parsed) ? parsed : [item.images];
+                        } catch {
+                          itemImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+                        }
+                      }
+                      
+                      const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
+
+                      return (
+                        <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden bg-[#141414] group border border-white/5 hover:border-yellow-400/30 transition-all">
+                          <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" src={mainImage} />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                            <p className="text-white text-xs font-bold tracking-wide uppercase truncate">{item.title}</p>
+                            {itemImages.length > 1 && (
+                              <span className="text-[9px] text-yellow-400 font-semibold mt-0.5 flex items-center gap-1">
+                                <span className="material-symbols-outlined text-xs">collections</span>
+                                {itemImages.length} images
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      ))
-                    )}
+                      );
+                    })}
                     {/* legacy project images */}
                     {projects.flatMap(p => {
                       try {
@@ -478,22 +501,27 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 <div className="relative w-24 h-24 mb-4">
                   <div className="absolute -inset-2 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire blur-[5px]"></div>
                   <div className="absolute inset-0 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire"></div>
-                  <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5">
+                  <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5 overflow-hidden">
                     <img 
                       alt="Profile Avatar" 
-                      className="w-full h-full rounded-full object-cover grayscale brightness-110" 
-                      src="https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw" 
+                      className="w-full h-full rounded-full object-cover brightness-110" 
+                      src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"} 
                     />
                   </div>
                   <div className="absolute bottom-1 right-1 w-[22px] h-[22px] bg-[#23a55a] border-4 border-[#0a0a0a] rounded-full shadow-[0_0_10px_rgba(35,165,90,0.5)]"></div>
                 </div>
                 {/* Designer Name and Tag */}
                 <div className="flex items-center justify-center gap-1 mb-1">
-                  <h2 className="font-bold text-2xl tracking-tight">{designer?.fullName || 'anyx3d'}</h2>
+                  <h2 className="font-bold text-2xl tracking-tight">{designer?.organizationName || designer?.fullName || 'Portfolio'}</h2>
                   <span className="material-symbols-outlined text-[#ff73fa] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
                 </div>
+                {designer?.fullName && designer?.organizationName && (
+                  <p className="text-xs text-white/50 mb-1">{designer.fullName}</p>
+                )}
                 <div className="inline-flex items-center px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10 mt-1">
-                  <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">Professional Designer</span>
+                  <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">
+                    {designer?.organizationName ? 'Studio & Organization' : 'Professional Designer'}
+                  </span>
                 </div>
               </div>
               
