@@ -113,37 +113,39 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   useEffect(() => {
     const loadData = async () => {
       if (params.id) {
-        // Load products and projects via readDb (uses user_id — works for org-owned data)
-        const { readDb } = await import('@/lib/db');
-        const db = await readDb(params.id);
-        if (db.products && db.products.length > 0) {
-          setProducts(db.products.map((p: any) => ({
-            ...p,
-            cadFiles: p.cad_files || p.cadFiles,
-            productType: p.product_type || p.productType,
-            ringSize: p.ring_size || p.ringSize,
-            mainGems: p.main_gems || p.mainGems,
-            sideGems: p.side_gems || p.sideGems,
-            metalWeight: p.metal_weight || p.metalWeight,
-            metalWeightImage: p.metal_weight_image || p.metalWeightImage,
-            braceletSize: p.bracelet_size || p.braceletSize,
-            customLabel: p.custom_label || p.customLabel,
-            customValue: p.custom_value || p.customValue,
-          })));
-        }
-        if (db.projects && db.projects.length > 0) {
-          setProjects(db.projects);
+        // Fetch designer profile + portfolio items via API route (reliable, no env var issues)
+        try {
+          const res = await fetch(`/api/portfolio/${params.id}`);
+          const data = await res.json();
+          if (data.designer) setDesigner(data.designer);
+          if (data.items && data.items.length > 0) setPortfolioItems(data.items);
+        } catch (e) {
+          console.error('[portfolio] API fetch failed:', e);
         }
 
-        // Fetch designer profile by auth user ID — also returns the verified real UUID
-        const { designer: designerProfile, authUserId } = await getPublicDesignerProfile(params.id);
-        if (designerProfile) {
-          setDesigner(designerProfile);
+        // Load shop products via readDb
+        try {
+          const { readDb } = await import('@/lib/db');
+          const db = await readDb(params.id);
+          if (db.products && db.products.length > 0) {
+            setProducts(db.products.map((p: any) => ({
+              ...p,
+              cadFiles: p.cad_files || p.cadFiles,
+              productType: p.product_type || p.productType,
+              ringSize: p.ring_size || p.ringSize,
+              mainGems: p.main_gems || p.mainGems,
+              sideGems: p.side_gems || p.sideGems,
+              metalWeight: p.metal_weight || p.metalWeight,
+              metalWeightImage: p.metal_weight_image || p.metalWeightImage,
+              braceletSize: p.bracelet_size || p.braceletSize,
+              customLabel: p.custom_label || p.customLabel,
+              customValue: p.custom_value || p.customValue,
+            })));
+          }
+          if (db.projects && db.projects.length > 0) setProjects(db.projects);
+        } catch (e) {
+          console.error('[portfolio] readDb failed:', e);
         }
-
-        // Use the verified authUserId (not the URL param which may be wrong/corrupted)
-        const { items } = await getPublicPortfolioItems(authUserId);
-        setPortfolioItems(items);
       }
     };
     loadData();
