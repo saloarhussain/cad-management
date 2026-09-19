@@ -135,14 +135,14 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           setProjects(db.projects);
         }
 
-        // Fetch designer profile by auth user ID (NOT by user_id/org owner)
-        const { designer: designerProfile } = await getPublicDesignerProfile(params.id);
+        // Fetch designer profile by auth user ID — also returns the verified real UUID
+        const { designer: designerProfile, authUserId } = await getPublicDesignerProfile(params.id);
         if (designerProfile) {
           setDesigner(designerProfile);
         }
 
-        // Fetch portfolio items from designer_portfolio_items table
-        const { items } = await getPublicPortfolioItems(params.id);
+        // Use the verified authUserId (not the URL param which may be wrong/corrupted)
+        const { items } = await getPublicPortfolioItems(authUserId);
         setPortfolioItems(items);
       }
     };

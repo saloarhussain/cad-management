@@ -1960,13 +1960,14 @@ export async function getPublicDesignerProfile(userId: string) {
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // 1. Get auth user to retrieve their email
+    // 1. Get auth user to retrieve their email + verified UUID
     const { data: { user }, error: authError } = await adminSupabase.auth.admin.getUserById(userId);
     if (authError || !user?.email) {
-      return { designer: null };
+      return { designer: null, authUserId: userId };
     }
 
     const email = user.email;
+    const authUserId = user.id; // verified real UUID from auth
 
     // 2. Find their designer profile record (stored by orgs who added them)
     const { data: designerRecords } = await adminSupabase
@@ -1976,15 +1977,15 @@ export async function getPublicDesignerProfile(userId: string) {
       .limit(1);
 
     if (designerRecords && designerRecords.length > 0) {
-      return { designer: { ...designerRecords[0], email } };
+      return { designer: { ...designerRecords[0], email }, authUserId };
     }
 
     // 3. Fallback: return basic profile from auth metadata
     const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
-    return { designer: { fullName, email, specialty: '', skills: [] } };
+    return { designer: { fullName, email, specialty: '', skills: [] }, authUserId };
   } catch (err: any) {
     console.error('[getPublicDesignerProfile] Error:', err.message);
-    return { designer: null };
+    return { designer: null, authUserId: userId };
   }
 }
 
