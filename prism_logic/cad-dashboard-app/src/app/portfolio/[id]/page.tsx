@@ -242,30 +242,39 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           <div className="pointer-events-none absolute top-1/2 left-10 w-80 h-80 bg-[#ffb955]/10 rounded-full blur-3xl"></div>
 
           <div className="w-full px-4 sm:px-8 xl:px-12 py-6 flex flex-col gap-6">
-            {/* Top Action Bar / Breadcrumb Strip */}
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <Link 
-                href="/explore" 
-                className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group text-xs font-bold uppercase tracking-wider"
-              >
-                <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
-                <span>Explore Studios</span>
-              </Link>
-              <div className="flex items-center gap-3">
-                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#14161E] border border-[#282D3C] text-zinc-400">
-                  <span className="material-symbols-outlined text-xs text-[#4ffeb9]">verified</span>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300">ASME Y14.5 Certified</span>
+            {/* Top Navigation Bar: Cadonce Logo & Share Portfolio Button */}
+            <div className="flex items-center justify-between gap-4 border-b border-[#282D3C]/80 pb-4">
+              <Link href="/" className="flex items-center gap-3 group">
+                <div className="size-9 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shadow-[0_0_16px_rgba(245,158,11,0.35)] shrink-0 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-black font-black text-xl leading-none">architecture</span>
                 </div>
+                <div className="flex flex-col">
+                  <span className="font-headline font-black text-lg text-white tracking-tighter uppercase italic leading-none">
+                    CAD<span className="text-[#F59E0B]">ONCE</span>
+                  </span>
+                  <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                    Studio Archive
+                  </span>
+                </div>
+              </Link>
+              
+              <div className="flex items-center gap-3">
+                {!user && (
+                  <Link 
+                    href="/auth/login"
+                    className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-zinc-300 hover:text-white border border-[#282D3C] hover:border-zinc-500 bg-[#14161E] transition-all"
+                  >
+                    <span>Sign In</span>
+                  </Link>
+                )}
                 <button 
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#14161E] border border-[#282D3C] hover:border-[#d9ee3c] text-[#F7F8FA] hover:text-[#d9ee3c] text-xs font-semibold transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#d9ee3c] hover:bg-[#cbe02d] text-[#1a1e00] font-bold text-xs uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.45)] shadow-md"
                 >
-                  <span className={`material-symbols-outlined text-sm ${copiedLink ? 'text-[#4ffeb9]' : ''}`}>
+                  <span className="material-symbols-outlined text-sm font-bold">
                     {copiedLink ? 'check' : 'share'}
                   </span>
-                  <span className={copiedLink ? 'text-[#4ffeb9] font-bold' : ''}>
-                    {copiedLink ? 'Link Copied!' : 'Share Dossier'}
-                  </span>
+                  <span>{copiedLink ? 'Link Copied!' : 'Share Portfolio'}</span>
                 </button>
               </div>
             </div>
