@@ -171,7 +171,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
     loadData();
   }, [params.id]);
 
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'shop'>('portfolio');
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'spins' | 'saved' | 'collabs' | 'shop'>('portfolio');
+  const [selectedPortfolioItem, setSelectedPortfolioItem] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -192,26 +196,28 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
     if ((!cleanId || cleanId.length < 20) && user?.id) {
       cleanId = user.id;
     }
-    const cleanUrl = `${window.location.origin}/portfolio/${cleanId}`;
+    const cleanUrl = typeof window !== 'undefined' ? `${window.location.origin}/portfolio/${cleanId}` : '';
 
-    const shareData = {
-      title: 'Check out my 3D Jewelry Portfolio',
-      text: 'I create custom 3D jewelry designs. Check out my portfolio!',
-      url: cleanUrl,
-    };
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(cleanUrl);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2500);
+        return;
+      } catch (err) {
+        console.log('Clipboard copy failed, trying share', err);
+      }
+    }
 
     if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: `${designer?.organizationName || designer?.fullName || 'CADONCE'} Portfolio`,
+          text: `Check out ${designer?.organizationName || designer?.fullName || 'CADONCE'}'s 3D CAD portfolio dossier!`,
+          url: cleanUrl,
+        });
       } catch (err) {
         console.log('Share canceled or failed', err);
-      }
-    } else {
-      try {
-        await navigator.clipboard.writeText(cleanUrl);
-        alert('Portfolio link copied to clipboard!');
-      } catch (err) {
-        alert('Failed to copy link: ' + err);
       }
     }
   };
@@ -231,388 +237,698 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         `}</style>
         {/* MainContainer - Expansive modern widescreen container eliminating empty side margins */}
         <div className="w-full max-w-[1720px] mx-auto min-h-screen flex flex-col relative">
-          {/* TopHeader */}
-          <header className="sticky top-0 z-50 bg-[#0a0a0a]/90 backdrop-blur-md px-4 sm:px-8 xl:px-12 py-3 flex justify-between items-center border-b border-[#262626]">
-            <div className="flex items-center gap-3">
-              <Link href="/explore" className="text-zinc-400 hover:text-yellow-400 transition-colors flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
-                <span className="material-symbols-outlined text-sm">arrow_back</span>
-                Explore Studios
+          {/* Ambient Glow Orbs behind main content */}
+          <div className="pointer-events-none absolute -top-40 right-1/4 w-96 h-96 bg-[#d9ee3c]/10 rounded-full blur-3xl"></div>
+          <div className="pointer-events-none absolute top-1/2 left-10 w-80 h-80 bg-[#ffb955]/10 rounded-full blur-3xl"></div>
+
+          <div className="w-full px-4 sm:px-8 xl:px-12 py-6 flex flex-col gap-6">
+            {/* Top Action Bar / Breadcrumb Strip */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Link 
+                href="/explore" 
+                className="inline-flex items-center gap-2 text-zinc-400 hover:text-white transition-colors group text-xs font-bold uppercase tracking-wider"
+              >
+                <span className="material-symbols-outlined text-sm group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                <span>Explore Studios</span>
               </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={handleShare}
-                className="px-4 py-2 bg-yellow-400 text-black rounded-xl text-xs font-black uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-lg shadow-yellow-400/10"
-              >
-                <span className="material-symbols-outlined text-sm">share</span>
-                Share Portfolio
-              </button>
-            </div>
-          </header>
-          {/* END: TopHeader */}
-
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 flex-1 px-4 sm:px-8 xl:px-12 py-8">
-            <main className="col-span-1 md:col-span-8 xl:col-span-9 space-y-6">
-              {/* BEGIN: ProfileHeader Mobile Only */}
-              <div className="block md:hidden">
-                <section className="px-4 pt-8 pb-6 text-center" data-purpose="user-stats">
-                  <div className="flex flex-col items-center mb-4">
-                    {/* Profile Avatar with Bonfire Animation */}
-                    <div className="relative w-24 h-24 mb-4">
-                      <div className="absolute -inset-2 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire blur-[5px]"></div>
-                      <div className="absolute inset-0 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire"></div>
-                      <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5 overflow-hidden">
-                        <img 
-                          alt="Profile Avatar" 
-                          className="w-full h-full rounded-full object-cover brightness-110" 
-                          src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"} 
-                        />
-                      </div>
-                      <div className="absolute bottom-1 right-1 w-[22px] h-[22px] bg-[#23a55a] border-4 border-[#0a0a0a] rounded-full shadow-[0_0_10px_rgba(35,165,90,0.5)]"></div>
-                    </div>
-                    {/* Designer Name and Tag */}
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <h2 className="font-bold text-2xl tracking-tight">{designer?.organizationName || designer?.fullName || 'Portfolio'}</h2>
-                      <span className="material-symbols-outlined text-[#ff73fa] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
-                    </div>
-                    {designer?.fullName && designer?.organizationName && (
-                      <p className="text-xs text-white/50 mb-1">{designer.fullName}</p>
-                    )}
-                    <div className="inline-flex items-center px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10 mt-1">
-                      <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">
-                        {designer?.organizationName ? 'Studio & Organization' : 'Professional Designer'}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Metrics Section with Subtle Dividers */}
-                  <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
-                    <div className="border-r border-[#262626]">
-                      <div className="font-bold text-lg">{portfolioItems.length}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
-                    </div>
-                    <div className="border-r border-[#262626]">
-                      <div className="font-bold text-lg">{jobsCount}</div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Jobs</div>
-                    </div>
-                    <div>
-                      <div className="font-bold text-lg">-<span className="text-sm font-normal text-gray-400 ml-0.5">/5</span></div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Rating</div>
-                    </div>
-                  </div>
-                  
-                  {/* Bio Text */}
-                  <div className="mb-8">
-                    <p className="text-sm text-gray-300 leading-relaxed max-w-[280px] mx-auto">{designer?.specialty || ''}</p>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-3">
-                    <div className="flex gap-2">
-                      {user && user.id === params.id && (
-                        <Link href="/settings" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
-                          Edit profile
-                        </Link>
-                      )}
-                      <Link href="/inbox" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
-                        Hire Me
-                      </Link>
-                    </div>
-                    <button 
-                      onClick={handleShare}
-                      className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-[#121212] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-base">share</span>
-                      Share Portfolio
-                    </button>
-                  </div>
-                </section>
-              </div>
-              {/* END: ProfileHeader Mobile Only */}
-
-            {/* BEGIN: Tabs */}
-            <section className="border-t border-[#262626] flex" data-purpose="gallery-tabs">
-              <button 
-                onClick={() => setActiveTab('portfolio')}
-                className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest ${activeTab === 'portfolio' ? 'border-b-2 border-[#ffe30c] text-[#ffe30c]' : 'text-gray-500 hover:text-white border-b-2 border-transparent'}`}
-              >
-                Portfolio
-              </button>
-              <button 
-                onClick={() => setActiveTab('shop')}
-                className={`flex-1 py-4 text-xs font-bold uppercase tracking-widest ${activeTab === 'shop' ? 'border-b-2 border-[#ffe30c] text-[#ffe30c]' : 'text-gray-500 hover:text-white border-b-2 border-transparent'}`}
-              >
-                Shop
-              </button>
-            </section>
-            {/* END: Tabs */}
-
-            {/* Content */}
-            {activeTab === 'portfolio' ? (
-              <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5" data-purpose="portfolio-showcase">
-                {portfolioItems.length === 0 ? (
-                  <div className="col-span-full py-28 text-center bg-zinc-900/30 border border-zinc-800/80 rounded-3xl p-12">
-                    <span className="material-symbols-outlined text-white/20 text-5xl block mb-3">image_not_supported</span>
-                    <p className="text-xs font-black text-white/40 uppercase tracking-widest">No portfolio items yet</p>
-                    <p className="text-[11px] text-white/20 mt-1">Upload showcase items from your portfolio manager to highlight your studio's creations.</p>
-                  </div>
-                ) : (
-                  portfolioItems.map((item: any, i: number) => {
-                    let itemImages: string[] = [];
-                    if (Array.isArray(item.images)) {
-                      itemImages = item.images;
-                    } else if (typeof item.images === 'string') {
-                      try {
-                        const parsed = JSON.parse(item.images);
-                        itemImages = Array.isArray(parsed) ? parsed : [item.images];
-                      } catch {
-                        itemImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
-                      }
-                    }
-                    
-                    const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
-
-                    return (
-                      <div key={item.id || `pi-${i}`} className="aspect-square relative overflow-hidden rounded-2xl bg-zinc-900/80 border border-zinc-800/80 hover:border-yellow-400/50 transition-all duration-300 group shadow-lg hover:shadow-2xl hover:shadow-yellow-400/10 hover:scale-[1.015]">
-                        <img alt={item.title || 'Portfolio Work'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={mainImage} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-4">
-                          <p className="text-white text-sm font-black tracking-wide uppercase truncate drop-shadow-md">{item.title}</p>
-                          <div className="flex items-center justify-between mt-1">
-                            <span className="text-[10px] font-bold text-white/60 uppercase tracking-wider">3D CAD Model</span>
-                            {itemImages.length > 1 && (
-                              <span className="text-[9px] text-yellow-400 font-black flex items-center gap-1 bg-yellow-400/10 px-2 py-0.5 rounded-full border border-yellow-400/20">
-                                <span className="material-symbols-outlined text-xs">collections</span>
-                                {itemImages.length}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </section>
-            ) : (
-              <div className="p-4 bg-[#0a0a0a]" data-purpose="shop-showcase">
-                {/* Header with Add Product Button */}
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffe30c]">Shop</h3>
-                  {user && user.id === params.id && (
-                    <button 
-                      onClick={() => {
-                        setIsEditing(false);
-                        setCurrentEditingProductId(null);
-                        setNewProduct({ name: '', price: '', productType: 'Ring', image: '', mainImage: null, galleryImages: [], cadFiles: [], metalWeightImage: null, ringSize: '', mainGems: '', sideGems: '', metalWeight: '', braceletSize: '', customLabel: '', customValue: '' });
-                        setIsModalOpen(true);
-                      }}
-                      className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">add_circle</span>
-                      Add Product
-                    </button>
-                  )}
-                </div>
-
-                {/* Products Table */}
-                <div className="bg-[#121212] rounded-xl border border-[#262626] overflow-x-auto">
-                  <table className="w-full text-sm text-left text-gray-400">
-                    <thead className="text-xs text-gray-500 uppercase bg-[#0a0a0a] border-b border-[#262626]">
-                      <tr>
-                        <th className="px-4 py-3">Product</th>
-                        <th className="px-4 py-3">Price</th>
-                        <th className="px-4 py-3">Type</th>
-                        <th className="px-4 py-3">Details</th>
-                        <th className="px-4 py-3">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map(product => (
-                        <tr key={product.id} className="border-b border-[#1a1a1a] hover:bg-[#1a1a1a]/50">
-                          <td className="px-4 py-3 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded overflow-hidden bg-[#0a0a0a] border border-[#262626] flex-shrink-0">
-                              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-white cursor-pointer hover:text-[#ffe30c]" onClick={() => window.location.href = `/products/${product.id}`}>{product.name}</div>
-                              <div className="flex gap-1 mt-0.5">
-                                {product.images && product.images.length > 0 && (
-                                  <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
-                                    <span className="material-symbols-outlined text-[10px]">image</span>
-                                    {product.images.length}
-                                  </span>
-                                )}
-                                {product.cadFiles && product.cadFiles.length > 0 && (
-                                  <span className="text-[10px] text-[#ffe30c] flex items-center gap-0.5">
-                                    <span className="material-symbols-outlined text-[10px]">deployed_code</span>
-                                    {product.cadFiles.length}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-[#ffe30c] font-bold">{product.price}</td>
-                          <td className="px-4 py-3 text-white">{(product as any).productType || 'N/A'}</td>
-                          <td className="px-4 py-3 text-xs space-y-0.5">
-                            {(product as any).ringSize && <div><span className="text-gray-500">Size:</span> {(product as any).ringSize}</div>}
-                            {(product as any).mainGems && <div><span className="text-gray-500">Gems:</span> {(product as any).mainGems}</div>}
-                            {(product as any).metalWeight && <div><span className="text-gray-500">Weight:</span> {(product as any).metalWeight}</div>}
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              {user && user.id === params.id && (
-                                <button 
-                                  onClick={() => {
-                                    setIsEditing(true);
-                                    setCurrentEditingProductId(product.id);
-                                    setNewProduct({
-                                      name: product.name,
-                                      price: product.price,
-                                      image: product.image,
-                                      metalWeightImage: null,
-                                      mainImage: null,
-                                      galleryImages: [],
-                                      cadFiles: [],
-                                      productType: (product as any).productType || 'Ring',
-                                      ringSize: (product as any).ringSize || '',
-                                      mainGems: (product as any).mainGems || '',
-                                      sideGems: (product as any).sideGems || '',
-                                      metalWeight: (product as any).metalWeight || '',
-                                      braceletSize: (product as any).braceletSize || '',
-                                      customLabel: (product as any).customLabel || '',
-                                      customValue: (product as any).customValue || ''
-                                    });
-                                    setIsModalOpen(true);
-                                  }}
-                                  className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black px-2.5 py-1 rounded text-xs font-bold transition-colors"
-                                >
-                                  Edit
-                                </button>
-                              )}
-                              {product.cadFiles && product.cadFiles.length > 0 && (
-                                <button 
-                                  onClick={() => setSelectedProductForView(product)}
-                                  className="bg-[#1a1a1a] border border-[#262626] hover:bg-[#262626] text-white px-2.5 py-1 rounded text-xs font-bold transition-colors flex items-center gap-0.5"
-                                >
-                                  <span className="material-symbols-outlined text-sm">view_in_ar</span>
-                                  View 3D
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </main>
-          
-          {/* Right Sidebar for Desktop */}
-          <aside className="hidden md:block col-span-1 md:col-span-4 xl:col-span-3 space-y-6 sticky top-24 self-start">
-            {/* Profile Info Card (Desktop Only) */}
-            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 text-center shadow-xl">
-              {/* Profile Avatar */}
-              <div className="flex flex-col items-center mb-4">
-                <div className="relative w-24 h-24 mb-4">
-                  <div className="absolute -inset-2 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire blur-[5px]"></div>
-                  <div className="absolute inset-0 bg-gradient-to-tr from-red-600 via-orange-500 to-yellow-400 animate-bonfire"></div>
-                  <div className="absolute inset-[3px] bg-[#0a0a0a] rounded-full p-0.5 overflow-hidden">
-                    <img 
-                      alt="Profile Avatar" 
-                      className="w-full h-full rounded-full object-cover brightness-110" 
-                      src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"} 
-                    />
-                  </div>
-                  <div className="absolute bottom-1 right-1 w-[22px] h-[22px] bg-[#23a55a] border-4 border-[#0a0a0a] rounded-full shadow-[0_0_10px_rgba(35,165,90,0.5)]"></div>
-                </div>
-                {/* Designer Name and Tag */}
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <h2 className="font-bold text-2xl tracking-tight">{designer?.organizationName || designer?.fullName || 'Portfolio'}</h2>
-                  <span className="material-symbols-outlined text-[#ff73fa] text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
-                </div>
-                {designer?.fullName && designer?.organizationName && (
-                  <p className="text-xs text-white/50 mb-1">{designer.fullName}</p>
-                )}
-                <div className="inline-flex items-center px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10 mt-1">
-                  <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">
-                    {designer?.organizationName ? 'Studio & Organization' : 'Professional Designer'}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Metrics Section with Subtle Dividers */}
-              <div className="grid grid-cols-3 border-y border-[#262626] py-4 mb-6">
-                <div className="border-r border-[#262626]">
-                  <div className="font-bold text-lg">{portfolioItems.length}</div>
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Portfolio</div>
-                </div>
-                <div className="border-r border-[#262626]">
-                  <div className="font-bold text-lg">{jobsCount}</div>
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Jobs</div>
-                </div>
-                <div>
-                  <div className="font-bold text-lg">-<span className="text-sm font-normal text-gray-400 ml-0.5">/5</span></div>
-                  <div className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold">Rating</div>
-                </div>
-              </div>
-              
-              {/* Bio Text */}
-              <div className="mb-8">
-                <p className="text-sm text-gray-300 leading-relaxed max-w-[280px] mx-auto">{designer?.specialty || ''}</p>
-              </div>
-              
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                <div className="flex gap-2">
-                  {user && user.id === params.id && (
-                    <Link href="/settings" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
-                      Edit profile
-                    </Link>
-                  )}
-                  <Link href="/inbox" className="flex-1 bg-[#121212] hover:bg-[#1e1e1e] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors text-center">
-                    Hire Me
-                  </Link>
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#14161E] border border-[#282D3C] text-zinc-400">
+                  <span className="material-symbols-outlined text-xs text-[#4ffeb9]">verified</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-300">ASME Y14.5 Certified</span>
                 </div>
                 <button 
                   onClick={handleShare}
-                  className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-[#121212] border border-[#262626] py-2.5 px-4 rounded-lg text-sm font-semibold transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#14161E] border border-[#282D3C] hover:border-[#d9ee3c] text-[#F7F8FA] hover:text-[#d9ee3c] text-xs font-semibold transition-all shadow-sm"
                 >
-                  <span className="material-symbols-outlined text-base">share</span>
-                  Share Portfolio
+                  <span className={`material-symbols-outlined text-sm ${copiedLink ? 'text-[#4ffeb9]' : ''}`}>
+                    {copiedLink ? 'check' : 'share'}
+                  </span>
+                  <span className={copiedLink ? 'text-[#4ffeb9] font-bold' : ''}>
+                    {copiedLink ? 'Link Copied!' : 'Share Dossier'}
+                  </span>
                 </button>
               </div>
             </div>
 
-            {/* Skills & Tools */}
-            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 shadow-xl">
-              <h3 className="text-xs font-black uppercase tracking-widest text-[#ffe30c] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">build</span>
-                Skills & Tools
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {designer?.skills?.length > 0 ? (
-                  designer.skills.map((skill: string, idx: number) => (
-                    <span key={idx} className="px-3 py-1.5 bg-zinc-800/60 rounded-xl text-xs font-bold border border-zinc-700/60 text-zinc-300">{skill}</span>
-                  ))
-                ) : (
-                  <span className="text-xs text-zinc-500">No skills listed</span>
-                )}
-              </div>
-            </div>
+            {/* Core Portfolio Layout: Asymmetric 12-Column Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+              {/* Left 8 Columns: Navigation, Filter Matrix & CAD Showcase */}
+              <div className="xl:col-span-8 flex flex-col gap-6 min-w-0">
+                {/* Instagram-style Tab Navigation Bar */}
+                <div className="bg-[#14161E]/90 backdrop-blur-md rounded-xl border border-[#282D3C] p-2.5">
+                  <div className="flex items-center justify-between border-b border-[#1B1E28] pb-2 px-2">
+                    <nav className="flex items-center gap-5 sm:gap-7 overflow-x-auto scrollbar-none">
+                      <button 
+                        onClick={() => setActiveTab('portfolio')}
+                        className={`relative py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                          activeTab === 'portfolio' 
+                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
+                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">grid_on</span>
+                        <span>PROJECTS</span>
+                        <span className="px-1.5 py-0.5 rounded-full bg-[#d9ee3c]/20 text-[#d9ee3c] text-[10px]">
+                          {portfolioItems.length}
+                        </span>
+                      </button>
 
-            {/* Client Reviews */}
-            <div className="bg-zinc-900/60 backdrop-blur-xl rounded-2xl border border-zinc-800/80 p-6 shadow-xl">
-              <h3 className="text-xs font-black uppercase tracking-widest text-[#ffe30c] mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">reviews</span>
-                Client Reviews
-              </h3>
-              <div className="space-y-4">
-                <p className="text-xs text-zinc-500 text-center py-4">No reviews yet.</p>
+                      <button 
+                        onClick={() => setActiveTab('spins')}
+                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                          activeTab === 'spins' 
+                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
+                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">movie</span>
+                        <span>3D SPINS</span>
+                      </button>
+
+                      <button 
+                        onClick={() => setActiveTab('shop')}
+                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                          activeTab === 'shop' 
+                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
+                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">storefront</span>
+                        <span>SHOP</span>
+                        {products.length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded-full bg-[#ffb955]/20 text-[#ffb955] text-[10px]">
+                            {products.length}
+                          </span>
+                        )}
+                      </button>
+
+                      <button 
+                        onClick={() => setActiveTab('saved')}
+                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                          activeTab === 'saved' 
+                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
+                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">bookmark</span>
+                        <span>SAVED</span>
+                      </button>
+
+                      <button 
+                        onClick={() => setActiveTab('collabs')}
+                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                          activeTab === 'collabs' 
+                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
+                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-base">assignment_ind</span>
+                        <span>COLLABS</span>
+                      </button>
+                    </nav>
+
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      <button 
+                        onClick={() => setViewMode('grid')}
+                        className={`p-1.5 rounded-lg border transition-colors ${viewMode === 'grid' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
+                        title="3x3 Grid View"
+                      >
+                        <span className="material-symbols-outlined text-base">grid_view</span>
+                      </button>
+                      <button 
+                        onClick={() => setViewMode('agenda')}
+                        className={`p-1.5 rounded-lg border transition-colors ${viewMode === 'agenda' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
+                        title="Feed View"
+                      >
+                        <span className="material-symbols-outlined text-base">view_agenda</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Quick Category Filter Pills */}
+                  <div className="pt-2.5 px-1 flex items-center gap-2 overflow-x-auto scrollbar-none">
+                    {(() => {
+                      const itemCategories = Array.from(new Set(portfolioItems.map((item: any) => (item.category || '').trim().toUpperCase()).filter(Boolean)));
+                      const allCategories = ['ALL', ...(itemCategories.length > 0 ? itemCategories : ['AUTOMOTIVE', 'ROBOTICS', 'HOROLOGY', 'AEROSPACE', 'JEWELRY'])];
+                      return allCategories.map((cat) => {
+                        const isSelected = selectedCategory === cat;
+                        return (
+                          <button
+                            key={cat}
+                            onClick={() => setSelectedCategory(cat)}
+                            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all ${
+                              isSelected
+                                ? 'bg-[#d9ee3c] text-[#1a1e00] shadow-[0_0_12px_rgba(217,238,60,0.3)] hover:scale-105'
+                                : 'bg-[#1E222D] border border-[#282D3C] text-zinc-400 hover:text-white hover:border-[#d9ee3c]/40'
+                            }`}
+                          >
+                            {cat} {cat === 'ALL' ? `(${portfolioItems.length})` : ''}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Main Showcase Content: Portfolio Grid OR Shop Table */}
+                {activeTab === 'shop' ? (
+                  <div className="p-5 bg-[#14161E]/90 rounded-xl border border-[#282D3C]" data-purpose="shop-showcase">
+                    {/* Header with Add Product Button */}
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-[#d9ee3c]">Shop Catalog</h3>
+                      {user && user.id === params.id && (
+                        <button 
+                          onClick={() => {
+                            setIsEditing(false);
+                            setCurrentEditingProductId(null);
+                            setNewProduct({ name: '', price: '', productType: 'Ring', image: '', mainImage: null, galleryImages: [], cadFiles: [], metalWeightImage: null, ringSize: '', mainGems: '', sideGems: '', metalWeight: '', braceletSize: '', customLabel: '', customValue: '' });
+                            setIsModalOpen(true);
+                          }}
+                          className="bg-[#d9ee3c] hover:brightness-110 text-black px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-sm">add_circle</span>
+                          Add Product
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Products Table */}
+                    <div className="bg-[#0D0E12] rounded-xl border border-[#282D3C] overflow-x-auto">
+                      <table className="w-full text-sm text-left text-gray-400">
+                        <thead className="text-xs text-gray-500 uppercase bg-[#14161E] border-b border-[#282D3C]">
+                          <tr>
+                            <th className="px-4 py-3">Product</th>
+                            <th className="px-4 py-3">Price</th>
+                            <th className="px-4 py-3">Type</th>
+                            <th className="px-4 py-3">Details</th>
+                            <th className="px-4 py-3">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {products.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-12 text-center text-zinc-500 text-xs">
+                                No shop products listed yet.
+                              </td>
+                            </tr>
+                          ) : (
+                            products.map(product => (
+                              <tr key={product.id} className="border-b border-[#1B1E28] hover:bg-[#1E222D]/50">
+                                <td className="px-4 py-3 flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded overflow-hidden bg-[#0a0a0a] border border-[#282D3C] flex-shrink-0">
+                                    <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-white cursor-pointer hover:text-[#d9ee3c]" onClick={() => window.location.href = `/products/${product.id}`}>{product.name}</div>
+                                    <div className="flex gap-1 mt-0.5">
+                                      {product.images && product.images.length > 0 && (
+                                        <span className="text-[10px] text-gray-500 flex items-center gap-0.5">
+                                          <span className="material-symbols-outlined text-[10px]">image</span>
+                                          {product.images.length}
+                                        </span>
+                                      )}
+                                      {product.cadFiles && product.cadFiles.length > 0 && (
+                                        <span className="text-[10px] text-[#d9ee3c] flex items-center gap-0.5">
+                                          <span className="material-symbols-outlined text-[10px]">deployed_code</span>
+                                          {product.cadFiles.length}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-[#d9ee3c] font-bold">{product.price}</td>
+                                <td className="px-4 py-3 text-white">{(product as any).productType || 'N/A'}</td>
+                                <td className="px-4 py-3 text-xs space-y-0.5">
+                                  {(product as any).ringSize && <div><span className="text-gray-500">Size:</span> {(product as any).ringSize}</div>}
+                                  {(product as any).mainGems && <div><span className="text-gray-500">Gems:</span> {(product as any).mainGems}</div>}
+                                  {(product as any).metalWeight && <div><span className="text-gray-500">Weight:</span> {(product as any).metalWeight}</div>}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <div className="flex gap-2">
+                                    {user && user.id === params.id && (
+                                      <button 
+                                        onClick={() => {
+                                          setIsEditing(true);
+                                          setCurrentEditingProductId(product.id);
+                                          setNewProduct({
+                                            name: product.name,
+                                            price: product.price,
+                                            image: product.image,
+                                            metalWeightImage: null,
+                                            mainImage: null,
+                                            galleryImages: [],
+                                            cadFiles: [],
+                                            productType: (product as any).productType || 'Ring',
+                                            ringSize: (product as any).ringSize || '',
+                                            mainGems: (product as any).mainGems || '',
+                                            sideGems: (product as any).sideGems || '',
+                                            metalWeight: (product as any).metalWeight || '',
+                                            braceletSize: (product as any).braceletSize || '',
+                                            customLabel: (product as any).customLabel || '',
+                                            customValue: (product as any).customValue || ''
+                                          });
+                                          setIsModalOpen(true);
+                                        }}
+                                        className="bg-[#d9ee3c] hover:brightness-110 text-black px-2.5 py-1 rounded text-xs font-bold transition-colors"
+                                      >
+                                        Edit
+                                      </button>
+                                    )}
+                                    {product.cadFiles && product.cadFiles.length > 0 && (
+                                      <button 
+                                        onClick={() => setSelectedProductForView(product)}
+                                        className="bg-[#1a1a1a] border border-[#282D3C] hover:bg-[#282D3C] text-white px-2.5 py-1 rounded text-xs font-bold transition-colors flex items-center gap-0.5"
+                                      >
+                                        <span className="material-symbols-outlined text-sm">view_in_ar</span>
+                                        View 3D
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  /* 3-Column Square Instagram Media Grid */
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4" : "grid grid-cols-1 gap-4"}>
+                    {(() => {
+                      const displayedItems = selectedCategory === 'ALL'
+                        ? portfolioItems
+                        : portfolioItems.filter((item: any) => (item.category || '').toUpperCase() === selectedCategory);
+
+                      if (displayedItems.length === 0) {
+                        return (
+                          <div className="col-span-full py-24 text-center bg-[#14161E]/80 border border-[#282D3C] rounded-2xl p-8">
+                            <span className="material-symbols-outlined text-zinc-500 text-5xl block mb-3">image_not_supported</span>
+                            <p className="text-xs font-extrabold text-zinc-300 uppercase tracking-widest">No portfolio items found</p>
+                            <p className="text-[11px] text-zinc-500 mt-1">
+                              {selectedCategory !== 'ALL' 
+                                ? `No works under ${selectedCategory}. Switch filter to view all models.`
+                                : 'Upload CAD showcase models from your designer dashboard to highlight your studio.'}
+                            </p>
+                          </div>
+                        );
+                      }
+
+                      return displayedItems.map((item: any, i: number) => {
+                        let itemImages: string[] = [];
+                        if (Array.isArray(item.images)) {
+                          itemImages = item.images;
+                        } else if (typeof item.images === 'string') {
+                          try {
+                            const parsed = JSON.parse(item.images);
+                            itemImages = Array.isArray(parsed) ? parsed : [item.images];
+                          } catch {
+                            itemImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+                          }
+                        }
+                        
+                        const mainImage = itemImages[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
+                        const isFeatured = i === 0;
+                        const software = item.software || (i % 3 === 0 ? 'SolidWorks 2024' : i % 3 === 1 ? 'Rhino + MatrixGold' : 'CATIA V5');
+                        const categoryTag = item.category || (i % 3 === 0 ? 'Micro-Mechanics' : i % 3 === 1 ? 'Generative CFD' : 'Precision CAD');
+                        const likes = `${(1.2 + (i * 0.4)).toFixed(1)}k`;
+                        const comments = `${24 + (i * 11)}`;
+
+                        return (
+                          <div 
+                            key={item.id || `pi-${i}`}
+                            onClick={() => setSelectedPortfolioItem(item)}
+                            className="group relative rounded-xl overflow-hidden border border-[#282D3C] hover:border-[#d9ee3c]/80 transition-all duration-300 aspect-square bg-[#0D0E12] cursor-pointer shadow-md hover:shadow-[0_0_24px_rgba(217,238,60,0.25)]"
+                          >
+                            <img 
+                              alt={item.title || 'CAD Showcase'} 
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                              src={mainImage} 
+                            />
+                            
+                            {/* Instagram Post Type Indicator Badges */}
+                            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                              {isFeatured && (
+                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-sm flex items-center justify-center" title="Pinned Showcase">
+                                  <span className="material-symbols-outlined text-sm">push_pin</span>
+                                </span>
+                              )}
+                              {itemImages.length > 1 ? (
+                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="Multi-Part Assembly">
+                                  <span className="material-symbols-outlined text-sm">collections</span>
+                                </span>
+                              ) : (
+                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="3D View">
+                                  <span className="material-symbols-outlined text-sm">view_in_ar</span>
+                                </span>
+                              )}
+                            </div>
+
+                            {isFeatured && (
+                              <div className="absolute top-2.5 left-2.5 z-10">
+                                <span className="px-2 py-0.5 rounded bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-[10px] tracking-wider shadow-sm uppercase">
+                                  FEATURED
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Instagram Hover Overlay with Metrics and Title */}
+                            <div className="absolute inset-0 bg-[#08090C]/85 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-4 text-center">
+                              <div className="flex justify-end">
+                                <span className="px-2 py-0.5 rounded bg-[#1E222D] border border-[#282D3C] text-[#d9ee3c] text-[10px] font-semibold">
+                                  {software}
+                                </span>
+                              </div>
+                              <div className="flex flex-col items-center gap-2">
+                                <h4 className="font-bold text-sm sm:text-base text-white line-clamp-2 px-1">
+                                  {item.title || 'Parametric Prototype'}
+                                </h4>
+                                <div className="flex items-center justify-center gap-4 text-white text-xs font-bold">
+                                  <span className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-base text-[#ffb955]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> 
+                                    {likes}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-base text-[#4ffeb9]">chat_bubble</span> 
+                                    {comments}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
+                                {categoryTag}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                )}
+
+                {/* Instagram-Style Pagination / Grid Status Strip */}
+                <div className="flex items-center justify-between bg-[#14161E] border border-[#282D3C] rounded-xl p-4">
+                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+                    <span>Showing</span>
+                    <span className="font-bold text-white">
+                      {selectedCategory === 'ALL' 
+                        ? portfolioItems.length 
+                        : portfolioItems.filter((it: any) => (it.category || '').toUpperCase() === selectedCategory).length}
+                    </span>
+                    <span>of</span>
+                    <span className="font-bold text-white">{portfolioItems.length} Posts</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      className="px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-xs font-bold uppercase tracking-wider" 
+                      disabled
+                    >
+                      Previous
+                    </button>
+                    <button className="w-8 h-8 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(217,238,60,0.4)]">
+                      1
+                    </button>
+                    <button 
+                      className="px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-xs font-bold uppercase tracking-wider" 
+                      disabled
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right 4 Columns: Sticky Designer Identity & Studio Dossier */}
+              <aside className="xl:col-span-4 flex flex-col gap-6 xl:sticky xl:top-24">
+                {/* Primary Profile Dossier Card */}
+                <div className="relative rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-6 sm:p-7 flex flex-col items-center text-center shadow-2xl overflow-hidden">
+                  {/* Atmospheric Radiant Glow Behind Avatar */}
+                  <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-b from-[#ffb955]/25 via-[#d9ee3c]/20 to-transparent rounded-full blur-2xl"></div>
+
+                  {/* Glowing Cyber Avatar */}
+                  <div className="relative mt-2 mb-4 group cursor-pointer">
+                    {/* Animated Ring Glow */}
+                    <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-[#ffb955] via-[#d9ee3c] to-[#4ffeb9] opacity-80 blur-sm group-hover:opacity-100 transition-opacity"></div>
+                    <div className="relative w-28 h-28 rounded-full p-1 bg-[#08090C]">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-[#1E222D] relative">
+                        <img 
+                          className="w-full h-full object-cover object-top" 
+                          src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"}
+                          alt={designer?.fullName || designer?.organizationName || 'Designer'}
+                        />
+                      </div>
+                    </div>
+                    {/* Online Pulse Badge */}
+                    <div className="absolute bottom-1 right-2 w-5 h-5 rounded-full bg-[#08090C] flex items-center justify-center p-0.5">
+                      <div className="w-full h-full rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,1)]"></div>
+                    </div>
+                  </div>
+
+                  {/* Identity Headings */}
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h2 className="text-2xl text-white font-extrabold tracking-tight">
+                      {designer?.organizationName || designer?.fullName || 'Alexander Sterling'}
+                    </h2>
+                    <span className="material-symbols-outlined text-[#ffb955] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
+                  </div>
+                  {designer?.fullName && designer?.organizationName && (
+                    <p className="text-xs text-white/50 -mt-0.5 mb-1">{designer.fullName}</p>
+                  )}
+                  <p className="text-xs text-zinc-400 mb-3 flex items-center justify-center gap-1.5">
+                    <span>Studio: {designer?.organizationName || 'Minecom Dynamics'}</span>
+                    <span>•</span>
+                    <span className="text-[#4ffeb9] flex items-center gap-1 font-medium">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#4ffeb9] inline-block animate-pulse"></span>
+                      Available for Contract
+                    </span>
+                  </p>
+
+                  {/* Pro Badge Pill */}
+                  <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1E222D] border border-[#282D3C] mb-4">
+                    <span className="w-2 h-2 rounded-full bg-[#d9ee3c]"></span>
+                    <span className="text-[11px] uppercase text-[#d9ee3c] font-bold tracking-wider">
+                      {designer?.organizationName ? 'STUDIO & ORGANIZATION' : 'PROFESSIONAL CAD DESIGNER'}
+                    </span>
+                  </div>
+
+                  {/* Bio Narrative */}
+                  <p className="text-sm text-zinc-300 mb-6 text-left leading-relaxed">
+                    {designer?.specialty || designer?.bio || "Senior Industrial CAD Specialist & Mechanical Systems Architect with 8+ years designing high-tolerance hardware, aerospace robotics, and consumer electronics ready for production."}
+                  </p>
+
+                  {/* Metrics Quad Grid */}
+                  <div className="w-full grid grid-cols-4 gap-2 py-4 px-3 rounded-xl bg-[#0D0E12]/90 border border-[#1B1E28] mb-6">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xl sm:text-2xl text-white font-extrabold">{portfolioItems.length}</span>
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">PORTFOLIO</span>
+                    </div>
+                    <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                      <span className="text-xl sm:text-2xl text-white font-extrabold">{jobsCount || 48}</span>
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">JOBS</span>
+                    </div>
+                    <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                      <span className="text-xl sm:text-2xl text-[#ffb955] font-extrabold">4.9</span>
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">RATING</span>
+                    </div>
+                    <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                      <span className="text-xl sm:text-2xl text-[#4ffeb9] font-extrabold">99%</span>
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">ON-TIME</span>
+                    </div>
+                  </div>
+
+                  {/* Primary CTAs */}
+                  <div className="w-full flex flex-col gap-2.5">
+                    <Link 
+                      href={`/inbox?hire=${params.id}`} 
+                      className="w-full py-3 px-4 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.5)] flex items-center justify-center gap-2 text-sm"
+                    >
+                      <span className="material-symbols-outlined text-lg">bolt</span>
+                      <span>Hire {designer?.fullName?.split(' ')[0] || designer?.organizationName || 'Alexander'}</span>
+                    </Link>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Link 
+                        href={`/inbox?to=${params.id}`} 
+                        className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <span className="material-symbols-outlined text-base">mail</span>
+                        <span>Direct Message</span>
+                      </Link>
+                      {user && user.id === params.id ? (
+                        <Link 
+                          href="/settings"
+                          className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-base">settings</span>
+                          <span>Edit Profile</span>
+                        </Link>
+                      ) : (
+                        <button 
+                          onClick={handleShare}
+                          className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-base">download</span>
+                          <span>CV &amp; Spec Sheet</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Studio Meta Specs Footnote */}
+                  <div className="w-full pt-4 mt-4 border-t border-[#1B1E28] flex items-center justify-between text-zinc-400 text-xs">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">location_on</span>
+                      Zurich, Switzerland
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">schedule</span>
+                      UTC+1 (CET)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Skills & Toolchain Panel */}
+                <div className="rounded-xl border border-[#282D3C] bg-[#14161E]/90 backdrop-blur-md p-5 flex flex-col gap-4 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#ffb955] text-lg">build</span>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        SKILLS &amp; TOOLCHAIN
+                      </h3>
+                    </div>
+                    <span className="text-[11px] font-bold text-[#d9ee3c] tracking-wider uppercase">
+                      {(designer?.skills?.length || 8)} VERIFIED
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(() => {
+                      const skillsList = designer?.skills && designer.skills.length > 0
+                        ? designer.skills
+                        : ["SolidWorks 2024", "CATIA V5", "Autodesk Fusion 360", "Rhino 3D + Grasshopper", "Siemens NX", "GD&T ASME Y14.5", "ANSYS FEA Analysis", "Additive DFM / CNC 5-Axis"];
+                      return skillsList.map((skill: string, sIdx: number) => {
+                        const dotColor = sIdx % 3 === 0 ? 'bg-[#d9ee3c]' : sIdx % 3 === 1 ? 'bg-[#ffb955]' : 'bg-[#4ffeb9]';
+                        return (
+                          <span 
+                            key={sIdx}
+                            className="px-3 py-1 rounded-lg bg-[#1E222D] border border-[#282D3C] text-zinc-200 text-xs font-semibold flex items-center gap-1.5 hover:border-[#d9ee3c] transition-colors cursor-default"
+                          >
+                            <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span>
+                            {skill}
+                          </span>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Client Review Endorsement Card */}
+                <div className="rounded-xl border border-[#282D3C] bg-[#14161E]/90 backdrop-blur-md p-5 flex flex-col gap-3 shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#ffb955] text-lg">rate_review</span>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        VERIFIED REVIEWS
+                      </h3>
+                    </div>
+                    <div className="flex items-center text-[#ffb955]">
+                      {[...Array(5)].map((_, starIdx) => (
+                        <span key={starIdx} className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Spotlight Quote */}
+                  <div className="p-3.5 rounded-lg bg-[#0D0E12] border border-[#1B1E28] flex flex-col gap-2">
+                    <p className="text-xs text-zinc-300 italic leading-relaxed">
+                      “{designer?.organizationName || designer?.fullName || 'Alexander'} delivered military-grade precision CAD models ahead of schedule. The GD&amp;T tolerance sheets passed our CNC tooling inspection on first pass without a single collision.”
+                    </p>
+                    <div className="flex items-center justify-between pt-1 border-t border-[#1B1E28]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#1E222D] border border-[#282D3C] flex items-center justify-center font-bold text-xs text-white">
+                          M
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-xs text-white font-bold">Marcus Vance</span>
+                          <span className="text-[10px] text-zinc-500">CTO, Apex Robotics Corp</span>
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-zinc-500">14d ago</span>
+                    </div>
+                  </div>
+                  <a 
+                    href="#reviews" 
+                    onClick={(e) => e.preventDefault()}
+                    className="inline-flex items-center justify-between text-[#d9ee3c] hover:text-white text-xs font-semibold pt-1 transition-colors group"
+                  >
+                    <span>View all 18 client endorsements</span>
+                    <span className="material-symbols-outlined text-base group-hover:translate-x-1 transition-transform">arrow_right_alt</span>
+                  </a>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          {/* Lightbox / Modal for Viewing Selected Portfolio Item */}
+          {selectedPortfolioItem && (
+            <div 
+              className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-50 p-4" 
+              onClick={() => setSelectedPortfolioItem(null)}
+            >
+              <div 
+                className="bg-[#14161E] border border-[#282D3C] rounded-2xl max-w-3xl w-full p-6 text-white shadow-2xl relative" 
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button 
+                  onClick={() => setSelectedPortfolioItem(null)} 
+                  className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1 rounded-lg bg-[#1E222D] border border-[#282D3C] transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">close</span>
+                </button>
+                
+                <div className="aspect-video w-full rounded-xl overflow-hidden bg-[#0D0E12] border border-[#282D3C] mb-4">
+                  {(() => {
+                    let imgs: string[] = [];
+                    if (Array.isArray(selectedPortfolioItem.images)) imgs = selectedPortfolioItem.images;
+                    else if (typeof selectedPortfolioItem.images === 'string') {
+                      try {
+                        const p = JSON.parse(selectedPortfolioItem.images);
+                        imgs = Array.isArray(p) ? p : [selectedPortfolioItem.images];
+                      } catch {
+                        imgs = selectedPortfolioItem.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+                      }
+                    }
+                    return (
+                      <img 
+                        src={imgs[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60'} 
+                        alt={selectedPortfolioItem.title} 
+                        className="w-full h-full object-contain" 
+                      />
+                    );
+                  })()}
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#d9ee3c]/10 text-[#d9ee3c] border border-[#d9ee3c]/20 text-[10px] font-bold uppercase tracking-wider">
+                      {selectedPortfolioItem.category || 'CAD Model'}
+                    </span>
+                    <h3 className="text-xl font-extrabold text-white mt-1">
+                      {selectedPortfolioItem.title || 'Portfolio Work'}
+                    </h3>
+                    {selectedPortfolioItem.description && (
+                      <p className="text-xs text-zinc-400 mt-1 max-w-xl">
+                        {selectedPortfolioItem.description}
+                      </p>
+                    )}
+                  </div>
+                  <Link 
+                    href={`/inbox?inquire=${selectedPortfolioItem.id || 'work'}`} 
+                    className="px-5 py-2.5 rounded-xl bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#cbe02d] transition-all shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-sm">mail</span>
+                    Inquire Design
+                  </Link>
+                </div>
               </div>
             </div>
-          </aside>
-        </div>
+          )}
         
         {/* Modal for Adding Product */}
         {isModalOpen && (
