@@ -51,6 +51,56 @@ interface Product {
   };
 }
 
+const getCadFileUrl = (item: any): string | null => {
+  if (!item) return null;
+  if (item.cad_file && typeof item.cad_file === 'string' && item.cad_file.trim().length > 5) return item.cad_file.trim();
+  if (item.cad_file_url && typeof item.cad_file_url === 'string' && item.cad_file_url.trim().length > 5) return item.cad_file_url.trim();
+  if (item.cadFileUrl && typeof item.cadFileUrl === 'string' && item.cadFileUrl.trim().length > 5) return item.cadFileUrl.trim();
+  if (item.model_url && typeof item.model_url === 'string' && item.model_url.trim().length > 5) return item.model_url.trim();
+  if (item.modelUrl && typeof item.modelUrl === 'string' && item.modelUrl.trim().length > 5) return item.modelUrl.trim();
+
+  const checkCadFiles = (files: any): string | null => {
+    if (!files) return null;
+    if (Array.isArray(files) && files.length > 0) {
+      for (const f of files) {
+        if (!f) continue;
+        if (typeof f === 'string' && /\.(glb|gltf|stl|obj|3dm|step|stp|fbx|iges|igs|sldprt|dwg|dxf)($|\?)/i.test(f)) return f;
+        if (typeof f === 'object' && f.url && /\.(glb|gltf|stl|obj|3dm|step|stp|fbx|iges|igs|sldprt|dwg|dxf)($|\?)/i.test(f.url || f.name)) return f.url;
+      }
+    }
+    if (typeof files === 'string') {
+      try {
+        const parsed = JSON.parse(files);
+        return checkCadFiles(parsed);
+      } catch {
+        if (/\.(glb|gltf|stl|obj|3dm|step|stp|fbx|iges|igs|sldprt|dwg|dxf)($|\?)/i.test(files)) return files;
+      }
+    }
+    return null;
+  };
+
+  const foundInCadFiles = checkCadFiles(item.cad_files) || checkCadFiles(item.cadFiles) || checkCadFiles(item.files);
+  if (foundInCadFiles) return foundInCadFiles;
+
+  if (typeof item.description === 'string') {
+    const cadMatch = item.description.match(/\[CAD_FILE\]\s*([^\s\n\r]+)/i);
+    if (cadMatch && cadMatch[1]) {
+      const cadVal = cadMatch[1].trim();
+      if (cadVal && cadVal !== 'undefined' && cadVal !== 'null' && cadVal !== 'none' && cadVal.length > 5) {
+        return cadVal;
+      }
+    }
+  }
+
+  if (Array.isArray(item.images)) {
+    for (const img of item.images) {
+      if (typeof img === 'string' && /\.(glb|gltf|stl|obj|3dm|step|stp)($|\?)/i.test(img)) return img;
+    }
+  }
+
+  return null;
+};
+
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
     super(props);
@@ -562,6 +612,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         const categoryTag = item.category || (i % 3 === 0 ? 'Micro-Mechanics' : i % 3 === 1 ? 'Generative CFD' : 'Precision CAD');
                         const likes = `${(1.2 + (i * 0.4)).toFixed(1)}k`;
                         const comments = `${24 + (i * 11)}`;
+                        const has3D = Boolean(getCadFileUrl(item) || item.has3d || item.has3D);
 
                         return (
                           <div 
@@ -575,20 +626,16 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                               src={mainImage} 
                             />
                             
-                            {/* Instagram Post Type Indicator Badges */}
+                            {/* Instagram Post Type Indicator Badges (Top-Right) */}
                             <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
                               {isFeatured && (
                                 <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-sm flex items-center justify-center" title="Pinned Showcase">
                                   <span className="material-symbols-outlined text-sm">push_pin</span>
                                 </span>
                               )}
-                              {itemImages.length > 1 ? (
+                              {itemImages.length > 1 && (
                                 <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="Multi-Part Assembly">
                                   <span className="material-symbols-outlined text-sm">collections</span>
-                                </span>
-                              ) : (
-                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="3D View">
-                                  <span className="material-symbols-outlined text-sm">view_in_ar</span>
                                 </span>
                               )}
                             </div>
@@ -597,6 +644,31 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                               <div className="absolute top-2.5 left-2.5 z-10">
                                 <span className="px-2 py-0.5 rounded bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-[10px] tracking-wider shadow-sm uppercase">
                                   FEATURED
+                                </span>
+                              </div>
+                            )}
+
+                            {/* 3D View Icon: Show ONLY if 3D file is uploaded, at bottom right corner */}
+                            {has3D && (
+                              <div 
+                                className="absolute bottom-2.5 right-2.5 z-20"
+                                onClick={(e) => {
+                                  const cadUrl = getCadFileUrl(item);
+                                  if (cadUrl) {
+                                    e.stopPropagation();
+                                    setSelectedProductForView({
+                                      id: item.id,
+                                      name: item.title || '3D Model',
+                                      cadFiles: [{ name: item.title || '3D Model', size: 0, url: cadUrl }]
+                                    });
+                                  }
+                                }}
+                              >
+                                <span 
+                                  className="p-1.5 rounded-lg bg-[#0D0E12]/90 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-lg flex items-center justify-center hover:bg-[#d9ee3c] hover:text-black hover:scale-110 transition-all cursor-pointer" 
+                                  title="View in 3D Viewport"
+                                >
+                                  <span className="material-symbols-outlined text-sm font-bold">view_in_ar</span>
                                 </span>
                               </div>
                             )}
@@ -927,13 +999,34 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                       </p>
                     )}
                   </div>
-                  <Link 
-                    href={`/inbox?inquire=${selectedPortfolioItem.id || 'work'}`} 
-                    className="px-5 py-2.5 rounded-xl bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#cbe02d] transition-all shrink-0"
-                  >
-                    <span className="material-symbols-outlined text-sm">mail</span>
-                    Inquire Design
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {(() => {
+                      const cadUrl = getCadFileUrl(selectedPortfolioItem);
+                      if (!cadUrl) return null;
+                      return (
+                        <button
+                          onClick={() => {
+                            setSelectedProductForView({
+                              id: selectedPortfolioItem.id,
+                              name: selectedPortfolioItem.title || '3D Model',
+                              cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
+                            });
+                          }}
+                          className="px-4 py-2.5 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-white text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 hover:bg-[#282D3C] transition-all"
+                        >
+                          <span className="material-symbols-outlined text-sm text-[#d9ee3c]">view_in_ar</span>
+                          View 3D
+                        </button>
+                      );
+                    })()}
+                    <Link 
+                      href={`/inbox?inquire=${selectedPortfolioItem.id || 'work'}`} 
+                      className="px-5 py-2.5 rounded-xl bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-2 hover:bg-[#cbe02d] transition-all"
+                    >
+                      <span className="material-symbols-outlined text-sm">mail</span>
+                      Inquire Design
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
