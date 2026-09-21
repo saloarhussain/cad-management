@@ -130,6 +130,35 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
   }
 }
 
+const parseItemDescription = (desc: any) => {
+  if (!desc || typeof desc !== 'string') return { category: '', software: '', cadFile: '', narrative: '' };
+  const descStr = desc.trim();
+  const categoryMatch = descStr.match(/\[CATEGORY\]\s*(.*?)(?=\n|\[|$)/i);
+  const softwareMatch = descStr.match(/\[SOFTWARE\]\s*(.*?)(?=\n|\[|$)/i);
+  const cadFileMatch = descStr.match(/\[CAD_FILE\]\s*(.*?)(?=\n|\[|$)/i);
+  
+  let narrative = descStr;
+  const cleanTags = ['[CATEGORY]', '[SOFTWARE]', '[CAD_FILE]'];
+  cleanTags.forEach(tag => {
+    const idx = narrative.indexOf(tag);
+    if (idx !== -1) {
+      const nextLineIdx = narrative.indexOf('\n', idx);
+      if (nextLineIdx !== -1) {
+        narrative = narrative.slice(nextLineIdx + 1);
+      } else {
+        narrative = '';
+      }
+    }
+  });
+
+  return {
+    category: categoryMatch?.[1]?.trim() || '',
+    software: softwareMatch?.[1]?.trim() || '',
+    cadFile: cadFileMatch?.[1]?.trim() || '',
+    narrative: narrative.trim()
+  };
+};
+
 const getModalImages = (item: any): string[] => {
   if (!item) return [];
   let imgs: string[] = [];
@@ -150,20 +179,7 @@ const getModalImages = (item: any): string[] => {
   if (item.image && typeof item.image === 'string' && !imgs.includes(item.image) && !/\.(glb|gltf|stl|obj|3dm|step|stp)($|\?)/i.test(item.image)) {
     imgs.unshift(item.image);
   }
-  if (imgs.length === 0) {
-    imgs = [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAs_sN-Na1YenVCly5VkLnfn39UfZIsVGhLGiXngzGav83vH68mrcEZECJuL3uqefLA17UP38g3cYX5s-MVecpMoJ7YWtVqdz5SyoZGfO1X92ZHrF6yv3fVloh8Cja2NNMA6T-0MPW3QmYqgANv-biHfH_BxoGcT1d5ePhlbVKYO0jqtQCnwPCw6jsPc6m6L5qPyIT1G4DugUszX6RZS1kUVOlmMnQ9KAHPj8uUobO7KTzbyQEXCdg5UQ',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDqglMgobFHNg0AxWJrxhpmzMq0g3N4sjOD5M3FJbJFQW-RbjUk3ei10kGnzIIHQKxg9evTn824GCUiCiMR4IYqJzXj_kwASlsPo18V7aX8msWIFf8EvkYiH_oTwhI7tGLVgTiQajhhnZ22X5ySsQQLvHHYFEvbkI7FkNw7YhYSTmkykLOtbCiuVbzgfOn3d_sKDzzbnLE7IBjE7VoNlpjrMK2qzjKJXGGhwubZwyaKHiB_k4VLlrJLQg',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCQIJIHwgogmlACquvkL_VCJEgp3lyLNYTNqFpWh9Qbq4mh6YfDSMVXwMasRWef3IT7FP4d_YDO2ib8wBMzqm_IlPh5_Ix0LeCHCJWAmCN9oeJ3yorTFMJuClvPrVBY4nxnKtFW90sZd4uX1SnhikoS_uLxdiJQ1qTD996ia0OaeL8RfCiVFu8kb2rRePFO7VFAGrduOUZrIzwB9wLxDZ2PMN5bgtLsGiDhVLDJyrtrd4ohSzQaAg3tuA'
-    ];
-  } else if (imgs.length === 1) {
-    imgs = [
-      imgs[0],
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDqglMgobFHNg0AxWJrxhpmzMq0g3N4sjOD5M3FJbJFQW-RbjUk3ei10kGnzIIHQKxg9evTn824GCUiCiMR4IYqJzXj_kwASlsPo18V7aX8msWIFf8EvkYiH_oTwhI7tGLVgTiQajhhnZ22X5ySsQQLvHHYFEvbkI7FkNw7YhYSTmkykLOtbCiuVbzgfOn3d_sKDzzbnLE7IBjE7VoNlpjrMK2qzjKJXGGhwubZwyaKHiB_k4VLlrJLQg',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuCQIJIHwgogmlACquvkL_VCJEgp3lyLNYTNqFpWh9Qbq4mh6YfDSMVXwMasRWef3IT7FP4d_YDO2ib8wBMzqm_IlPh5_Ix0LeCHCJWAmCN9oeJ3yorTFMJuClvPrVBY4nxnKtFW90sZd4uX1SnhikoS_uLxdiJQ1qTD996ia0OaeL8RfCiVFu8kb2rRePFO7VFAGrduOUZrIzwB9wLxDZ2PMN5bgtLsGiDhVLDJyrtrd4ohSzQaAg3tuA'
-    ];
-  }
-  return imgs;
+  return imgs.length > 0 ? imgs : ['https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=1200&auto=format&fit=crop&q=80'];
 };
 
 export default function PublicPortfolio({ params }: { params: { id: string } }) {
@@ -265,7 +281,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
   // Lightbox Modal Extended States
   const [selectedImageIdx, setSelectedImageIdx] = useState<number>(0);
-  const [activeShadingMode, setActiveShadingMode] = useState<'Rendered' | 'Wireframe' | 'Prong' | 'Setting' | 'Heatmap'>('Rendered');
   const [modalLikes, setModalLikes] = useState<Record<string, { count: number; liked: boolean }>>({});
   const [modalSaved, setModalSaved] = useState<Record<string, boolean>>({});
   const [modalComments, setModalComments] = useState<Record<string, Array<{ id: string; author: string; role: string; time: string; text: string; likes: number; avatar?: string; isAuthor?: boolean }>>>({});
@@ -687,7 +702,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                             onClick={() => {
                               setSelectedPortfolioItem(item);
                               setSelectedImageIdx(0);
-                              setActiveShadingMode('Rendered');
                             }}
                             className="group relative rounded-xl overflow-hidden border border-[#282D3C] hover:border-[#d9ee3c]/80 transition-all duration-300 aspect-square bg-[#0D0E12] cursor-pointer shadow-md hover:shadow-[0_0_24px_rgba(217,238,60,0.25)]"
                           >
@@ -1022,7 +1036,9 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             const activeImages = getModalImages(selectedPortfolioItem);
             const currentImg = activeImages[selectedImageIdx] || activeImages[0];
             const currentItemIndex = portfolioItems.findIndex((it: any) => it.id === selectedPortfolioItem.id);
-            const cadUrl = getCadFileUrl(selectedPortfolioItem);
+            const parsed = parseItemDescription(selectedPortfolioItem.description);
+            const cadUrl = getCadFileUrl(selectedPortfolioItem) || (parsed.cadFile && parsed.cadFile !== 'none' && parsed.cadFile !== 'null' ? parsed.cadFile : null);
+            const has3D = Boolean(cadUrl);
             const itemId = String(selectedPortfolioItem.id || 'default');
             const likeData = modalLikes[itemId] || { count: 3840, liked: false };
             const isSaved = Boolean(modalSaved[itemId]);
@@ -1032,7 +1048,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 author: 'Henri Dufour',
                 role: 'Master Setter • Place Vendôme',
                 time: '2d ago',
-                text: 'The azurage work beneath the emerald collet allows breathtaking light return. Are the pavé beads modeled with enough metal clearance for bright-cut finishing under the microscope?',
+                text: 'The setting and geometry on this piece show impressive craftsmanship. Clean tolerances and balanced proportions.',
                 likes: 44,
                 avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
               },
@@ -1042,7 +1058,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 role: 'Author',
                 isAuthor: true,
                 time: '1d ago',
-                text: 'Merci Henri! Yes, each micro-prong has +0.08mm stock left on top specifically for graver shaping and rounded bead burnishing by hand.',
+                text: 'Thank you Henri! Modeled with precision clearances specifically for high-end casting and hand finishing.',
                 likes: 18,
                 avatar: designer?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'
               }
@@ -1050,8 +1066,13 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
             const creatorName = designer?.fullName || designer?.organizationName || 'Elena Rostova, GG (GIA)';
             const creatorFirst = creatorName.split(',')[0].trim().split(' ')[0] || 'Elena';
-            const softwareName = (selectedPortfolioItem.software || 'MATRIXGOLD / RHINO 7').toUpperCase();
-            const categoryName = (selectedPortfolioItem.category || 'HIGH JEWELLERY • COCKTAIL RING').toUpperCase();
+            const softwareName = (parsed.software || selectedPortfolioItem.software || 'RHINOCEROS / MATRIXGOLD').toUpperCase();
+            const categoryName = (parsed.category || selectedPortfolioItem.category || 'JEWELLERY CAD').toUpperCase();
+            const narrativeText = parsed.narrative || selectedPortfolioItem.narrative || (
+              typeof selectedPortfolioItem.description === 'string' && !selectedPortfolioItem.description.includes('[CATEGORY]')
+                ? selectedPortfolioItem.description 
+                : `${selectedPortfolioItem.title || 'Portfolio Work'} engineered with precision CAD modeling.`
+            );
 
             const handlePrevItem = (e: React.MouseEvent) => {
               e.stopPropagation();
@@ -1142,146 +1163,28 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   <span className="material-symbols-outlined text-xl">close</span>
                 </button>
 
-                {/* Main Instagram-meets-Engineering Lightbox Shell */}
+                {/* Main Lightbox Shell */}
                 <div 
                   onClick={(e) => e.stopPropagation()}
                   className="relative w-full max-w-[1240px] h-[88vh] max-h-[820px] bg-[#14161E] rounded-2xl border border-[#282D3C] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row"
                 >
-                  {/* LEFT COLUMN: CAD Interactive Viewport (~62%) */}
-                  <div className="relative flex-1 lg:w-[62%] h-1/2 lg:h-full bg-[#0D0E12] flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none">
-                    {/* Viewport Top Status & Verification Bar */}
-                    <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-2.5 bg-gradient-to-b from-[#08090C]/95 via-[#0D0E12]/80 to-transparent">
+                  {/* LEFT COLUMN: Clean Luxury Image / Showcase Canvas (~62%) */}
+                  <div className="relative flex-1 lg:w-[62%] h-1/2 lg:h-full bg-[#0A0B0E] flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none">
+                    {/* Viewport Top Header Bar */}
+                    <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-[#08090C]/90 via-[#0A0B0E]/60 to-transparent">
                       <div className="flex items-center gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1E222D]/90 border border-[#282D3C]">
-                          <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,0.8)]"></span>
+                          <span className="w-2 h-2 rounded-full bg-[#d9ee3c] shadow-[0_0_8px_rgba(217,238,60,0.6)]"></span>
                           <span className="text-[10px] sm:text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
                         </div>
                         <div className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#1E222D]/80 border border-[#282D3C]">
-                          <span className="material-symbols-outlined text-[#ffb955] text-sm">verified</span>
-                          <span className="text-[10px] sm:text-[11px] font-bold text-zinc-300 uppercase tracking-wider">GIA TOLERANCE STANDARD</span>
+                          <span className="text-[10px] sm:text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
                         </div>
-                        <span className="hidden sm:inline-block text-[10px] font-bold text-zinc-400 px-1.5 py-0.5 rounded bg-[#14161E]/60 border border-[#282D3C]/40 uppercase tracking-wider">
-                          CASTING SHRINKAGE COMPENSATED: 2.1%
-                        </span>
                       </div>
 
-                      {/* 3D Render Shading / Viewport Mode Switcher */}
-                      <div className="flex items-center gap-1 bg-[#1E222D]/90 p-1 rounded-lg border border-[#282D3C] overflow-x-auto max-w-full">
-                        {(['Rendered', 'Wireframe Mesh', 'Prong Prep', 'Stone Setting Map', 'Gem Heatmap'] as const).map((mode) => {
-                          const isCurrent = (activeShadingMode === 'Rendered' && mode === 'Rendered') ||
-                            (activeShadingMode === 'Wireframe' && mode === 'Wireframe Mesh') ||
-                            (activeShadingMode === 'Prong' && mode === 'Prong Prep') ||
-                            (activeShadingMode === 'Setting' && mode === 'Stone Setting Map') ||
-                            (activeShadingMode === 'Heatmap' && mode === 'Gem Heatmap');
-                          return (
-                            <button
-                              key={mode}
-                              onClick={() => {
-                                if (mode === 'Rendered') setActiveShadingMode('Rendered');
-                                else if (mode === 'Wireframe Mesh') setActiveShadingMode('Wireframe');
-                                else if (mode === 'Prong Prep') setActiveShadingMode('Prong');
-                                else if (mode === 'Stone Setting Map') setActiveShadingMode('Setting');
-                                else setActiveShadingMode('Heatmap');
-                              }}
-                              className={`px-2.5 py-1 rounded text-[11px] font-bold uppercase tracking-wider transition-all shrink-0 ${
-                                isCurrent 
-                                  ? 'text-[#1a1e00] bg-[#d9ee3c] shadow-[0_0_12px_rgba(217,238,60,0.3)]' 
-                                  : 'text-zinc-400 hover:text-white'
-                              } ${mode === 'Stone Setting Map' ? 'hidden md:inline-block' : ''} ${mode === 'Gem Heatmap' ? 'hidden xl:inline-block' : ''}`}
-                            >
-                              {mode}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Central High-Impact CAD Model Viewport */}
-                    <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden group">
-                      {/* Atmospheric Radial Glow in Canvas */}
-                      <div className="absolute w-96 h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
-                      <div className="absolute w-80 h-80 rounded-full bg-[#d9ee3c]/10 blur-3xl -bottom-10 -right-10 pointer-events-none"></div>
-
-                      {/* Engineering Grid Lines Overlay (Subtle) */}
-                      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#282D3C_1px,transparent_1px)] [background-size:24px_24px] opacity-25 z-10"></div>
-
-                      {/* Hero Image / 3D Render Display */}
-                      <img 
-                        src={currentImg}
-                        alt={selectedPortfolioItem.title || 'CAD Model Render'}
-                        className={`w-full h-full object-cover object-center scale-[1.02] group-hover:scale-105 transition-all duration-700 ease-out ${
-                          activeShadingMode === 'Wireframe' ? 'filter invert contrast-200 hue-rotate-180 brightness-90' :
-                          activeShadingMode === 'Prong' ? 'filter contrast-150 saturate-150 hue-rotate-30' :
-                          activeShadingMode === 'Setting' ? 'filter contrast-125 saturate-125 sepia-50' :
-                          activeShadingMode === 'Heatmap' ? 'filter contrast-150 saturate-200 hue-rotate-270' : ''
-                        }`}
-                      />
-
-                      {/* Floating Jewellery Geometry Callout Hotspots */}
-                      <div className="absolute top-20 right-6 hidden md:flex flex-col gap-1 p-3 rounded-lg bg-[#1E222D]/85 backdrop-blur-md border border-[#282D3C] pointer-events-none max-w-xs shadow-xl z-10">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.9)]"></span>
-                          <span className="text-[10px] font-bold text-[#4ffeb9] uppercase tracking-wider">CENTRAL EMERALD COLLET</span>
-                        </div>
-                        <span className="text-xs text-zinc-200 font-mono">4.85 ct Colombian Emerald</span>
-                        <span className="text-[10px] text-zinc-400">Platinum 950 V-Prong, Bezel Seat Depth: 1.82mm</span>
-                      </div>
-
-                      <div className="absolute bottom-20 left-6 hidden md:flex flex-col gap-1 p-3 rounded-lg bg-[#1E222D]/85 backdrop-blur-md border border-[#282D3C] pointer-events-none max-w-xs shadow-xl z-10">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#d9ee3c] shadow-[0_0_6px_rgba(217,238,60,0.8)]"></span>
-                          <span className="text-[10px] font-bold text-[#d9ee3c] uppercase tracking-wider">MICRO-PAVÉ GALLERY</span>
-                        </div>
-                        <span className="text-xs text-zinc-200 font-mono">118 Brilliants, F/VVS (0.90mm - 1.30mm)</span>
-                        <span className="text-[10px] text-zinc-400">French Cut Micro-Prongs, Safety Wall: 0.25mm</span>
-                      </div>
-
-                      {/* Floating Viewport Tools Dock (Left Vertical) */}
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 p-1.5 rounded-xl bg-[#14161E]/90 backdrop-blur-md border border-[#282D3C] shadow-2xl z-20">
-                        <button 
-                          onClick={() => {
-                            if (cadUrl) {
-                              setSelectedProductForView({
-                                id: selectedPortfolioItem.id,
-                                name: selectedPortfolioItem.title || '3D Model',
-                                cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
-                              });
-                            }
-                          }}
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" 
-                          title="Orbit / Rotate 360°"
-                        >
-                          <span className="material-symbols-outlined text-lg">360</span>
-                        </button>
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" title="Pan Atelier View">
-                          <span className="material-symbols-outlined text-lg">pan_tool</span>
-                        </button>
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" title="Zoom Macro Loupe">
-                          <span className="material-symbols-outlined text-lg">zoom_in</span>
-                        </button>
-                        <div className="w-full h-px bg-[#282D3C] my-0.5"></div>
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" title="Measure Ring Gauge & Wall Thickness">
-                          <span className="material-symbols-outlined text-lg">straighten</span>
-                        </button>
-                        <button className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" title="Cross Section Finger Azimuth / Shank Cut">
-                          <span className="material-symbols-outlined text-lg">cut</span>
-                        </button>
-                      </div>
-
-                      {/* Fullscreen & Model Reset Buttons (Bottom-Right Viewport) */}
-                      <div className="absolute bottom-4 right-4 flex items-center gap-2 z-20">
-                        <button 
-                          onClick={() => {
-                            setSelectedImageIdx(0);
-                            setActiveShadingMode('Rendered');
-                          }}
-                          className="p-2 rounded-lg bg-[#14161E]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white transition-colors flex items-center gap-1.5" 
-                          title="Recenter Jewelry Camera"
-                        >
-                          <span className="material-symbols-outlined text-base">center_focus_strong</span>
-                          <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">RESET VIEW</span>
-                        </button>
-                        {cadUrl && (
+                      {/* Action Controls on Top Right */}
+                      <div className="flex items-center gap-2">
+                        {has3D && (
                           <button 
                             onClick={() => {
                               setSelectedProductForView({
@@ -1290,11 +1193,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                                 cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
                               });
                             }}
-                            className="px-2.5 py-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] hover:border-[#d9ee3c] text-[#d9ee3c] transition-colors flex items-center gap-1 shadow-lg"
-                            title="Open 3D WebGL Viewport"
+                            className="px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:bg-[#cbe02d] text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
+                            title="Interactive 3D WebGL Viewport"
                           >
                             <span className="material-symbols-outlined text-base">view_in_ar</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">VIEW 3D</span>
+                            <span className="text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
                           </button>
                         )}
                         <button 
@@ -1305,44 +1208,85 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                               document.exitFullscreen?.();
                             }
                           }}
-                          className="p-2 rounded-lg bg-[#14161E]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white transition-colors" 
-                          title="Expand Fullscreen Viewport"
+                          className="p-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white transition-colors" 
+                          title="Expand Fullscreen"
                         >
                           <span className="material-symbols-outlined text-base">fullscreen</span>
                         </button>
                       </div>
                     </div>
 
-                    {/* Bottom Gallery Carousel Thumbnails & Projection Angles */}
-                    <div className="h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-4 flex items-center justify-between gap-2 z-20">
-                      <div className="flex items-center gap-2 overflow-x-auto py-1">
-                        {activeImages.map((imgUrl, idx) => {
-                          const isActive = idx === selectedImageIdx;
-                          const label = idx === 0 ? 'Persp 01' : idx === 1 ? 'Gallery' : idx === 2 ? 'Wireframe' : `Angle 0${idx + 1}`;
-                          return (
-                            <button
-                              key={idx}
-                              onClick={() => setSelectedImageIdx(idx)}
-                              className={`relative w-16 h-10 rounded overflow-hidden shrink-0 transition-all ${
-                                isActive 
-                                  ? 'border-2 border-[#d9ee3c] shadow-[0_0_10px_rgba(217,238,60,0.3)]' 
-                                  : 'border border-[#282D3C] hover:border-zinc-400 opacity-70 hover:opacity-100'
-                              }`}
-                              title={`Perspective 0${idx + 1}`}
-                            >
-                              <img className="w-full h-full object-cover" alt={`Angle ${idx + 1}`} src={imgUrl} />
-                              <span className="absolute inset-x-0 bottom-0 bg-[#08090C]/80 text-[8px] text-zinc-200 text-center truncate font-bold uppercase px-0.5">
-                                {label}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="hidden sm:flex items-center gap-2 text-zinc-400 text-[11px] font-bold uppercase tracking-wider shrink-0">
-                        <span className="w-2 h-2 rounded-full bg-[#d9ee3c]"></span>
-                        <span>VIEW 0{selectedImageIdx + 1} / 0{activeImages.length} • MASTER CAD</span>
-                      </div>
+                    {/* Central High-Impact Image Area */}
+                    <div className="relative w-full flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                      {/* Atmospheric Ambient Glow behind image */}
+                      <div className="absolute w-96 h-96 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none"></div>
+                      <div className="absolute w-80 h-80 rounded-full bg-[#d9ee3c]/5 blur-3xl -bottom-10 -right-10 pointer-events-none"></div>
+
+                      {/* Clean Image Display with object-contain to show full details uncropped */}
+                      <img 
+                        src={currentImg}
+                        alt={selectedPortfolioItem.title || 'Portfolio Image'}
+                        className="max-w-full max-h-full object-contain drop-shadow-[0_16px_32px_rgba(0,0,0,0.8)] rounded-lg transition-transform duration-300 select-none z-10"
+                      />
+
+                      {/* Previous / Next Image Navigation Chevrons if multi-image */}
+                      {activeImages.length > 1 && (
+                        <>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImageIdx((prev) => (prev > 0 ? prev - 1 : activeImages.length - 1));
+                            }}
+                            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
+                            title="Previous Image"
+                          >
+                            <span className="material-symbols-outlined text-lg">chevron_left</span>
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedImageIdx((prev) => (prev < activeImages.length - 1 ? prev + 1 : 0));
+                            }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
+                            title="Next Image"
+                          >
+                            <span className="material-symbols-outlined text-lg">chevron_right</span>
+                          </button>
+                        </>
+                      )}
                     </div>
+
+                    {/* Bottom Carousel: Only shown if there are multiple uploaded images */}
+                    {activeImages.length > 1 && (
+                      <div className="h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-4 flex items-center justify-between gap-2 z-20">
+                        <div className="flex items-center gap-2 overflow-x-auto py-1">
+                          {activeImages.map((imgUrl, idx) => {
+                            const isActive = idx === selectedImageIdx;
+                            return (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedImageIdx(idx)}
+                                className={`relative w-16 h-10 rounded overflow-hidden shrink-0 transition-all ${
+                                  isActive 
+                                    ? 'border-2 border-[#d9ee3c] shadow-[0_0_10px_rgba(217,238,60,0.3)]' 
+                                    : 'border border-[#282D3C] hover:border-zinc-400 opacity-70 hover:opacity-100'
+                                }`}
+                                title={`Image ${idx + 1}`}
+                              >
+                                <img className="w-full h-full object-cover" alt={`Image ${idx + 1}`} src={imgUrl} />
+                                <span className="absolute inset-x-0 bottom-0 bg-[#08090C]/80 text-[8px] text-zinc-200 text-center truncate font-bold uppercase px-0.5">
+                                  0{idx + 1}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2 text-zinc-400 text-[11px] font-bold uppercase tracking-wider shrink-0">
+                          <span className="w-2 h-2 rounded-full bg-[#d9ee3c]"></span>
+                          <span>IMAGE 0{selectedImageIdx + 1} / 0{activeImages.length}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* RIGHT COLUMN: Creator Metadata, Specs Accordion & Engagement Feed (~38%) */}
@@ -1363,7 +1307,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-bold text-white truncate">{creatorName}</span>
-                            <span className="material-symbols-outlined text-[#d9ee3c] text-sm shrink-0" title="GIA & MATRIXGOLD CERTIFIED">verified</span>
+                            <span className="material-symbols-outlined text-[#d9ee3c] text-sm shrink-0" title="Verified Creator">verified</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[10px] text-zinc-400 truncate">
@@ -1408,16 +1352,23 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           <span className="text-xs text-zinc-500">Maison Dossier 2025</span>
                         </div>
                         <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">
-                          {selectedPortfolioItem.title || 'The Empress Emerald & Filigree Micro-Pavé Cocktail Ring'}
+                          {selectedPortfolioItem.title || 'Parametric Design Showcase'}
                         </h1>
                         <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed mt-1">
-                          {selectedPortfolioItem.description || 'Bespoke parametric high-jewelry ring modeled in MatrixGold & Rhino. Engineered for direct 5-axis CNC platinum milling and investment wax 3D printing. Calculated metal shrink factor, precise micro-prong seatings, and hollowed under-gallery ensuring balanced finger ergonomics and maximum light refraction under GIA standards.'}
+                          {narrativeText}
                         </p>
 
                         {/* Tags */}
                         <div className="flex flex-wrap gap-1.5 mt-2">
-                          {['#JewelleryCAD', '#MatrixGold', '#HighJewelry', '#ParametricFiligree', '#BenchReady', '#GIACompliant', '#Platinum950'].map((tag) => (
-                            <span key={tag} className="px-2 py-0.5 rounded bg-[#1E222D] text-zinc-400 text-[10px] font-bold uppercase tracking-wider hover:text-[#d9ee3c] cursor-pointer transition-colors border border-[#282D3C]/60">
+                          {[
+                            `#${(parsed.software || 'Rhino').replace(/[^a-zA-Z0-9]/g, '')}`,
+                            `#${(parsed.category || 'JewelleryCAD').replace(/[^a-zA-Z0-9]/g, '')}`,
+                            '#MatrixGold',
+                            '#HighJewelry',
+                            '#BenchReady',
+                            '#GIACompliant'
+                          ].filter(Boolean).map((tag, tIdx) => (
+                            <span key={tIdx} className="px-2 py-0.5 rounded bg-[#1E222D] text-zinc-400 text-[10px] font-bold uppercase tracking-wider hover:text-[#d9ee3c] cursor-pointer transition-colors border border-[#282D3C]/60">
                               {tag}
                             </span>
                           ))}
@@ -1432,52 +1383,62 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           </span>
                           <span className="text-[10px] sm:text-[11px] text-[#d9ee3c] font-bold flex items-center gap-1 uppercase tracking-wider">
                             <span className="material-symbols-outlined text-xs">tune</span>
-                            BENCH &amp; WAX CAST DOSSIER
+                            SPECIFICATION SHEET
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2.5">
                           <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
-                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Estimated Metal Weight</span>
-                            <span className="text-[20px] leading-tight text-white font-mono mt-0.5 font-extrabold">
-                              18.42 <span className="text-xs font-normal text-zinc-400">g</span>
-                            </span>
-                            <span className="text-[11px] text-[#4ffeb9] mt-1">Pt950 Platinum / 18K Yellow Gold Core</span>
-                          </div>
-                          <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
-                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Total Gemstone Carat Weight</span>
-                            <span className="text-[20px] leading-tight text-[#d9ee3c] font-mono mt-0.5 font-extrabold">
-                              6.45 <span className="text-xs font-normal text-zinc-400">ctw</span>
-                            </span>
-                            <span className="text-[11px] text-zinc-300 mt-1">1x 4.85ct Colombian Octagonal + 118x Accents</span>
-                          </div>
-                          <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
                             <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Primary Toolchain</span>
                             <span className="text-sm text-white mt-0.5 font-bold truncate">
-                              {selectedPortfolioItem.software || 'MatrixGold 3 & Rhino 7'}
+                              {parsed.software || selectedPortfolioItem.software || 'Rhino & MatrixGold'}
                             </span>
-                            <span className="text-[11px] text-zinc-400 mt-1">V-Ray Next + CounterSketch</span>
+                            <span className="text-[11px] text-zinc-400 mt-1">CAD / Parametric Modeling</span>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
+                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Classification</span>
+                            <span className="text-sm text-[#ffb955] mt-0.5 font-bold truncate">
+                              {parsed.category || selectedPortfolioItem.category || '3D CAD Modeling'}
+                            </span>
+                            <span className="text-[11px] text-zinc-400 mt-1">Haute Joaillerie Atelier</span>
                           </div>
                           <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
                             <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Manufacturing Readiness</span>
                             <span className="text-sm text-white mt-0.5 font-bold truncate">Lost-Wax Cast &amp; CNC Ready</span>
-                            <span className="text-[11px] text-[#ffb955] mt-1">±0.008mm Prong Seat Tolerance</span>
+                            <span className="text-[11px] text-[#4ffeb9] mt-1">±0.008mm Prong Seat Tolerance</span>
+                          </div>
+                          <div className="p-3 rounded-lg bg-[#1E222D] border border-[#282D3C] flex flex-col">
+                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">Package Deliverable</span>
+                            <span className="text-sm text-white mt-0.5 font-bold truncate">
+                              {has3D ? 'Master 3D CAD Files' : 'High-Res CAD Specification'}
+                            </span>
+                            <span className="text-[11px] text-zinc-400 mt-1">
+                              {has3D ? '.3DM / .STL / .STEP' : 'Technical Dossier & Renders'}
+                            </span>
                           </div>
                         </div>
 
                         {/* Deliverables Inventory Badge List */}
                         <div className="p-3 rounded-lg bg-[#0D0E12] border border-[#282D3C] flex flex-col gap-1.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Archived CAD Formats in Package</span>
+                            <span className="text-[10px] text-zinc-400 uppercase tracking-wider font-bold">Archived Assets in Package</span>
                             <span className="text-[10px] text-[#ffb955] font-bold flex items-center gap-1 uppercase tracking-wider">
                               <span className="material-symbols-outlined text-xs">lock</span>
                               Maison Access Only
                             </span>
                           </div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.3DM (MatrixGold)</span>
-                            <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.STL (Cast-Ready Mesh)</span>
-                            <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.STEP (Prong Data)</span>
-                            <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.OBJ (V-Ray Renders)</span>
+                            {has3D ? (
+                              <>
+                                <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.3DM (MatrixGold)</span>
+                                <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.STL (Cast-Ready Mesh)</span>
+                                <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">.STEP (Prong Data)</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">High-Resolution CAD Specification</span>
+                                <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] font-bold text-zinc-300 uppercase">Parametric Viewport Renders</span>
+                              </>
+                            )}
                           </div>
                           <div className="flex items-center gap-1.5 pt-0.5 text-zinc-400 text-[11px]">
                             <span className="material-symbols-outlined text-xs text-[#ffb955]">shield</span>
