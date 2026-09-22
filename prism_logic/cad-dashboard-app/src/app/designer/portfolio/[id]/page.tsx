@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { getPortfolioItem, getPublicDesignerProfile, getPublicPortfolioItems } from '@/app/actions';
-import AuthGuard from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 
 export default function PortfolioDetailPage() {
@@ -202,8 +201,7 @@ export default function PortfolioDetailPage() {
   const dossierId = `HJ-${String(item.id).replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || '2025-09'}`;
 
   return (
-    <AuthGuard>
-      <div className="bg-[#08090C] text-[#e3e2e7] font-sans antialiased min-h-screen flex flex-col selection:bg-[#d9ee3c] selection:text-[#1a1e00]">
+    <div className="bg-[#08090C] text-[#e3e2e7] font-sans antialiased min-h-screen flex flex-col selection:bg-[#d9ee3c] selection:text-[#1a1e00]">
         {/* Toast Alert */}
         {showSuccessToast && (
           <div className="fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#14161E] border border-[#d9ee3c]/50 text-white shadow-2xl animate-fade-in">
@@ -712,6 +710,5 @@ export default function PortfolioDetailPage() {
           </div>
         </footer>
       </div>
-    </AuthGuard>
   );
 }
