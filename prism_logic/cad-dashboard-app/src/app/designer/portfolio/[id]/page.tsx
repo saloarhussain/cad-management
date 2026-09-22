@@ -5,6 +5,74 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { getPortfolioItem, getPublicDesignerProfile, getPublicPortfolioItems } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
+const SOFTWARE_META_MAP: Record<string, { name: string; logo: string; role: string }> = {
+  rhino: { name: 'Rhinoceros 3D', logo: '/rhino-logo.png', role: 'NURBS & Computational CAD' },
+  rhinoceros: { name: 'Rhinoceros 3D', logo: '/rhino-logo.png', role: 'NURBS & Computational CAD' },
+  matrixgold: { name: 'MatrixGold', logo: '/matrixgold-logo.png', role: 'Parametric Jewelry Suite' },
+  keyshot: { name: 'KeyShot', logo: '/keyshot-logo.jpg', role: 'Real-Time Ray-Tracing & Rendering' },
+  zbrush: { name: 'ZBrush', logo: '/zbrush-logo.jpg', role: 'High-Poly Digital Sculpting' },
+  solidworks: { name: 'SolidWorks', logo: '/solidworks-logo.png', role: 'Mechanical Parametric Design' },
+  jewelcad: { name: 'JewelCAD', logo: '/jewelcad-logo.png', role: 'Jewelry CAD & Stone Settings' },
+  blender: { name: 'Blender', logo: '/blender-logo.png', role: '3D Mesh & Shader Pipeline' },
+};
+
+const resolveSoftwareList = (rawSoftware: any, rawDescription?: string, defaultFallback = 'KeyShot') => {
+  let items: string[] = [];
+  if (Array.isArray(rawSoftware)) {
+    items = rawSoftware.filter(Boolean);
+  } else if (typeof rawSoftware === 'string' && rawSoftware.trim()) {
+    items = rawSoftware.split(/[,/&+]+|\band\b/i).map((s: string) => s.trim()).filter(Boolean);
+  }
+  
+  if (items.length === 0 && rawDescription && typeof rawDescription === 'string') {
+    const descLower = rawDescription.toLowerCase();
+    for (const [key, meta] of Object.entries(SOFTWARE_META_MAP)) {
+      if (descLower.includes(key)) {
+        if (!items.some(it => it.toLowerCase().includes(key))) {
+          items.push(meta.name);
+        }
+      }
+    }
+  }
+
+  if (items.length === 0) {
+    items = [defaultFallback];
+  }
+
+  const seen = new Set<string>();
+  const result: Array<{ name: string; logo: string | null; role: string; raw: string }> = [];
+
+  for (const clean of items) {
+    const lower = clean.toLowerCase();
+    let matched = false;
+    for (const [key, meta] of Object.entries(SOFTWARE_META_MAP)) {
+      if (lower.includes(key)) {
+        if (!seen.has(meta.name)) {
+          seen.add(meta.name);
+          result.push({
+            name: meta.name,
+            logo: meta.logo,
+            role: meta.role,
+            raw: clean
+          });
+        }
+        matched = true;
+        break;
+      }
+    }
+    if (!matched && !seen.has(clean)) {
+      seen.add(clean);
+      result.push({
+        name: clean,
+        logo: null,
+        role: 'CAD & 3D Modeling Suite',
+        raw: clean
+      });
+    }
+  }
+
+  return result;
+};
 
 export default function PortfolioDetailPage() {
   const { id } = useParams() as { id: string };
@@ -95,6 +163,7 @@ export default function PortfolioDetailPage() {
   const rawSoftware = softwareMatch ? softwareMatch[1]?.trim() : 'ZBrush, Rhino';
   const softwareTags = rawSoftware ? rawSoftware.split(/[,/]+/).map((s: string) => s.trim()).filter(Boolean) : ['ZBrush', 'MatrixGold'];
   const primaryToolchain = softwareTags[0] || 'ZBrush';
+  const softwareList = resolveSoftwareList(rawSoftware, description);
   const cadFile = cadFileMatch ? cadFileMatch[1]?.trim() : (item.cad_file || '');
 
   // Extract clean narrative
@@ -512,53 +581,40 @@ export default function PortfolioDetailPage() {
                     ))}
                   </div>
 
-                  {/* Jewellery Engineering Specifications */}
+                  {/* Software Used to Achieve This Design */}
                   <div className="flex flex-col gap-2.5 pt-1">
                     <div className="flex items-center justify-between flex-wrap gap-1">
-                      <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold">JEWELLERY ENGINEERING SPECIFICATIONS</span>
-                      <button 
-                        onClick={() => setShowSuccessToast('Specification Sheet exported for CAD workshop.')}
-                        className="text-[11px] text-[#d9ee3c] hover:underline font-bold flex items-center gap-1.5 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-sm text-[#d9ee3c]">tune</span>
-                        <span>SPECIFICATION SHEET</span>
-                      </button>
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold">
+                        SOFTWARE USED TO ACHIEVE THIS DESIGN
+                      </span>
+                      <span className="text-[10px] text-zinc-500 font-semibold uppercase tracking-wider">
+                        Production Stack
+                      </span>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
-                        <div>
-                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">PRIMARY TOOLCHAIN</span>
-                          <span className="text-lg text-white font-bold mt-1 block truncate">{primaryToolchain}</span>
+                    <div className={`grid gap-2.5 ${softwareList.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                      {softwareList.map((sw, sIdx) => (
+                        <div 
+                          key={sIdx} 
+                          className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#3E4557] transition-all flex items-center gap-3.5"
+                        >
+                          <div className="w-11 h-11 rounded-lg bg-[#14161E] border border-[#282D3C] flex items-center justify-center overflow-hidden shrink-0 p-1.5 shadow-sm">
+                            {sw.logo ? (
+                              <img 
+                                src={sw.logo} 
+                                alt={sw.name} 
+                                className="w-full h-full object-contain" 
+                              />
+                            ) : (
+                              <span className="material-symbols-outlined text-xl text-[#d9ee3c]">deployed_code</span>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-bold text-white block truncate">{sw.name}</span>
+                            <span className="text-[11px] text-zinc-400 block truncate mt-0.5">{sw.role}</span>
+                          </div>
                         </div>
-                        <span className="text-[11px] text-zinc-400 mt-1.5">CAD / Parametric Modeling</span>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
-                        <div>
-                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">CLASSIFICATION</span>
-                          <span className="text-lg text-[#ffb955] font-bold mt-1 block truncate">{category}</span>
-                        </div>
-                        <span className="text-[11px] text-zinc-400 mt-1.5">Haute Joaillerie Atelier</span>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
-                        <div>
-                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">MANUFACTURING READINESS</span>
-                          <span className="text-base text-white font-bold mt-1 block truncate">Lost-Wax Cast &amp; CNC Ready</span>
-                        </div>
-                        <span className="text-[11px] text-[#4ffeb9] mt-1.5 font-semibold">±0.008mm Prong Seat Tolerance</span>
-                      </div>
-
-                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
-                        <div>
-                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">PACKAGE DELIVERABLE</span>
-                          <span className="text-base text-white font-bold mt-1 block truncate">
-                            {cadFile ? 'Production CAD Package' : 'High-Res CAD Specification'}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-zinc-400 mt-1.5">Technical Dossier &amp; Renders</span>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
