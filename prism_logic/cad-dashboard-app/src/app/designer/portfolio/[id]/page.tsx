@@ -714,23 +714,6 @@ export default function PortfolioDetailPage() {
               </div>
             </div>
         </main>
-
-        {/* Haute Atelier Footer */}
-        <footer className="w-full bg-[#14161E] border-t border-[#282D3C] py-6 sm:py-8 mt-auto">
-          <div className="w-full px-4 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-base text-white font-bold tracking-wider">CADONCE</span>
-              <span className="text-xs text-zinc-500">Haute Joaillerie Parametric CAD Archive</span>
-            </div>
-            <div className="flex items-center gap-4 sm:gap-6 text-zinc-400 text-xs flex-wrap justify-center">
-              <Link href="/explore" className="hover:text-white transition-colors">Ateliers</Link>
-              <Link href="/designer/portfolio" className="hover:text-white transition-colors">Repository</Link>
-              <Link href="/team" className="hover:text-white transition-colors">Master Jewelers</Link>
-              <span className="text-[#282D3C]">|</span>
-              <span className="text-zinc-500">© 2025 CADONCE. All rights reserved.</span>
-            </div>
-          </div>
-        </footer>
       </div>
   );
 }
