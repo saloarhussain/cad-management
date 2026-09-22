@@ -1412,10 +1412,10 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
             return (
               <div 
-                className="fixed inset-0 z-50 bg-[#08090C] text-[#e3e2e7] font-sans antialiased overflow-y-auto flex flex-col selection:bg-[#d9ee3c] selection:text-[#1a1e00]"
+                className="fixed inset-0 z-50 bg-[#08090C] text-[#e3e2e7] font-sans antialiased overflow-hidden flex flex-col h-screen max-h-screen selection:bg-[#d9ee3c] selection:text-[#1a1e00]"
               >
-                {/* Global Fixed Luxury Navigation Header */}
-                <header className="fixed top-0 left-0 w-full z-40 bg-[#14161E]/85 backdrop-blur-xl border-b border-[#282D3C]">
+                {/* Global Luxury Navigation Header */}
+                <header className="shrink-0 w-full z-40 bg-[#14161E]/95 backdrop-blur-xl border-b border-[#282D3C]">
                   <div className="h-16 md:h-20 w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-6">
                     <div className="flex items-center gap-6 shrink-0">
                       <button 
@@ -1471,145 +1471,140 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 </header>
 
                 {/* Main Content Area */}
-                <main className="w-full pt-16 md:pt-20 bg-[#08090C] flex-1 flex flex-col relative">
-                  <div className="flex flex-col w-full relative flex-1">
-                    {/* Full-Screen Project Sub-Header / Breadcrumb Bar */}
-                    <div className="w-full bg-[#0D0E12] border-b border-[#282D3C] px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between shrink-0">
-                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                        <button 
-                          onClick={() => setSelectedPortfolioItem(null)} 
-                          className="inline-flex items-center gap-1 text-zinc-400 hover:text-[#d9ee3c] font-semibold text-xs sm:text-sm transition-colors"
-                        >
-                          <span className="material-symbols-outlined text-base">arrow_back</span>
-                          <span>Back to Dossiers</span>
-                        </button>
-                        <span className="text-[#282D3C]">/</span>
-                        <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold hidden sm:inline">Haute Joaillerie CAD</span>
-                        <span className="text-[#282D3C] hidden sm:inline">/</span>
-                        <span className="text-white font-semibold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-xs">
-                          {selectedPortfolioItem.title || 'Parametric Showcase'}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="hidden md:flex items-center gap-1.5 text-zinc-400 text-[11px] font-bold tracking-wider uppercase">
-                          <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.8)]"></span>
-                          <span>PROJECT DOSSIER #{dossierId}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button 
-                            onClick={handlePrevItem}
-                            disabled={portfolioItems.length <= 1}
-                            className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 transition-colors" 
-                            title="Previous Project"
-                          >
-                            <span className="material-symbols-outlined text-base">chevron_left</span>
-                          </button>
-                          <button 
-                            onClick={handleNextItem}
-                            disabled={portfolioItems.length <= 1}
-                            className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 transition-colors" 
-                            title="Next Project"
-                          >
-                            <span className="material-symbols-outlined text-base">chevron_right</span>
-                          </button>
-                        </div>
-                      </div>
+                <main className="w-full flex-1 flex flex-col overflow-hidden min-h-0 relative bg-[#08090C]">
+                  {/* Full-Screen Project Sub-Header / Breadcrumb Bar */}
+                  <div className="w-full bg-[#0D0E12] border-b border-[#282D3C] px-4 sm:px-6 lg:px-10 py-2.5 sm:py-3 flex items-center justify-between shrink-0 z-30">
+                    <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                      <button 
+                        onClick={() => setSelectedPortfolioItem(null)} 
+                        className="inline-flex items-center gap-1 text-zinc-400 hover:text-[#d9ee3c] font-semibold text-xs sm:text-sm transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-base">arrow_back</span>
+                        <span>Back to Dossiers</span>
+                      </button>
+                      <span className="text-[#282D3C]">/</span>
+                      <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold hidden sm:inline">Haute Joaillerie CAD</span>
+                      <span className="text-[#282D3C] hidden sm:inline">/</span>
+                      <span className="text-white font-semibold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-xs">
+                        {selectedPortfolioItem.title || 'Parametric Showcase'}
+                      </span>
                     </div>
 
-                    {/* Full-Screen 2-Column Split: Viewport & Details */}
-                    <div className="w-full flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-7.5rem)] lg:h-[calc(100vh-7.5rem)]">
-                      {/* LEFT COLUMN: CAD Interactive Viewport (~60%) */}
-                      <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none shrink-0 lg:h-full">
-                        {/* Viewport Top Header Bar */}
-                        <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-[#08090C]/90 via-[#0D0E12]/60 to-transparent pointer-events-auto">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C] backdrop-blur-md">
-                              <span className="w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-                              <span className="text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
-                            </div>
-                            <div className="inline-flex items-center px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C] backdrop-blur-md">
-                              <span className="text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
-                            </div>
-                          </div>
+                    <div className="flex items-center gap-3">
+                      <div className="hidden md:flex items-center gap-1.5 text-zinc-400 text-[11px] font-bold tracking-wider uppercase">
+                        <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.8)]"></span>
+                        <span>PROJECT DOSSIER #{dossierId}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={handlePrevItem}
+                          disabled={portfolioItems.length <= 1}
+                          className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 transition-colors" 
+                          title="Previous Project"
+                        >
+                          <span className="material-symbols-outlined text-base">chevron_left</span>
+                        </button>
+                        <button 
+                          onClick={handleNextItem}
+                          disabled={portfolioItems.length <= 1}
+                          className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 transition-colors" 
+                          title="Next Project"
+                        >
+                          <span className="material-symbols-outlined text-base">chevron_right</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
-                          <div className="flex items-center gap-2">
-                            {has3D && (
-                              <button 
-                                onClick={() => {
-                                  setSelectedProductForView({
-                                    id: selectedPortfolioItem.id,
-                                    name: selectedPortfolioItem.title || '3D Model',
-                                    cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
-                                  });
-                                }}
-                                className="px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:brightness-110 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
-                                title="Interactive 3D WebGL Viewport"
-                              >
-                                <span className="material-symbols-outlined text-base">view_in_ar</span>
-                                <span className="text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
-                              </button>
-                            )}
+                  {/* Full-Screen 2-Column Split: Viewport & Details */}
+                  <div className="w-full flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+                    {/* LEFT COLUMN: CAD Interactive Viewport & High-Res Renders (~60%) */}
+                    <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none h-full min-h-0 overflow-y-auto overscroll-contain">
+                      {/* Viewport Top Header Bar */}
+                      <div className="sticky top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-[#0D0E12]/95 backdrop-blur-md border-b border-[#282D3C]/60 shrink-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C]">
+                            <span className="w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                            <span className="text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
+                          </div>
+                          <div className="inline-flex items-center px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C]">
+                            <span className="text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {has3D && (
                             <button 
                               onClick={() => {
-                                if (typeof document !== 'undefined') {
-                                  if (!document.fullscreenElement) {
-                                    document.documentElement.requestFullscreen?.();
-                                  } else {
-                                    document.exitFullscreen?.();
-                                  }
-                                }
+                                setSelectedProductForView({
+                                  id: selectedPortfolioItem.id,
+                                  name: selectedPortfolioItem.title || '3D Model',
+                                  cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
+                                });
                               }}
-                              className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#1A1C23]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-all shadow-lg" 
-                              title="Toggle Fullscreen CAD View"
+                              className="px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:brightness-110 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
+                              title="Interactive 3D WebGL Viewport"
                             >
-                              <span className="material-symbols-outlined text-lg sm:text-xl">fullscreen</span>
+                              <span className="material-symbols-outlined text-base">view_in_ar</span>
+                              <span className="text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
                             </button>
-                          </div>
+                          )}
+                          <button 
+                            onClick={() => {
+                              if (typeof document !== 'undefined') {
+                                if (!document.fullscreenElement) {
+                                  document.documentElement.requestFullscreen?.();
+                                } else {
+                                  document.exitFullscreen?.();
+                                }
+                              }
+                            }}
+                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#1A1C23]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-all shadow-lg" 
+                            title="Toggle Fullscreen CAD View"
+                          >
+                            <span className="material-symbols-outlined text-lg sm:text-xl">fullscreen</span>
+                          </button>
                         </div>
+                      </div>
 
-                        {/* Central CAD Viewport Display Area */}
-                        <div className="relative w-full h-[400px] sm:h-[520px] lg:flex-1 lg:h-auto flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#08090C] to-[#0D0E12] group">
-                          <div className="absolute w-72 sm:w-96 h-72 sm:h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
-                          <div className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full bg-[#d9ee3c]/10 blur-3xl -bottom-10 -right-10 pointer-events-none"></div>
-
-                          <img 
-                            src={currentImg} 
-                            alt={selectedPortfolioItem.title || 'Portfolio Image'}
-                            className="w-full h-full object-cover sm:object-contain object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-                          />
-
-                          {/* Blueprint Grid Overlay */}
-                          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#282D3C_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
-
-                          {/* Feature Floating Indicator */}
-                          <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 hidden sm:flex items-center gap-2 p-2 rounded-lg bg-[#14161E]/85 backdrop-blur-md border border-[#282D3C] pointer-events-none shadow-lg z-20">
-                            <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.9)]"></span>
-                            <span className="text-[11px] text-white tracking-wider uppercase font-semibold">Parametric Collet &amp; Micro-Prong Seatings</span>
+                      {/* Renders / Views Feed */}
+                      <div className="flex-1 flex flex-col gap-6 p-4 sm:p-6">
+                        {activeImages.map((imgUrl, idx) => (
+                          <div 
+                            key={idx} 
+                            id={`modal-viewport-img-${idx}`}
+                            className="relative w-full rounded-2xl bg-gradient-to-b from-[#08090C] to-[#14161E] border border-[#282D3C] flex items-center justify-center overflow-hidden p-2 sm:p-4 group shadow-xl min-h-[380px]"
+                          >
+                            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#282D3C_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+                            <img 
+                              src={imgUrl} 
+                              alt={`${selectedPortfolioItem.title || 'Portfolio Work'} - Angle ${idx + 1}`} 
+                              className="w-full h-auto max-h-[82vh] object-contain rounded-xl transition-transform duration-500 ease-out group-hover:scale-[1.01]" 
+                            />
+                            <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 flex items-center gap-2 p-1.5 px-3 rounded-lg bg-[#14161E]/90 backdrop-blur-md border border-[#282D3C] shadow-lg pointer-events-none">
+                              <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.9)]"></span>
+                              <span className="text-[10px] text-zinc-300 tracking-wider uppercase font-bold">
+                                {idx === 0 ? 'Perspective View' : idx === 1 ? 'Wireframe / Technical' : `Angle 0${idx + 1}`}
+                              </span>
+                            </div>
                           </div>
+                        ))}
+                      </div>
 
-                          {/* Reset Camera Button */}
-                          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-2 z-20">
-                            <button 
-                              onClick={() => setSelectedImageIdx(0)}
-                              className="px-2.5 py-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-colors flex items-center gap-1.5 shadow-md" 
-                              title="Center 3D Camera"
-                            >
-                              <span className="material-symbols-outlined text-sm sm:text-base">center_focus_strong</span>
-                              <span className="text-[10px] hidden sm:inline tracking-wider font-bold uppercase">RESET CAMERA</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Viewport Bottom Carousel / Projection Angle Thumbnails */}
-                        <div className="h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 z-20 shrink-0">
+                      {/* Viewport Bottom Carousel / Projection Angle Thumbnails */}
+                      {activeImages.length > 1 && (
+                        <div className="sticky bottom-0 h-16 w-full bg-[#14161E]/95 backdrop-blur-md border-t border-[#282D3C] px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 z-20 shrink-0">
                           <div className="flex items-center gap-2 overflow-x-auto py-1">
                             {activeImages.map((imgUrl, idx) => {
                               const isActive = idx === selectedImageIdx;
                               return (
                                 <button
                                   key={idx}
-                                  onClick={() => setSelectedImageIdx(idx)}
+                                  onClick={() => {
+                                    setSelectedImageIdx(idx);
+                                    const el = document.getElementById(`modal-viewport-img-${idx}`);
+                                    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                                  }}
                                   className={`relative w-14 sm:w-16 h-10 rounded overflow-hidden shrink-0 transition-all ${
                                     isActive 
                                       ? 'border-2 border-[#d9ee3c] shadow-[0_0_10px_rgba(217,238,60,0.3)]' 
@@ -1627,15 +1622,16 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           </div>
                           <div className="flex items-center gap-1.5 text-zinc-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider shrink-0">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#d9ee3c]"></span>
-                            <span>VIEW 0{selectedImageIdx + 1} / 0{activeImages.length}</span>
+                            <span>{activeImages.length} VIEWS</span>
                           </div>
                         </div>
-                      </div>
+                      )}
+                    </div>
 
-                      {/* RIGHT COLUMN: Creator Header, Dossier Specs, Engagement & Sticky Commission CTA (~40%) */}
-                      <div className="flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] overflow-hidden lg:h-full">
-                        {/* Top Creator Profile Header Bar */}
-                        <div className="p-4 sm:p-5 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/90 backdrop-blur-sm shrink-0">
+                    {/* RIGHT COLUMN: Creator Header, Dossier Specs, Engagement & Sticky Commission CTA (~40%) */}
+                    <div className="flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] overflow-hidden h-full min-h-0">
+                      {/* Top Creator Profile Header Bar */}
+                      <div className="p-4 sm:p-5 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/90 backdrop-blur-sm shrink-0">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="relative shrink-0">
                               <div className="w-11 h-11 rounded-full p-[1.5px] bg-[#282D3C] overflow-hidden border border-[#282D3C]">
@@ -1682,7 +1678,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         </div>
 
                         {/* Scrollable Dossier Content & Technical Specifications */}
-                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-5">
+                        <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-5 min-h-0 overscroll-contain">
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center justify-between gap-2">
                               <span className="text-[11px] text-[#ffb955] font-bold uppercase tracking-wider">{categoryName}</span>
@@ -1854,7 +1850,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         </div>
                       </div>
                     </div>
-                  </div>
                 </main>
 
                 {/* Haute Atelier Footer */}
