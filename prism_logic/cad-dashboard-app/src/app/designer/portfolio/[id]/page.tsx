@@ -562,31 +562,6 @@ export default function PortfolioDetailPage() {
                     </div>
                   </div>
 
-                  {/* Archived Assets in Package */}
-                  <div className="p-3.5 rounded-xl bg-[#0D0E12] border border-[#282D3C] flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">ARCHIVED ASSETS IN PACKAGE</span>
-                      <span className="text-[11px] text-[#ffb955] font-bold flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">lock</span>
-                        <span>MAISON ACCESS ONLY</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">HIGH RESOLUTION CAD SPECIFICATION</span>
-                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">PARAMETRIC VIEWPORT RENDERS</span>
-                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">.STL / .ZTL</span>
-                      {cadFile && (
-                        <a 
-                          href={cadFile} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="px-2 py-0.5 rounded bg-[#d9ee3c]/20 border border-[#d9ee3c]/50 text-[10px] text-[#d9ee3c] font-bold hover:bg-[#d9ee3c] hover:text-black transition-colors"
-                        >
-                          DOWNLOAD ASSETS
-                        </a>
-                      )}
-                    </div>
-                  </div>
 
                   {/* Recent Atelier Reviews */}
                   {comments.length > 0 && (
