@@ -366,98 +366,234 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           .animate-bonfire {
             animation: bonfire 1.5s ease-in-out infinite;
           }
+          .no-scrollbar::-webkit-scrollbar {
+            display: none !important;
+          }
+          .no-scrollbar {
+            -ms-overflow-style: none !important;
+            scrollbar-width: none !important;
+          }
         `}</style>
         {/* MainContainer - Expansive modern widescreen container eliminating empty side margins */}
-        <div className="w-full max-w-[1720px] mx-auto min-h-screen flex flex-col relative">
+        <div className="w-full max-w-[1720px] mx-auto min-h-screen flex flex-col relative overflow-x-hidden">
           {/* Ambient Glow Orbs behind main content */}
           <div className="pointer-events-none absolute -top-40 right-1/4 w-96 h-96 bg-[#d9ee3c]/10 rounded-full blur-3xl"></div>
           <div className="pointer-events-none absolute top-1/2 left-10 w-80 h-80 bg-[#ffb955]/10 rounded-full blur-3xl"></div>
 
-          <div className="w-full px-4 sm:px-8 xl:px-12 py-6 flex flex-col gap-6">
+          <div className="w-full px-3 sm:px-8 xl:px-12 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
             {/* Top Navigation Bar: Cadonce Logo & Share Portfolio Button */}
-            <div className="flex items-center justify-between gap-4 border-b border-[#282D3C]/80 pb-4">
-              <Link href="/" className="flex items-center gap-3 group">
-                <div className="size-9 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shadow-[0_0_16px_rgba(245,158,11,0.35)] shrink-0 group-hover:scale-105 transition-transform">
-                  <span className="material-symbols-outlined text-black font-black text-xl leading-none">architecture</span>
+            <div className="flex items-center justify-between gap-2 sm:gap-4 border-b border-[#282D3C]/80 pb-3.5 sm:pb-4">
+              <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+                <div className="size-8 sm:size-9 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shadow-[0_0_16px_rgba(245,158,11,0.35)] shrink-0 group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-black font-black text-lg sm:text-xl leading-none">architecture</span>
                 </div>
                 <div className="flex flex-col">
-                  <span className="font-headline font-black text-lg text-white tracking-tighter uppercase italic leading-none">
+                  <span className="font-headline font-black text-base sm:text-lg text-white tracking-tighter uppercase italic leading-none">
                     CAD<span className="text-[#F59E0B]">ONCE</span>
                   </span>
-                  <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                  <span className="text-[8px] sm:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
                     Studio Archive
                   </span>
                 </div>
               </Link>
               
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
                 {!user && (
                   <Link 
                     href="/auth/login"
-                    className="inline-flex items-center justify-center px-3.5 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white border border-[#282D3C] hover:border-zinc-500 bg-[#14161E] transition-all"
+                    className="inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold text-zinc-300 hover:text-white border border-[#282D3C] hover:border-zinc-500 bg-[#14161E] transition-all"
                   >
                     <span>Sign In</span>
                   </Link>
                 )}
                 <button 
                   onClick={handleShare}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#d9ee3c] hover:bg-[#cbe02d] text-[#1a1e00] font-semibold text-xs transition-all duration-200 hover:shadow-[0_0_12px_rgba(217,238,60,0.3)] shadow-sm"
+                  className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-lg bg-[#d9ee3c] hover:bg-[#cbe02d] text-[#1a1e00] font-semibold text-xs transition-all duration-200 hover:shadow-[0_0_12px_rgba(217,238,60,0.3)] shadow-sm"
                 >
                   <span className="material-symbols-outlined text-[15px] font-bold">
                     {copiedLink ? 'check' : 'share'}
                   </span>
-                  <span>{copiedLink ? 'Link Copied!' : 'Share Portfolio'}</span>
+                  <span>{copiedLink ? 'Copied!' : (<><span className="hidden sm:inline">Share Portfolio</span><span className="sm:hidden">Share</span></>)}</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Mobile / Tablet Designer Identity Hero (Visible < xl, hidden on desktop xl+) */}
+            <div className="xl:hidden rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col gap-4">
+              {/* Atmospheric Glow */}
+              <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-[#ffb955]/20 via-[#d9ee3c]/15 to-transparent rounded-full blur-2xl"></div>
+
+              {/* Profile Top Row: Avatar & Basic Info */}
+              <div className="flex items-center gap-3.5 relative z-10">
+                <div className="relative group shrink-0">
+                  <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#ffb955] via-[#d9ee3c] to-[#4ffeb9] opacity-80 blur-sm"></div>
+                  <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-[#08090C]">
+                    <div className="w-full h-full rounded-full overflow-hidden bg-[#1E222D]">
+                      <img 
+                        className="w-full h-full object-cover object-top" 
+                        src={designer?.avatarUrl || "https://lh3.googleusercontent.com/aida/ADBb0uhfZwChFLIygiDSRSW5IbKILEBGWomOnXd7KijnsSHlt69qiSAys1otcP_-KpA9-XSBOdvlYx47LAUlgPeLRMsDzDjpmd_PI1WjRVqGmCcWRaAijR0TkOE3XCfa4YSD99XaqFnjJ-xME9nylcGT-7rTyNVLBa2RxHxMq-WztXR34Lz9wSRZgFWzgvj5ECR8lY9ppOS91UIRkwA2nAuvBbj-Us0I80EJkrBSMraL1brRUT4cpjUyxZZ_WsB-14jxk7wPlrLGPjGOLw"}
+                        alt={designer?.fullName || designer?.organizationName || 'Designer'}
+                      />
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-[#08090C] flex items-center justify-center p-0.5">
+                    <div className="w-full h-full rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,1)]"></div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="text-base sm:text-xl text-white font-extrabold tracking-tight truncate">
+                      {designer?.organizationName || designer?.fullName || 'Alexander Sterling'}
+                    </h2>
+                    <span className="material-symbols-outlined text-[#ffb955] text-base shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span>
+                  </div>
+                  {designer?.fullName && designer?.organizationName && (
+                    <p className="text-[11px] text-white/50 truncate -mt-0.5">{designer.fullName}</p>
+                  )}
+                  <p className="text-[11px] text-zinc-400 mt-0.5 flex items-center gap-1 truncate">
+                    <span className="truncate">Studio: {designer?.organizationName || 'Minecom Dynamics'}</span>
+                  </p>
+                  <div className="mt-1 flex items-center gap-1 text-[10px] text-[#4ffeb9] font-medium">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#4ffeb9] inline-block animate-pulse shrink-0"></span>
+                    <span>Available for Contract</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pro Badge Pill */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1E222D] border border-[#282D3C] w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d9ee3c]"></span>
+                <span className="text-[10px] uppercase text-[#d9ee3c] font-bold tracking-wider">
+                  {designer?.organizationName ? 'STUDIO & ORGANIZATION' : 'PROFESSIONAL CAD DESIGNER'}
+                </span>
+              </div>
+
+              {/* Bio Narrative */}
+              <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed text-left">
+                {designer?.specialty || designer?.bio || "Senior Industrial CAD Specialist & Mechanical Systems Architect with 8+ years designing high-tolerance hardware, aerospace robotics, and consumer electronics ready for production."}
+              </p>
+
+              {/* Metrics Quad Grid */}
+              <div className="w-full grid grid-cols-4 gap-1.5 py-3 px-2 rounded-xl bg-[#0D0E12]/90 border border-[#1B1E28]">
+                <div className="flex flex-col items-center">
+                  <span className="text-base sm:text-xl text-white font-extrabold">{portfolioItems.length}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">PORTFOLIO</span>
+                </div>
+                <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                  <span className="text-base sm:text-xl text-white font-extrabold">{jobsCount || 48}</span>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">JOBS</span>
+                </div>
+                <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                  <span className="text-base sm:text-xl text-[#ffb955] font-extrabold">4.9</span>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">RATING</span>
+                </div>
+                <div className="flex flex-col items-center border-l border-[#1B1E28]">
+                  <span className="text-base sm:text-xl text-[#4ffeb9] font-extrabold">99%</span>
+                  <span className="text-[9px] text-zinc-500 uppercase tracking-wider font-bold mt-0.5">ON-TIME</span>
+                </div>
+              </div>
+
+              {/* Primary CTAs */}
+              <div className="w-full flex flex-col sm:flex-row gap-2">
+                <Link 
+                  href={`/inbox?hire=${params.id}`} 
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.5)] flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                >
+                  <span className="material-symbols-outlined text-base">bolt</span>
+                  <span>Hire {designer?.fullName?.split(' ')[0] || designer?.organizationName || 'Alexander'}</span>
+                </Link>
+                <div className="flex gap-2 flex-1">
+                  <Link 
+                    href={`/inbox?to=${params.id}`} 
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-base">mail</span>
+                    <span>Message</span>
+                  </Link>
+                  {user && user.id === params.id ? (
+                    <Link 
+                      href="/settings"
+                      className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-base">settings</span>
+                      <span className="hidden xs:inline">Settings</span>
+                    </Link>
+                  ) : (
+                    <button 
+                      onClick={handleShare}
+                      className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-base">download</span>
+                      <span className="hidden xs:inline">Spec Sheet</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Studio Meta Specs */}
+              <div className="w-full pt-3 border-t border-[#1B1E28] flex items-center justify-between text-zinc-400 text-[11px]">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">location_on</span>
+                  Zurich, Switzerland
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-xs">schedule</span>
+                  UTC+1 (CET)
+                </span>
               </div>
             </div>
 
             {/* Core Portfolio Layout: Asymmetric 12-Column Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
               {/* Left 8 Columns: Navigation, Filter Matrix & CAD Showcase */}
-              <div className="xl:col-span-8 flex flex-col gap-6 min-w-0">
+              <div className="xl:col-span-8 flex flex-col gap-4 sm:gap-6 min-w-0">
                 {/* Instagram-style Tab Navigation Bar */}
-                <div className="bg-[#14161E]/90 backdrop-blur-md rounded-xl border border-[#282D3C] p-2.5">
-                  <div className="flex items-center justify-between border-b border-[#1B1E28] pb-2 px-2">
-                    <nav className="flex items-center gap-5 sm:gap-7 overflow-x-auto scrollbar-none">
+                <div className="bg-[#14161E]/90 backdrop-blur-md rounded-xl border border-[#282D3C] p-2 sm:p-2.5">
+                  <div className="flex items-center justify-between border-b border-[#1B1E28] pb-1.5 sm:pb-2 px-1 sm:px-2 gap-2">
+                    <nav 
+                      className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap shrink min-w-0"
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
                       <button 
                         onClick={() => setActiveTab('portfolio')}
-                        className={`relative py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                        className={`relative shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
                           activeTab === 'portfolio' 
                             ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
                             : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-base">grid_on</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">grid_on</span>
                         <span>PROJECTS</span>
-                        <span className="px-1.5 py-0.5 rounded-full bg-[#d9ee3c]/20 text-[#d9ee3c] text-[10px]">
+                        <span className="px-1.5 py-0.5 rounded-full bg-[#d9ee3c]/20 text-[#d9ee3c] text-[9px] sm:text-[10px]">
                           {portfolioItems.length}
                         </span>
                       </button>
 
                       <button 
                         onClick={() => setActiveTab('spins')}
-                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                        className={`shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
                           activeTab === 'spins' 
                             ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
                             : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-base">movie</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">movie</span>
                         <span>3D SPINS</span>
                       </button>
 
                       <button 
                         onClick={() => setActiveTab('shop')}
-                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                        className={`shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
                           activeTab === 'shop' 
                             ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
                             : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-base">storefront</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">storefront</span>
                         <span>SHOP</span>
                         {products.length > 0 && (
-                          <span className="px-1.5 py-0.5 rounded-full bg-[#ffb955]/20 text-[#ffb955] text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded-full bg-[#ffb955]/20 text-[#ffb955] text-[9px] sm:text-[10px]">
                             {products.length}
                           </span>
                         )}
@@ -465,49 +601,52 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
                       <button 
                         onClick={() => setActiveTab('saved')}
-                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                        className={`shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
                           activeTab === 'saved' 
                             ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
                             : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-base">bookmark</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">bookmark</span>
                         <span>SAVED</span>
                       </button>
 
                       <button 
                         onClick={() => setActiveTab('collabs')}
-                        className={`py-2.5 text-xs font-bold flex items-center gap-2 tracking-wider uppercase transition-colors ${
+                        className={`shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
                           activeTab === 'collabs' 
                             ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
                             : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
                         }`}
                       >
-                        <span className="material-symbols-outlined text-base">assignment_ind</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">assignment_ind</span>
                         <span>COLLABS</span>
                       </button>
                     </nav>
 
-                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                       <button 
                         onClick={() => setViewMode('grid')}
-                        className={`p-1.5 rounded-lg border transition-colors ${viewMode === 'grid' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
-                        title="3x3 Grid View"
+                        className={`p-1 sm:p-1.5 rounded-lg border transition-colors ${viewMode === 'grid' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
+                        title="Grid View"
                       >
-                        <span className="material-symbols-outlined text-base">grid_view</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">grid_view</span>
                       </button>
                       <button 
                         onClick={() => setViewMode('agenda')}
-                        className={`p-1.5 rounded-lg border transition-colors ${viewMode === 'agenda' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
+                        className={`p-1 sm:p-1.5 rounded-lg border transition-colors ${viewMode === 'agenda' ? 'bg-[#1E222D] text-white border-[#282D3C] shadow-sm' : 'text-zinc-500 hover:text-zinc-300 border-transparent'}`}
                         title="Feed View"
                       >
-                        <span className="material-symbols-outlined text-base">view_agenda</span>
+                        <span className="material-symbols-outlined text-sm sm:text-base">view_agenda</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Quick Category Filter Pills */}
-                  <div className="pt-2.5 px-1 flex items-center gap-2 overflow-x-auto scrollbar-none">
+                  <div 
+                    className="pt-2 sm:pt-2.5 pb-0.5 px-1 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap"
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
                     {(() => {
                       const itemCategories = Array.from(new Set(portfolioItems.map((item: any) => (item.category || '').trim().toUpperCase()).filter(Boolean)));
                       const allCategories = ['ALL', ...(itemCategories.length > 0 ? itemCategories : ['AUTOMOTIVE', 'ROBOTICS', 'HOROLOGY', 'AEROSPACE', 'JEWELRY'])];
@@ -517,7 +656,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           <button
                             key={cat}
                             onClick={() => setSelectedCategory(cat)}
-                            className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all ${
+                            className={`shrink-0 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold tracking-wider uppercase transition-all whitespace-nowrap ${
                               isSelected
                                 ? 'bg-[#d9ee3c] text-[#1a1e00] shadow-[0_0_12px_rgba(217,238,60,0.3)] hover:scale-105'
                                 : 'bg-[#1E222D] border border-[#282D3C] text-zinc-400 hover:text-white hover:border-[#d9ee3c]/40'
@@ -554,7 +693,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </div>
 
                     {/* Products Table */}
-                    <div className="bg-[#0D0E12] rounded-xl border border-[#282D3C] overflow-x-auto">
+                    <div className="bg-[#0D0E12] rounded-xl border border-[#282D3C] overflow-x-auto no-scrollbar">
                       <table className="w-full text-sm text-left text-gray-400">
                         <thead className="text-xs text-gray-500 uppercase bg-[#14161E] border-b border-[#282D3C]">
                           <tr>
@@ -654,8 +793,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </div>
                   </div>
                 ) : (
-                  /* 3-Column Square Instagram Media Grid */
-                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4" : "grid grid-cols-1 gap-4"}>
+                  /* Responsive Media Grid or Feed View */
+                  <div className={viewMode === 'grid' ? "grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-4" : "grid grid-cols-1 gap-4"}>
                     {(() => {
                       const displayedItems = selectedCategory === 'ALL'
                         ? portfolioItems
@@ -663,8 +802,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
                       if (displayedItems.length === 0) {
                         return (
-                          <div className="col-span-full py-24 text-center bg-[#14161E]/80 border border-[#282D3C] rounded-2xl p-8">
-                            <span className="material-symbols-outlined text-zinc-500 text-5xl block mb-3">image_not_supported</span>
+                          <div className="col-span-full py-16 sm:py-24 text-center bg-[#14161E]/80 border border-[#282D3C] rounded-2xl p-6 sm:p-8">
+                            <span className="material-symbols-outlined text-zinc-500 text-4xl sm:text-5xl block mb-3">image_not_supported</span>
                             <p className="text-xs font-extrabold text-zinc-300 uppercase tracking-widest">No portfolio items found</p>
                             <p className="text-[11px] text-zinc-500 mt-1">
                               {selectedCategory !== 'ALL' 
@@ -696,6 +835,72 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         const comments = `${24 + (i * 11)}`;
                         const has3D = Boolean(getCadFileUrl(item) || item.has3d || item.has3D);
 
+                        if (viewMode === 'agenda') {
+                          return (
+                            <div 
+                              key={item.id || `pi-${i}`}
+                              onClick={() => {
+                                setSelectedPortfolioItem(item);
+                                setSelectedImageIdx(0);
+                              }}
+                              className="group rounded-2xl overflow-hidden border border-[#282D3C] bg-[#14161E] hover:border-[#d9ee3c]/60 transition-all cursor-pointer shadow-lg flex flex-col"
+                            >
+                              <div className="p-3 sm:p-4 flex items-center justify-between border-b border-[#1B1E28]">
+                                <div className="flex items-center gap-2">
+                                  <span className="px-2 py-0.5 rounded bg-[#1E222D] border border-[#282D3C] text-[#d9ee3c] text-[10px] font-bold uppercase">
+                                    {software}
+                                  </span>
+                                  <span className="text-[10px] text-zinc-400 font-bold uppercase">{categoryTag}</span>
+                                </div>
+                                {isFeatured && (
+                                  <span className="px-2 py-0.5 rounded bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-[9px] tracking-wider uppercase">
+                                    FEATURED
+                                  </span>
+                                )}
+                              </div>
+                              <div className="relative aspect-[4/3] sm:aspect-[16/10] bg-[#0A0B0E] overflow-hidden">
+                                <img alt={item.title || 'CAD Showcase'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={mainImage} />
+                                {has3D && (
+                                  <div 
+                                    className="absolute bottom-3 right-3 z-20"
+                                    onClick={(e) => {
+                                      const cadUrl = getCadFileUrl(item);
+                                      if (cadUrl) {
+                                        e.stopPropagation();
+                                        setSelectedProductForView({
+                                          id: item.id,
+                                          name: item.title || '3D Model',
+                                          cadFiles: [{ name: item.title || '3D Model', size: 0, url: cadUrl }]
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <span className="p-2 rounded-xl bg-[#0D0E12]/90 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-lg flex items-center gap-1.5 hover:bg-[#d9ee3c] hover:text-black transition-all">
+                                      <span className="material-symbols-outlined text-sm font-bold">view_in_ar</span>
+                                      <span className="text-[10px] font-bold uppercase">View 3D</span>
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-3 sm:p-4 flex items-center justify-between">
+                                <h4 className="font-bold text-sm sm:text-base text-white truncate mr-2">
+                                  {item.title || 'Parametric Prototype'}
+                                </h4>
+                                <div className="flex items-center gap-3 text-xs font-bold text-zinc-400 shrink-0">
+                                  <span className="flex items-center gap-1 text-[#ffb955]">
+                                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+                                    {likes}
+                                  </span>
+                                  <span className="flex items-center gap-1 text-[#4ffeb9]">
+                                    <span className="material-symbols-outlined text-sm">chat_bubble</span>
+                                    {comments}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div 
                             key={item.id || `pi-${i}`}
@@ -712,22 +917,22 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                             />
                             
                             {/* Instagram Post Type Indicator Badges (Top-Right) */}
-                            <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+                            <div className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 flex items-center gap-1 sm:gap-1.5 z-10">
                               {isFeatured && (
-                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-sm flex items-center justify-center" title="Pinned Showcase">
-                                  <span className="material-symbols-outlined text-sm">push_pin</span>
+                                <span className="p-0.5 sm:p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-sm flex items-center justify-center" title="Pinned Showcase">
+                                  <span className="material-symbols-outlined text-xs sm:text-sm">push_pin</span>
                                 </span>
                               )}
                               {itemImages.length > 1 && (
-                                <span className="p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="Multi-Part Assembly">
-                                  <span className="material-symbols-outlined text-sm">collections</span>
+                                <span className="p-0.5 sm:p-1 rounded bg-[#0D0E12]/85 backdrop-blur-md text-white border border-[#282D3C] shadow-sm flex items-center justify-center" title="Multi-Part Assembly">
+                                  <span className="material-symbols-outlined text-xs sm:text-sm">collections</span>
                                 </span>
                               )}
                             </div>
 
                             {isFeatured && (
-                              <div className="absolute top-2.5 left-2.5 z-10">
-                                <span className="px-2 py-0.5 rounded bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-[10px] tracking-wider shadow-sm uppercase">
+                              <div className="absolute top-2 left-2 sm:top-2.5 sm:left-2.5 z-10">
+                                <span className="px-1.5 sm:px-2 py-0.5 rounded bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-[8px] sm:text-[10px] tracking-wider shadow-sm uppercase">
                                   FEATURED
                                 </span>
                               </div>
@@ -736,7 +941,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                             {/* 3D View Icon: Show ONLY if 3D file is uploaded, at bottom right corner */}
                             {has3D && (
                               <div 
-                                className="absolute bottom-2.5 right-2.5 z-20"
+                                className="absolute bottom-2 right-2 sm:bottom-2.5 sm:right-2.5 z-20"
                                 onClick={(e) => {
                                   const cadUrl = getCadFileUrl(item);
                                   if (cadUrl) {
@@ -750,37 +955,37 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                                 }}
                               >
                                 <span 
-                                  className="p-1.5 rounded-lg bg-[#0D0E12]/90 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-lg flex items-center justify-center hover:bg-[#d9ee3c] hover:text-black hover:scale-110 transition-all cursor-pointer" 
+                                  className="p-1 sm:p-1.5 rounded-lg bg-[#0D0E12]/90 backdrop-blur-md text-[#d9ee3c] border border-[#282D3C] shadow-lg flex items-center justify-center hover:bg-[#d9ee3c] hover:text-black hover:scale-110 transition-all cursor-pointer" 
                                   title="View in 3D Viewport"
                                 >
-                                  <span className="material-symbols-outlined text-sm font-bold">view_in_ar</span>
+                                  <span className="material-symbols-outlined text-xs sm:text-sm font-bold">view_in_ar</span>
                                 </span>
                               </div>
                             )}
 
                             {/* Instagram Hover Overlay with Metrics and Title */}
-                            <div className="absolute inset-0 bg-[#08090C]/85 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-4 text-center">
+                            <div className="absolute inset-0 bg-[#08090C]/85 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-2.5 sm:p-4 text-center">
                               <div className="flex justify-end">
-                                <span className="px-2 py-0.5 rounded bg-[#1E222D] border border-[#282D3C] text-[#d9ee3c] text-[10px] font-semibold">
+                                <span className="px-1.5 sm:px-2 py-0.5 rounded bg-[#1E222D] border border-[#282D3C] text-[#d9ee3c] text-[9px] sm:text-[10px] font-semibold truncate max-w-full">
                                   {software}
                                 </span>
                               </div>
-                              <div className="flex flex-col items-center gap-2">
-                                <h4 className="font-bold text-sm sm:text-base text-white line-clamp-2 px-1">
+                              <div className="flex flex-col items-center gap-1 sm:gap-2">
+                                <h4 className="font-bold text-xs sm:text-sm text-white line-clamp-2 px-1">
                                   {item.title || 'Parametric Prototype'}
                                 </h4>
-                                <div className="flex items-center justify-center gap-4 text-white text-xs font-bold">
+                                <div className="flex items-center justify-center gap-3 sm:gap-4 text-white text-[11px] sm:text-xs font-bold">
                                   <span className="flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-base text-[#ffb955]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> 
+                                    <span className="material-symbols-outlined text-sm sm:text-base text-[#ffb955]" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span> 
                                     {likes}
                                   </span>
                                   <span className="flex items-center gap-1">
-                                    <span className="material-symbols-outlined text-base text-[#4ffeb9]">chat_bubble</span> 
+                                    <span className="material-symbols-outlined text-sm sm:text-base text-[#4ffeb9]">chat_bubble</span> 
                                     {comments}
                                   </span>
                                 </div>
                               </div>
-                              <div className="text-[10px] text-zinc-400 uppercase tracking-wider font-semibold">
+                              <div className="text-[9px] sm:text-[10px] text-zinc-400 uppercase tracking-wider font-semibold truncate">
                                 {categoryTag}
                               </div>
                             </div>
@@ -792,8 +997,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 )}
 
                 {/* Instagram-Style Pagination / Grid Status Strip */}
-                <div className="flex items-center justify-between bg-[#14161E] border border-[#282D3C] rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-zinc-400 text-xs font-medium">
+                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 bg-[#14161E] border border-[#282D3C] rounded-xl p-3 sm:p-4">
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-zinc-400 text-[11px] sm:text-xs font-medium">
                     <span>Showing</span>
                     <span className="font-bold text-white">
                       {selectedCategory === 'ALL' 
@@ -803,18 +1008,18 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     <span>of</span>
                     <span className="font-bold text-white">{portfolioItems.length} Posts</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <button 
-                      className="px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-xs font-bold uppercase tracking-wider" 
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-[11px] sm:text-xs font-bold uppercase tracking-wider" 
                       disabled
                     >
                       Previous
                     </button>
-                    <button className="w-8 h-8 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(217,238,60,0.4)]">
+                    <button className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold flex items-center justify-center shadow-[0_0_8px_rgba(217,238,60,0.4)]">
                       1
                     </button>
                     <button 
-                      className="px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-xs font-bold uppercase tracking-wider" 
+                      className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-[#282D3C] bg-[#1E222D] text-zinc-500 cursor-not-allowed text-[11px] sm:text-xs font-bold uppercase tracking-wider" 
                       disabled
                     >
                       Next
@@ -826,7 +1031,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
               {/* Right 4 Columns: Sticky Designer Identity & Studio Dossier */}
               <aside className="xl:col-span-4 flex flex-col gap-6 xl:sticky xl:top-24">
                 {/* Primary Profile Dossier Card */}
-                <div className="relative rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-6 sm:p-7 flex flex-col items-center text-center shadow-2xl overflow-hidden">
+                <div className="hidden xl:flex relative rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-6 sm:p-7 flex-col items-center text-center shadow-2xl overflow-hidden">
                   {/* Atmospheric Radiant Glow Behind Avatar */}
                   <div className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-b from-[#ffb955]/25 via-[#d9ee3c]/20 to-transparent rounded-full blur-2xl"></div>
 
@@ -1157,33 +1362,33 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 {/* Close Lightbox Micro-CTA */}
                 <button 
                   onClick={() => setSelectedPortfolioItem(null)}
-                  className="absolute top-4 right-4 sm:top-6 sm:right-8 z-50 w-10 h-10 rounded-full bg-[#1E222D]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-colors shadow-lg"
+                  className="absolute top-2.5 right-2.5 sm:top-6 sm:right-8 z-50 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#1E222D]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-colors shadow-lg"
                   title="Close Dossier (Esc)"
                 >
-                  <span className="material-symbols-outlined text-xl">close</span>
+                  <span className="material-symbols-outlined text-base sm:text-xl">close</span>
                 </button>
 
                 {/* Main Lightbox Shell */}
                 <div 
                   onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-[1240px] h-[88vh] max-h-[820px] bg-[#14161E] rounded-2xl border border-[#282D3C] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row"
+                  className="relative w-full max-w-[1240px] h-[94vh] sm:h-[88vh] max-h-[840px] bg-[#14161E] rounded-xl sm:rounded-2xl border border-[#282D3C] overflow-hidden shadow-[0_24px_64px_rgba(0,0,0,0.85)] flex flex-col lg:flex-row"
                 >
-                  {/* LEFT COLUMN: Clean Luxury Image / Showcase Canvas (~62%) */}
-                  <div className="relative flex-1 lg:w-[62%] h-1/2 lg:h-full bg-[#0A0B0E] flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none">
+                  {/* LEFT COLUMN: Clean Luxury Image / Showcase Canvas (~60%) */}
+                  <div className="relative w-full lg:w-[60%] h-[40%] sm:h-[46%] lg:h-full shrink-0 bg-[#0A0B0E] flex flex-col overflow-hidden border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none">
                     {/* Viewport Top Header Bar */}
-                    <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-[#08090C]/90 via-[#0A0B0E]/60 to-transparent">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#1E222D]/90 border border-[#282D3C]">
-                          <span className="w-2 h-2 rounded-full bg-[#d9ee3c] shadow-[0_0_8px_rgba(217,238,60,0.6)]"></span>
-                          <span className="text-[10px] sm:text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
+                    <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 bg-gradient-to-b from-[#08090C]/90 via-[#0A0B0E]/60 to-transparent">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-[#1E222D]/90 border border-[#282D3C]">
+                          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#d9ee3c] shadow-[0_0_8px_rgba(217,238,60,0.6)]"></span>
+                          <span className="text-[9px] sm:text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
                         </div>
-                        <div className="flex items-center gap-1 px-2.5 py-1 rounded bg-[#1E222D]/80 border border-[#282D3C]">
-                          <span className="text-[10px] sm:text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
+                        <div className="flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded bg-[#1E222D]/80 border border-[#282D3C]">
+                          <span className="text-[9px] sm:text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
                         </div>
                       </div>
 
                       {/* Action Controls on Top Right */}
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         {has3D && (
                           <button 
                             onClick={() => {
@@ -1193,11 +1398,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                                 cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
                               });
                             }}
-                            className="px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:bg-[#cbe02d] text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
+                            className="px-2.5 sm:px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:bg-[#cbe02d] text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
                             title="Interactive 3D WebGL Viewport"
                           >
-                            <span className="material-symbols-outlined text-base">view_in_ar</span>
-                            <span className="text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
+                            <span className="material-symbols-outlined text-sm sm:text-base">view_in_ar</span>
+                            <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
                           </button>
                         )}
                         <button 
@@ -1208,16 +1413,16 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                               document.exitFullscreen?.();
                             }
                           }}
-                          className="p-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white transition-colors" 
+                          className="p-1 sm:p-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white transition-colors" 
                           title="Expand Fullscreen"
                         >
-                          <span className="material-symbols-outlined text-base">fullscreen</span>
+                          <span className="material-symbols-outlined text-sm sm:text-base">fullscreen</span>
                         </button>
                       </div>
                     </div>
 
                     {/* Central High-Impact Image Area */}
-                    <div className="relative w-full flex-1 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
+                    <div className="relative w-full flex-1 flex items-center justify-center p-3 sm:p-6 overflow-hidden">
                       {/* Atmospheric Ambient Glow behind image */}
                       <div className="absolute w-96 h-96 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none"></div>
                       <div className="absolute w-80 h-80 rounded-full bg-[#d9ee3c]/5 blur-3xl -bottom-10 -right-10 pointer-events-none"></div>
@@ -1229,6 +1434,15 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         className="max-w-full max-h-full object-contain drop-shadow-[0_16px_32px_rgba(0,0,0,0.8)] rounded-lg transition-transform duration-300 select-none z-10"
                       />
 
+                      {/* Blueprint Grid Overlay */}
+                      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#282D3C_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+
+                      {/* Feature Floating Indicator */}
+                      <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 hidden sm:flex items-center gap-2 p-2 rounded-lg bg-[#14161E]/85 backdrop-blur-md border border-[#282D3C] pointer-events-none shadow-lg z-20">
+                        <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.9)]"></span>
+                        <span className="text-[11px] text-white tracking-wider uppercase font-semibold">Parametric Collet &amp; Micro-Prong Seatings</span>
+                      </div>
+
                       {/* Previous / Next Image Navigation Chevrons if multi-image */}
                       {activeImages.length > 1 && (
                         <>
@@ -1237,20 +1451,20 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                               e.stopPropagation();
                               setSelectedImageIdx((prev) => (prev > 0 ? prev - 1 : activeImages.length - 1));
                             }}
-                            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
+                            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
                             title="Previous Image"
                           >
-                            <span className="material-symbols-outlined text-lg">chevron_left</span>
+                            <span className="material-symbols-outlined text-base sm:text-lg">chevron_left</span>
                           </button>
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedImageIdx((prev) => (prev < activeImages.length - 1 ? prev + 1 : 0));
                             }}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
+                            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-[#14161E]/80 border border-[#282D3C] flex items-center justify-center text-white hover:bg-[#1E222D] hover:border-[#d9ee3c] transition-all shadow-xl z-20"
                             title="Next Image"
                           >
-                            <span className="material-symbols-outlined text-lg">chevron_right</span>
+                            <span className="material-symbols-outlined text-base sm:text-lg">chevron_right</span>
                           </button>
                         </>
                       )}
@@ -1258,15 +1472,18 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
                     {/* Bottom Carousel: Only shown if there are multiple uploaded images */}
                     {activeImages.length > 1 && (
-                      <div className="h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-4 flex items-center justify-between gap-2 z-20">
-                        <div className="flex items-center gap-2 overflow-x-auto py-1">
+                      <div className="h-12 sm:h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-2 sm:px-4 flex items-center justify-between gap-2 z-20">
+                        <div 
+                          className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar py-1"
+                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                        >
                           {activeImages.map((imgUrl, idx) => {
                             const isActive = idx === selectedImageIdx;
                             return (
                               <button
                                 key={idx}
                                 onClick={() => setSelectedImageIdx(idx)}
-                                className={`relative w-16 h-10 rounded overflow-hidden shrink-0 transition-all ${
+                                className={`relative w-12 sm:w-16 h-8 sm:h-10 rounded overflow-hidden shrink-0 transition-all ${
                                   isActive 
                                     ? 'border-2 border-[#d9ee3c] shadow-[0_0_10px_rgba(217,238,60,0.3)]' 
                                     : 'border border-[#282D3C] hover:border-zinc-400 opacity-70 hover:opacity-100'
@@ -1274,7 +1491,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                                 title={`Image ${idx + 1}`}
                               >
                                 <img className="w-full h-full object-cover" alt={`Image ${idx + 1}`} src={imgUrl} />
-                                <span className="absolute inset-x-0 bottom-0 bg-[#08090C]/80 text-[8px] text-zinc-200 text-center truncate font-bold uppercase px-0.5">
+                                <span className="absolute inset-x-0 bottom-0 bg-[#08090C]/80 text-[7px] sm:text-[8px] text-zinc-200 text-center truncate font-bold uppercase px-0.5">
                                   0{idx + 1}
                                 </span>
                               </button>
@@ -1289,10 +1506,10 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     )}
                   </div>
 
-                  {/* RIGHT COLUMN: Creator Metadata, Specs Accordion & Engagement Feed (~38%) */}
-                  <div className="flex-1 lg:w-[38%] h-1/2 lg:h-full bg-[#14161E] flex flex-col justify-between overflow-hidden">
+                  {/* RIGHT COLUMN: Creator Metadata, Specs Accordion & Engagement Feed (~40%) */}
+                  <div className="w-full lg:w-[40%] flex-1 lg:h-full bg-[#14161E] flex flex-col justify-between overflow-hidden min-h-0">
                     {/* Header: Creator Profile & Follow Action */}
-                    <div className="p-4 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/60 backdrop-blur-sm shrink-0">
+                    <div className="p-3 sm:p-4 border-b border-[#282D3C] flex items-center justify-between gap-2.5 sm:gap-3 bg-[#14161E]/60 backdrop-blur-sm shrink-0">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative shrink-0">
                           <div className="w-11 h-11 rounded-full p-[2px] bg-gradient-to-tr from-[#d9ee3c] via-[#ffb955] to-[#4ffeb9] shadow-[0_0_12px_rgba(217,238,60,0.35)]">
@@ -1491,26 +1708,26 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </div>
 
                     {/* Sticky Footer: Social Engagement + Primary Commission / Inquiry CTA */}
-                    <div className="p-4 border-t border-[#282D3C] bg-[#14161E]/95 backdrop-blur-md flex flex-col gap-3 shrink-0">
+                    <div className="p-3 sm:p-4 border-t border-[#282D3C] bg-[#14161E]/95 backdrop-blur-md flex flex-col gap-2.5 sm:gap-3 shrink-0">
                       {/* Social Interaction Bar */}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3 sm:gap-4">
                           {/* Like Button */}
                           <button 
                             onClick={toggleLike}
                             className={`flex items-center gap-1.5 hover:scale-105 transition-transform ${likeData.liked ? 'text-[#d9ee3c]' : 'text-zinc-400 hover:text-white'}`}
                             title={`Liked by ${likeData.count.toLocaleString()} designers`}
                           >
-                            <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: likeData.liked ? "'FILL' 1" : "'FILL' 0" }}>
+                            <span className="material-symbols-outlined text-lg sm:text-xl" style={{ fontVariationSettings: likeData.liked ? "'FILL' 1" : "'FILL' 0" }}>
                               favorite
                             </span>
-                            <span className="text-sm font-bold text-white">{likeData.count.toLocaleString()}</span>
+                            <span className="text-xs sm:text-sm font-bold text-white">{likeData.count.toLocaleString()}</span>
                           </button>
 
                           {/* Comment Button */}
                           <button className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors" title="Join atelier discussion">
-                            <span className="material-symbols-outlined text-xl">chat_bubble</span>
-                            <span className="text-sm font-medium text-white">{commentsList.length}</span>
+                            <span className="material-symbols-outlined text-lg sm:text-xl">chat_bubble</span>
+                            <span className="text-xs sm:text-sm font-medium text-white">{commentsList.length}</span>
                           </button>
 
                           {/* Share Dossier */}
@@ -1519,7 +1736,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                             className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors relative" 
                             title="Share technical dossier"
                           >
-                            <span className="material-symbols-outlined text-xl">share</span>
+                            <span className="material-symbols-outlined text-lg sm:text-xl">share</span>
                             {copiedModalLink && (
                               <span className="absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-[#d9ee3c] text-black text-[10px] font-bold whitespace-nowrap shadow-md">
                                 Link Copied!
@@ -1534,7 +1751,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           className={`hover:text-[#d9ee3c] transition-colors ${isSaved ? 'text-[#d9ee3c]' : 'text-zinc-400'}`}
                           title="Save to Haute Jewellery Collection"
                         >
-                          <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}>
+                          <span className="material-symbols-outlined text-lg sm:text-xl" style={{ fontVariationSettings: isSaved ? "'FILL' 1" : "'FILL' 0" }}>
                             {isSaved ? 'bookmark' : 'bookmark_border'}
                           </span>
                         </button>
@@ -1543,7 +1760,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                       {/* Quick Comment Input Field */}
                       <div className="relative w-full">
                         <input 
-                          type="text"
+                          type="text" 
                           value={newCommentText}
                           onChange={(e) => setNewCommentText(e.target.value)}
                           onKeyDown={(e) => {
@@ -1553,7 +1770,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                             }
                           }}
                           className="w-full bg-[#0D0E12] border border-[#282D3C] rounded-lg pl-3 pr-14 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#d9ee3c] transition-all" 
-                          placeholder={`Add technical review or inquiry for ${creatorFirst}...`}
+                          placeholder={`Add inquiry for ${creatorFirst}...`}
                         />
                         <button 
                           onClick={handlePostComment}
@@ -1564,13 +1781,13 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                       </div>
 
                       {/* Action Button: Commission Bespoke Piece */}
-                      <div className="flex items-center pt-1">
+                      <div className="flex items-center pt-0.5 sm:pt-1">
                         <Link 
                           href={`/inbox?hire=${selectedPortfolioItem.id || 'bespoke'}`}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs sm:text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.45)] uppercase tracking-wider"
+                          className="w-full flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 px-3 sm:px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs sm:text-sm font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.45)] uppercase tracking-wider"
                         >
-                          <span className="material-symbols-outlined text-lg">mail</span>
-                          <span>Commission Bespoke Piece / Hire {creatorFirst}</span>
+                          <span className="material-symbols-outlined text-base sm:text-lg">mail</span>
+                          <span className="truncate">Hire {creatorFirst} / Commission Piece</span>
                         </Link>
                       </div>
                     </div>
@@ -2016,8 +2233,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
         {/* Viewport Modal */}
         {selectedProductForView && (
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[#121212] rounded-xl border border-[#262626] w-full max-w-2xl relative h-[600px] overflow-hidden">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4">
+            <div className="bg-[#121212] rounded-xl border border-[#262626] w-full max-w-2xl relative h-[80vh] sm:h-[600px] max-h-[640px] overflow-hidden">
               <div className="absolute inset-0">
                 {selectedProductForView.cadFiles && selectedProductForView.cadFiles.length > 0 ? (
                   <ErrorBoundary>
@@ -2046,20 +2263,20 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 )}
               </div>
               
-              <div className="absolute top-4 left-4 right-4 flex justify-between items-center z-10 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/5">
+              <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-4 sm:right-4 flex justify-between items-center z-10 bg-black/60 backdrop-blur-md p-3 sm:p-4 rounded-xl border border-white/5">
                 <div>
-                  <h3 className="text-xl font-bold">{selectedProductForView.name}</h3>
-                  <p className="text-xs text-gray-400">3D Viewport Preview</p>
+                  <h3 className="text-base sm:text-xl font-bold text-white truncate max-w-[200px] sm:max-w-none">{selectedProductForView.name}</h3>
+                  <p className="text-[10px] sm:text-xs text-gray-400">3D Viewport Preview</p>
                 </div>
                 <button onClick={() => setSelectedProductForView(null)} className="text-gray-400 hover:text-white">
-                  <span className="material-symbols-outlined">close</span>
+                  <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
                 </button>
               </div>
               
-              <div className="absolute bottom-4 right-4 z-10">
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10">
                 <button 
                   onClick={() => setSelectedProductForView(null)}
-                  className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black py-2 px-6 rounded-lg text-sm font-bold transition-colors"
+                  className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black py-1.5 sm:py-2 px-4 sm:px-6 rounded-lg text-xs sm:text-sm font-bold transition-colors"
                 >
                   Close Preview
                 </button>

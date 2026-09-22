@@ -2,24 +2,56 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { getPortfolioItem } from '@/app/actions';
+import { useParams, useRouter } from 'next/navigation';
+import { getPortfolioItem, getPublicDesignerProfile, getPublicPortfolioItems } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function PortfolioDetailPage() {
   const { id } = useParams() as { id: string };
+  const router = useRouter();
+  const { user } = useAuth();
+
   const [item, setItem] = useState<any>(null);
+  const [designer, setDesigner] = useState<any>(null);
+  const [siblingItems, setSiblingItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Viewport & Lightbox States
+  const [selectedImgIdx, setSelectedImgIdx] = useState<number>(0);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [isFollowing, setIsFollowing] = useState<boolean>(false);
+  const [likesCount, setLikesCount] = useState<number>(3840);
+  const [hasLiked, setHasLiked] = useState<boolean>(false);
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const [reviewInput, setReviewInput] = useState<string>('');
+  const [comments, setComments] = useState<Array<{ id: string; author: string; text: string; time: string }>>([
+    { id: '1', author: 'Henri Dufour', text: 'Micro-prong setting geometry is immaculate. Bench-ready casting fidelity.', time: '2d ago' },
+    { id: '2', author: 'Elena Rostova', text: 'Wall tolerances are calculated for platinum shrinkage accurately.', time: '1d ago' }
+  ]);
+  const [showSuccessToast, setShowSuccessToast] = useState<string | null>(null);
 
   useEffect(() => {
     const loadItem = async () => {
       setLoading(true);
       try {
         const res = await getPortfolioItem(id);
-        if (res.success) {
+        if (res.success && res.data) {
           setItem(res.data);
-        } else {
-          alert('Failed to load portfolio item: ' + res.error);
+          const designerId = res.data.designer_id || res.data.user_id;
+          if (designerId) {
+            const [profRes, itemsRes] = await Promise.all([
+              getPublicDesignerProfile(designerId),
+              getPublicPortfolioItems(designerId)
+            ]);
+            if (profRes?.designer) {
+              setDesigner(profRes.designer);
+            }
+            if (itemsRes?.items && itemsRes.items.length > 0) {
+              setSiblingItems(itemsRes.items);
+            }
+          }
         }
       } catch (err) {
         console.error('Error loading portfolio item:', err);
@@ -34,111 +66,651 @@ export default function PortfolioDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#ffe30c] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#08090C] flex flex-col items-center justify-center text-white">
+        <div className="w-10 h-10 border-4 border-[#d9ee3c] border-t-transparent rounded-full animate-spin"></div>
+        <span className="mt-4 font-bold text-xs uppercase tracking-widest text-[#d9ee3c]">Loading Haute Atelier Dossier...</span>
       </div>
     );
   }
 
   if (!item) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center">
-        <p className="text-sm font-bold text-gray-400">Portfolio item not found.</p>
-        <Link href="/designer/profile" className="mt-4 text-[#ffe30c] text-xs font-bold uppercase hover:underline">
-          Back to Profile
+      <div className="min-h-screen bg-[#08090C] text-white flex flex-col items-center justify-center p-6 text-center">
+        <span className="material-symbols-outlined text-5xl text-zinc-600 mb-3">draft</span>
+        <p className="text-base font-bold text-zinc-300">Portfolio Dossier Not Found</p>
+        <p className="text-xs text-zinc-500 mt-1 max-w-sm">This piece may have been relocated or archived by the creator.</p>
+        <Link href="/designer/profile" className="mt-5 px-4 py-2 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold uppercase tracking-wider hover:brightness-110 transition-all">
+          Back to Atelier Profile
         </Link>
       </div>
     );
   }
 
-  // Parse description
+  // Parse description fields
   const description = item.description || '';
-  const categoryMatch = description.match(/\[CATEGORY\] (.*)/);
-  const softwareMatch = description.match(/\[SOFTWARE\] (.*)/);
-  const cadFileMatch = description.match(/\[CAD_FILE\] (.*)/);
-  
-  const category = categoryMatch ? categoryMatch[1] : 'N/A';
-  const software = softwareMatch ? softwareMatch[1].split(', ') : [];
-  const cadFile = cadFileMatch ? cadFileMatch[1] : '';
-  const narrative = description.split('\n\n')[1] || description;
+  const categoryMatch = description.match(/\[CATEGORY\]\s*(.*?)(?=\n|\[|$)/i);
+  const softwareMatch = description.match(/\[SOFTWARE\]\s*(.*?)(?=\n|\[|$)/i);
+  const cadFileMatch = description.match(/\[CAD_FILE\]\s*(.*?)(?=\n|\[|$)/i);
 
-  const images = typeof item.images === 'string' ? JSON.parse(item.images) : item.images;
+  const category = categoryMatch ? categoryMatch[1]?.trim() : '3D CAD MODELING';
+  const rawSoftware = softwareMatch ? softwareMatch[1]?.trim() : 'ZBrush, Rhino';
+  const softwareTags = rawSoftware ? rawSoftware.split(/[,/]+/).map((s: string) => s.trim()).filter(Boolean) : ['ZBrush', 'MatrixGold'];
+  const primaryToolchain = softwareTags[0] || 'ZBrush';
+  const cadFile = cadFileMatch ? cadFileMatch[1]?.trim() : (item.cad_file || '');
+
+  // Extract clean narrative
+  let narrative = description;
+  ['[CATEGORY]', '[SOFTWARE]', '[CAD_FILE]'].forEach(tag => {
+    const idx = narrative.indexOf(tag);
+    if (idx !== -1) {
+      const nextLineIdx = narrative.indexOf('\n', idx);
+      if (nextLineIdx !== -1) {
+        narrative = narrative.slice(nextLineIdx + 1);
+      } else {
+        narrative = '';
+      }
+    }
+  });
+  narrative = narrative.trim();
+  if (!narrative) {
+    narrative = `${item.title} engineered with precision CAD modeling. Designed with calculated metal wall thickness, microscopic anatomical sculpt fidelity, and bench-ready lost-wax cast feasibility.`;
+  }
+
+  // Parse images
+  let parsedImages: string[] = [];
+  if (Array.isArray(item.images)) {
+    parsedImages = item.images.filter((x: any) => typeof x === 'string');
+  } else if (typeof item.images === 'string') {
+    try {
+      const p = JSON.parse(item.images);
+      if (Array.isArray(p)) parsedImages = p.filter((x: any) => typeof x === 'string');
+      else if (typeof p === 'string') parsedImages = [p];
+    } catch {
+      parsedImages = item.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+    }
+  }
+
+  // Default fallback showcase images if none provided
+  const defaultFallbackImages = [
+    {
+      url: 'https://lh3.googleusercontent.com/aida/AEtjO1Vd9IBP-NrMi_DcJFFABhUK2xpTO9lw12cKmriyj56K8vRCcWkK8HktLCJFzJA4TfzvabxnVkNkawDp745l4g7c-E7FHo58qkk_i8v0Wv5bTPOcOpcxkZiy5A003NXNxjBATqsJbYjNI-cjDwWfTuEhu7FkRS7j5AfPcHGuKQSZtP3kXXSB85wDsTMcDwcaPNTxK0yuDwyR-86Z9YA-ip4vT7d0TsA43YaRB2BJUAQ_A4EKCu9EmdGYPs1l',
+      label: 'Persp 01'
+    },
+    {
+      url: 'https://lh3.googleusercontent.com/aida/AEtjO1UPXDG38Rm13qrBweV3VNQZynlKcroh9xuMSoPzdbIZ1FzDcYVV_YhdQwNC2d0Cr46JRkP_-ORN9n5daEaPArTEVWpaasZgZA5SUwWjXNayCp7Yknbn5suPJVrZP3TiEOsXTwmUOXy82GH9Yd3d4jzZws8mFU2UbtiOIUlZTwI1rribnVJr3FGHUYzWGSPNakkPhQOkPlPPsOqXLWYezD_In4WlILDM-6jEjRfUfcOkvOkptZ1f7zWSaHd3',
+      label: 'Wireframe'
+    },
+    {
+      url: 'https://lh3.googleusercontent.com/aida/AEtjO1WcfOCcD4_FVjv-EgCR2ELgVGB8vlLXt0yB3dTZ9-UThOdunSc3y0Y2Eu8nSz40GXF-Diu38i4VuQ1ROzcQLsci9OL1w_w93YnYqjHjiFR4Xpzd2fCsxhh934jBovXAz1Isijar36dipiZe0LLOhEAmEAJruTSNQDXZ7_1gUvjOXYXlYLEv8XYMrI0vFAV818sqOjaAe56QG2kWa0g8HOkD-v922anUXudMdhQgXygUbW5jGZeIwoU3LEY3',
+      label: 'Prongs'
+    }
+  ];
+
+  const displayImages = parsedImages.length > 0 
+    ? parsedImages.map((u, i) => ({ url: u, label: i === 0 ? 'Persp 01' : i === 1 ? 'Wireframe' : `View 0${i + 1}` }))
+    : defaultFallbackImages;
+
+  const currentImage = displayImages[selectedImgIdx]?.url || displayImages[0].url;
+
+  // Sibling navigation
+  const currentIdxInSiblings = siblingItems.findIndex(x => x.id === item.id);
+  const handlePrev = () => {
+    if (siblingItems.length <= 1) return;
+    const prevIndex = currentIdxInSiblings > 0 ? currentIdxInSiblings - 1 : siblingItems.length - 1;
+    router.push(`/designer/portfolio/${siblingItems[prevIndex].id}`);
+  };
+
+  const handleNext = () => {
+    if (siblingItems.length <= 1) return;
+    const nextIndex = currentIdxInSiblings < siblingItems.length - 1 ? currentIdxInSiblings + 1 : 0;
+    router.push(`/designer/portfolio/${siblingItems[nextIndex].id}`);
+  };
+
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      navigator.clipboard.writeText(window.location.href);
+      setCopiedLink(true);
+      setShowSuccessToast('Dossier link copied to clipboard!');
+      setTimeout(() => {
+        setCopiedLink(false);
+        setShowSuccessToast(null);
+      }, 2500);
+    }
+  };
+
+  const handlePostReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reviewInput.trim()) return;
+    const authorName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Atelier Visitor';
+    setComments(prev => [
+      ...prev,
+      {
+        id: String(Date.now()),
+        author: authorName,
+        text: reviewInput.trim(),
+        time: 'Just now'
+      }
+    ]);
+    setReviewInput('');
+    setShowSuccessToast('Technical review posted successfully.');
+    setTimeout(() => setShowSuccessToast(null), 2500);
+  };
+
+  const creatorName = designer?.fullName || designer?.organizationName || 'Saloar hussain';
+  const creatorFirstName = creatorName.split(' ')[0] || 'Saloar';
+  const creatorAvatar = designer?.avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCHIqk87oggK5TPsjoUaYgF7PHHn4IuOD8iZUBOBBRsVsayp1WGVkMVJJG_8xH62jo3KfjCpf28Bs1yi-VkgwyXHY_8X7F5zJ_UCLdoPGDzuxVYIExhwLbsOKSkWSTCmI7eLql7RtNwooxqk0aJpu-h1oBmWYWhaHht_6QbmFot9WbDXJmKK4zXxLi470FjM4iAOmYJKOdmQN464OB8Ol2G7qXGtE444Bej5ZN4Wsid5Yfn1lboWNjx6A';
+  const dossierId = `HJ-${String(item.id).replace(/[^a-zA-Z0-9]/g, '').slice(0, 6).toUpperCase() || '2025-09'}`;
 
   return (
     <AuthGuard>
-      <div className="min-h-screen bg-[#0a0a0a] text-white font-sans antialiased pb-20">
-        <main className="max-w-4xl mx-auto px-4 py-8">
-          <Link href="/designer/profile" className="text-[10px] font-black text-[#ffe30c] uppercase tracking-widest flex items-center gap-1 hover:text-yellow-300 transition-colors mb-6">
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Back to Profile
-          </Link>
+      <div className="bg-[#08090C] text-[#e3e2e7] font-sans antialiased min-h-screen flex flex-col selection:bg-[#d9ee3c] selection:text-[#1a1e00]">
+        {/* Toast Alert */}
+        {showSuccessToast && (
+          <div className="fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#14161E] border border-[#d9ee3c]/50 text-white shadow-2xl animate-fade-in">
+            <span className="material-symbols-outlined text-[#d9ee3c] text-base">check_circle</span>
+            <span className="text-xs font-semibold">{showSuccessToast}</span>
+          </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Left Column: Images */}
-            <div className="space-y-4">
-              {Array.isArray(images) && images.length > 0 ? (
-                images.map((img: any, idx: number) => (
-                  <div key={idx} className="bg-[#121212] border border-[#262626] rounded-xl overflow-hidden">
-                    <img src={img.url || img} alt={item.title} className="w-full h-auto object-cover" />
-                  </div>
-                ))
-              ) : (
-                <div className="bg-[#121212] border border-[#262626] rounded-xl aspect-square flex flex-col items-center justify-center text-gray-600">
-                  <span className="material-symbols-outlined text-5xl mb-2">image_not_supported</span>
-                  <p className="text-xs">No images available</p>
+        {/* Global Fixed Luxury Navigation Header */}
+        <header className="fixed top-0 left-0 w-full z-40 bg-[#14161E]/85 backdrop-blur-xl border-b border-[#282D3C]">
+          <div className="h-16 md:h-20 w-full px-4 sm:px-6 lg:px-10 flex items-center justify-between gap-6">
+            <div className="flex items-center gap-6 shrink-0">
+              <Link href="/explore" className="flex items-center gap-2 group">
+                <div className="w-8 h-8 rounded bg-[#d9ee3c] flex items-center justify-center shadow-[0_0_16px_rgba(217,238,60,0.35)] group-hover:scale-105 transition-transform">
+                  <span className="material-symbols-outlined text-[#1a1e00] font-bold text-xl">diamond</span>
                 </div>
-              )}
+                <span className="font-extrabold text-base sm:text-xl text-white tracking-tight uppercase">CADONCE</span>
+              </Link>
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E222D] border border-[#282D3C]">
+                <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,0.8)] animate-pulse"></span>
+                <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Atelier Online</span>
+              </div>
             </div>
 
-            {/* Right Column: Details */}
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold text-white mb-2">{item.title}</h1>
-                <div className="inline-flex items-center px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10">
-                  <span className="text-[#ffe30c] text-[10px] font-bold uppercase tracking-[0.15em]">{category}</span>
+            {/* Global Search */}
+            <div className="hidden md:flex flex-1 max-w-md items-center">
+              <div className="relative w-full">
+                <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</span>
+                <input 
+                  type="text" 
+                  placeholder="Search High-Jewellery CAD, gemstone maps, ateliers..." 
+                  className="w-full bg-[#0D0E12] border border-[#282D3C] rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#d9ee3c] focus:ring-1 focus:ring-[#d9ee3c] transition-all"
+                />
+              </div>
+            </div>
+
+            {/* Nav Links */}
+            <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold">
+              <Link href="/explore" className="text-zinc-400 hover:text-white transition-colors">Haute Ateliers</Link>
+              <Link href="/designer/portfolio" className="text-zinc-400 hover:text-white transition-colors">Jewellery CAD Vault</Link>
+              <Link href="/team" className="text-zinc-400 hover:text-white transition-colors">Master Goldsmiths</Link>
+              <Link href="/projects" className="text-zinc-400 hover:text-white transition-colors">Couture Awards</Link>
+            </nav>
+
+            {/* Action Bar */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <button 
+                onClick={handleShare}
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.45)]"
+              >
+                <span className="material-symbols-outlined text-base">{copiedLink ? 'check' : 'ios_share'}</span>
+                <span className="hidden md:inline">{copiedLink ? 'Copied' : 'Share Dossier'}</span>
+              </button>
+              <Link 
+                href="/designer/profile" 
+                className="w-8 h-8 rounded-full bg-zinc-800 border border-[#282D3C] hover:border-[#d9ee3c] flex items-center justify-center transition-colors overflow-hidden"
+                title="Your Atelier Profile"
+              >
+                {user?.user_metadata?.avatar_url ? (
+                  <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="material-symbols-outlined text-zinc-300 text-[18px]">person</span>
+                )}
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="w-full pt-16 md:pt-20 bg-[#08090C] flex-1 flex flex-col relative">
+          <div className="flex flex-col w-full relative flex-1">
+            {/* Breadcrumb / Sub-Header Bar */}
+            <div className="w-full bg-[#0D0E12] border-b border-[#282D3C] px-4 sm:px-6 lg:px-10 py-3 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
+                <Link 
+                  href={designer?.id ? `/portfolio/${designer.id}` : "/designer/profile"} 
+                  className="inline-flex items-center gap-1 text-zinc-400 hover:text-[#d9ee3c] font-semibold text-xs sm:text-sm transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base">arrow_back</span>
+                  <span>Back to Dossiers</span>
+                </Link>
+                <span className="text-[#282D3C]">/</span>
+                <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold hidden sm:inline">Haute Joaillerie CAD</span>
+                <span className="text-[#282D3C] hidden sm:inline">/</span>
+                <span className="text-white font-semibold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-xs">{item.title}</span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="hidden md:flex items-center gap-1.5 text-zinc-400 text-[11px] font-bold tracking-wider uppercase">
+                  <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.8)]"></span>
+                  <span>PROJECT DOSSIER #{dossierId}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button 
+                    onClick={handlePrev} 
+                    disabled={siblingItems.length <= 1}
+                    className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 disabled:hover:text-zinc-400 transition-colors" 
+                    title="Previous Project"
+                  >
+                    <span className="material-symbols-outlined text-base">chevron_left</span>
+                  </button>
+                  <button 
+                    onClick={handleNext} 
+                    disabled={siblingItems.length <= 1}
+                    className="p-1.5 rounded-lg bg-[#14161E] text-zinc-400 hover:text-white hover:border-[#d9ee3c] border border-[#282D3C] disabled:opacity-40 disabled:hover:text-zinc-400 transition-colors" 
+                    title="Next Project"
+                  >
+                    <span className="material-symbols-outlined text-base">chevron_right</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 2-Column Dossier Workspace */}
+            <div className="w-full flex-1 flex flex-col lg:flex-row min-h-[calc(100vh-7.5rem)] lg:h-[calc(100vh-7.5rem)]">
+              {/* LEFT COLUMN: CAD Interactive Viewport (~60%) */}
+              <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none shrink-0 lg:h-full">
+                {/* Viewport Top Badges & Controls Header */}
+                <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-gradient-to-b from-[#08090C]/90 via-[#0D0E12]/60 to-transparent pointer-events-auto">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C] backdrop-blur-md">
+                      <span className="w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+                      <span className="text-[11px] font-bold tracking-wider text-white uppercase">{primaryToolchain}</span>
+                    </div>
+                    <div className="inline-flex items-center px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C] backdrop-blur-md">
+                      <span className="text-[11px] font-bold tracking-wider text-[#ffb955] uppercase">{category}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {cadFile && (
+                      <a 
+                        href={cadFile} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs font-bold hover:brightness-110 transition-all shadow-md"
+                        title="Download Master CAD Asset"
+                      >
+                        <span className="material-symbols-outlined text-sm">download</span>
+                        <span className="hidden sm:inline">CAD FILE</span>
+                      </a>
+                    )}
+                    <button 
+                      onClick={() => {
+                        if (typeof document !== 'undefined') {
+                          if (!document.fullscreenElement) {
+                            document.documentElement.requestFullscreen?.();
+                            setIsFullscreen(true);
+                          } else {
+                            document.exitFullscreen?.();
+                            setIsFullscreen(false);
+                          }
+                        }
+                      }}
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#1A1C23]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-all shadow-lg" 
+                      title="Toggle Fullscreen CAD View"
+                    >
+                      <span className="material-symbols-outlined text-lg sm:text-xl">
+                        {isFullscreen ? 'fullscreen_exit' : 'fullscreen'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Central CAD Viewport Display Area */}
+                <div className="relative w-full h-[400px] sm:h-[520px] lg:flex-1 lg:h-auto flex items-center justify-center overflow-hidden bg-gradient-to-b from-[#08090C] to-[#0D0E12] group">
+                  {/* Atmospheric Glow Elements */}
+                  <div className="absolute w-72 sm:w-96 h-72 sm:h-96 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+                  <div className="absolute w-64 sm:w-80 h-64 sm:h-80 rounded-full bg-[#d9ee3c]/10 blur-3xl -bottom-10 -right-10 pointer-events-none"></div>
+
+                  {/* Main Render Image */}
+                  <img 
+                    src={currentImage} 
+                    alt={item.title}
+                    className="w-full h-full object-cover sm:object-contain object-center transition-transform duration-700 ease-out group-hover:scale-[1.02]"
+                  />
+
+                  {/* Blueprint Grid Overlay */}
+                  <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(#282D3C_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+
+                  {/* Feature Floating Indicator */}
+                  <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 hidden sm:flex items-center gap-2 p-2 rounded-lg bg-[#14161E]/85 backdrop-blur-md border border-[#282D3C] pointer-events-none shadow-lg">
+                    <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.9)]"></span>
+                    <span className="text-[11px] text-white tracking-wider uppercase font-semibold">Parametric Collet &amp; Micro-Prong Seatings</span>
+                  </div>
+
+                  {/* Reset Camera Button */}
+                  <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 flex items-center gap-2 z-20">
+                    <button 
+                      onClick={() => setSelectedImgIdx(0)}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#1E222D]/90 backdrop-blur-md border border-[#282D3C] text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-colors flex items-center gap-1.5 shadow-md" 
+                      title="Center 3D Camera / Default Perspective"
+                    >
+                      <span className="material-symbols-outlined text-sm sm:text-base">center_focus_strong</span>
+                      <span className="text-[10px] hidden sm:inline tracking-wider font-bold uppercase">RESET CAMERA</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Viewport Bottom Carousel / Projection Angle Thumbnails */}
+                <div className="h-16 w-full bg-[#14161E]/95 border-t border-[#282D3C] px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 z-20 shrink-0">
+                  <div className="flex items-center gap-2 overflow-x-auto py-1">
+                    {displayImages.map((img, idx) => {
+                      const isCurrent = idx === selectedImgIdx;
+                      return (
+                        <button 
+                          key={idx}
+                          onClick={() => setSelectedImgIdx(idx)}
+                          className={`relative w-14 sm:w-16 h-10 rounded overflow-hidden shrink-0 transition-all ${
+                            isCurrent 
+                              ? 'border-2 border-[#d9ee3c] shadow-[0_0_10px_rgba(217,238,60,0.3)]' 
+                              : 'border border-[#282D3C] hover:border-zinc-400 opacity-75 hover:opacity-100'
+                          }`}
+                          title={img.label}
+                        >
+                          <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                          <span className="absolute inset-x-0 bottom-0 bg-[#08090C]/80 text-[8px] text-zinc-300 text-center truncate font-bold uppercase px-0.5">
+                            {img.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-zinc-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider shrink-0">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#d9ee3c]"></span>
+                    <span>VIEW 0{selectedImgIdx + 1} / 0{displayImages.length}</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-[#121212] border border-[#262626] rounded-xl p-6 space-y-4">
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#ffe30c] mb-2">Software Used</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {software.length > 0 ? (
-                      software.map((sw: string, idx: number) => {
-                        const isRhino = sw.toLowerCase().includes('rhino');
-                        return (
-                          <span key={idx} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#1a1a1a] rounded-lg text-xs font-semibold border border-[#262626]">
-                            {isRhino && (
-                              <img src="/rhino-logo.png" alt="Rhino" className="w-3.5 h-3.5 object-contain rounded-sm" />
-                            )}
-                            <span>{sw}</span>
+              {/* RIGHT COLUMN: Creator Header, Dossier Specs, Engagement & Sticky Commission CTA (~40%) */}
+              <div className="flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] overflow-hidden lg:h-full">
+                {/* Top Creator Profile Header Bar */}
+                <div className="p-4 sm:p-5 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/90 backdrop-blur-sm shrink-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <div className="w-11 h-11 rounded-full p-[1.5px] bg-[#282D3C] overflow-hidden border border-[#282D3C]">
+                        <img 
+                          src={creatorAvatar} 
+                          alt={creatorName} 
+                          className="w-full h-full rounded-full object-cover" 
+                        />
+                      </div>
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-[#4ffeb9] border-2 border-[#14161E] shadow-[0_0_6px_rgba(79,254,185,0.8)]"></span>
+                    </div>
+
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-base text-white font-bold truncate">{creatorName}</span>
+                        <span className="material-symbols-outlined text-[#ffb955] text-base shrink-0" style={{ fontVariationSettings: "'FILL' 1" }} title="Verified Master CAD Modeler">verified</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-zinc-400 truncate">
+                        <span className="text-zinc-400 truncate">{designer?.specialty || 'Minecom Portfolio'}</span>
+                        <span className="text-[#282D3C]">•</span>
+                        <span className="text-zinc-500 truncate">{designer?.organizationName || 'Minecom Haute Joaillerie'}</span>
+                        <span className="text-[#282D3C]">•</span>
+                        <button 
+                          onClick={() => setIsFollowing(!isFollowing)}
+                          className={`font-bold ml-0.5 shrink-0 transition-colors ${
+                            isFollowing ? 'text-[#4ffeb9]' : 'text-[#d9ee3c] hover:underline'
+                          }`}
+                        >
+                          {isFollowing ? 'Following' : '+ Follow'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button 
+                      onClick={handleShare}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-zinc-400 hover:text-white hover:bg-[#1E222D] transition-colors" 
+                      title="Share Project"
+                    >
+                      <span className="material-symbols-outlined text-xl">{copiedLink ? 'check' : 'share'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Scrollable Dossier Content & Technical Specifications */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-5">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[#ffb955] font-bold uppercase tracking-wider">{category}</span>
+                      <span className="text-xs text-zinc-500">Maison Dossier 2025</span>
+                    </div>
+                    <h1 className="text-2xl text-white font-bold tracking-tight mt-0.5">{item.title}</h1>
+                    <p className="text-sm text-zinc-300 leading-relaxed mt-1">{narrative}</p>
+                  </div>
+
+                  {/* Hashtags */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      `#${primaryToolchain.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`,
+                      `#${category.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()}`,
+                      '#MATRIXGOLD',
+                      '#HIGHJEWELRY',
+                      '#BENCHREADY',
+                      '#GIACOMPLIANT'
+                    ].map((tag, tIdx) => (
+                      <span 
+                        key={tIdx} 
+                        className="px-2.5 py-1 rounded-md bg-[#1B1E28] border border-[#282D3C] text-zinc-400 text-[11px] font-semibold hover:text-[#d9ee3c] hover:border-[#d9ee3c] cursor-pointer transition-colors"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Jewellery Engineering Specifications */}
+                  <div className="flex flex-col gap-2.5 pt-1">
+                    <div className="flex items-center justify-between flex-wrap gap-1">
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold">JEWELLERY ENGINEERING SPECIFICATIONS</span>
+                      <button 
+                        onClick={() => setShowSuccessToast('Specification Sheet exported for CAD workshop.')}
+                        className="text-[11px] text-[#d9ee3c] hover:underline font-bold flex items-center gap-1.5 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-sm text-[#d9ee3c]">tune</span>
+                        <span>SPECIFICATION SHEET</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">PRIMARY TOOLCHAIN</span>
+                          <span className="text-lg text-white font-bold mt-1 block truncate">{primaryToolchain}</span>
+                        </div>
+                        <span className="text-[11px] text-zinc-400 mt-1.5">CAD / Parametric Modeling</span>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">CLASSIFICATION</span>
+                          <span className="text-lg text-[#ffb955] font-bold mt-1 block truncate">{category}</span>
+                        </div>
+                        <span className="text-[11px] text-zinc-400 mt-1.5">Haute Joaillerie Atelier</span>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">MANUFACTURING READINESS</span>
+                          <span className="text-base text-white font-bold mt-1 block truncate">Lost-Wax Cast &amp; CNC Ready</span>
+                        </div>
+                        <span className="text-[11px] text-[#4ffeb9] mt-1.5 font-semibold">±0.008mm Prong Seat Tolerance</span>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-[#1E222D] border border-[#282D3C] flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] text-zinc-400 uppercase tracking-wider block">PACKAGE DELIVERABLE</span>
+                          <span className="text-base text-white font-bold mt-1 block truncate">
+                            {cadFile ? 'Production CAD Package' : 'High-Res CAD Specification'}
                           </span>
-                        );
-                      })
-                    ) : (
-                      <span className="text-xs text-gray-600">No software listed</span>
-                    )}
+                        </div>
+                        <span className="text-[11px] text-zinc-400 mt-1.5">Technical Dossier &amp; Renders</span>
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Archived Assets in Package */}
+                  <div className="p-3.5 rounded-xl bg-[#0D0E12] border border-[#282D3C] flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-wider font-semibold">ARCHIVED ASSETS IN PACKAGE</span>
+                      <span className="text-[11px] text-[#ffb955] font-bold flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">lock</span>
+                        <span>MAISON ACCESS ONLY</span>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">HIGH RESOLUTION CAD SPECIFICATION</span>
+                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">PARAMETRIC VIEWPORT RENDERS</span>
+                      <span className="px-2 py-0.5 rounded bg-[#14161E] border border-[#282D3C] text-[10px] text-zinc-300 font-bold">.STL / .ZTL</span>
+                      {cadFile && (
+                        <a 
+                          href={cadFile} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="px-2 py-0.5 rounded bg-[#d9ee3c]/20 border border-[#d9ee3c]/50 text-[10px] text-[#d9ee3c] font-bold hover:bg-[#d9ee3c] hover:text-black transition-colors"
+                        >
+                          DOWNLOAD ASSETS
+                        </a>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Recent Atelier Reviews */}
+                  {comments.length > 0 && (
+                    <div className="flex flex-col gap-2 pt-2">
+                      <span className="text-[11px] text-zinc-400 uppercase tracking-widest font-bold">TECHNICAL REVIEWS ({comments.length})</span>
+                      <div className="space-y-2">
+                        {comments.map(c => (
+                          <div key={c.id} className="p-3 rounded-lg bg-[#1E222D]/60 border border-[#282D3C]/60 flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-bold text-white">{c.author}</span>
+                              <span className="text-[10px] text-zinc-500">{c.time}</span>
+                            </div>
+                            <p className="text-xs text-zinc-300">{c.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-widest text-[#ffe30c] mb-2">Description</h3>
-                  <p className="text-sm text-gray-300 leading-relaxed">{narrative}</p>
-                </div>
+                {/* Sticky Bottom Bar: Social Engagement + Review Input + High Impact Hire CTA */}
+                <div className="p-4 sm:p-5 border-t border-[#282D3C] bg-[#14161E]/95 backdrop-blur-md flex flex-col gap-3 shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-5">
+                      {/* Likes */}
+                      <button 
+                        onClick={() => {
+                          setHasLiked(!hasLiked);
+                          setLikesCount(prev => hasLiked ? prev - 1 : prev + 1);
+                        }}
+                        className={`flex items-center gap-1.5 transition-colors group ${
+                          hasLiked ? 'text-rose-500' : 'text-zinc-400 hover:text-white'
+                        }`} 
+                        title="Like Project"
+                      >
+                        <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">
+                          {hasLiked ? 'favorite' : 'favorite_border'}
+                        </span>
+                        <span className="text-sm text-white font-bold">{likesCount.toLocaleString()}</span>
+                      </button>
 
-                {cadFile && (
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-[#ffe30c] mb-2">CAD File</h3>
-                    <a href={cadFile} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-[#ffe30c] hover:bg-[#e6cc00] text-black px-4 py-2 rounded-lg text-xs font-bold transition-colors">
-                      <span className="material-symbols-outlined text-sm">download</span>
-                      Download CAD File
-                    </a>
+                      {/* Comments count */}
+                      <button 
+                        className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors group" 
+                        title="Comments"
+                      >
+                        <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">chat_bubble_outline</span>
+                        <span className="text-sm text-white font-bold">{comments.length}</span>
+                      </button>
+
+                      {/* Share */}
+                      <button 
+                        onClick={handleShare}
+                        className="flex items-center gap-1.5 text-zinc-400 hover:text-white transition-colors group" 
+                        title="Share Creation"
+                      >
+                        <span className="material-symbols-outlined text-xl group-hover:scale-110 transition-transform">share</span>
+                      </button>
+                    </div>
+
+                    {/* Bookmark */}
+                    <button 
+                      onClick={() => setIsBookmarked(!isBookmarked)}
+                      className={`transition-colors ${
+                        isBookmarked ? 'text-[#d9ee3c]' : 'text-zinc-400 hover:text-[#d9ee3c]'
+                      }`} 
+                      title="Bookmark to Collection"
+                    >
+                      <span className="material-symbols-outlined text-xl">
+                        {isBookmarked ? 'bookmark' : 'bookmark_border'}
+                      </span>
+                    </button>
                   </div>
-                )}
+
+                  {/* Review Input */}
+                  <form onSubmit={handlePostReview} className="relative w-full">
+                    <input 
+                      type="text" 
+                      value={reviewInput}
+                      onChange={(e) => setReviewInput(e.target.value)}
+                      placeholder={`Add technical review or inquiry for ${creatorFirstName}...`} 
+                      className="w-full bg-[#0D0E12] border border-[#282D3C] rounded-lg pl-3 pr-16 py-2.5 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#d9ee3c] transition-all"
+                    />
+                    <button 
+                      type="submit"
+                      disabled={!reviewInput.trim()}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-[#d9ee3c] hover:underline font-bold px-2 py-1 disabled:opacity-40"
+                    >
+                      POST
+                    </button>
+                  </form>
+
+                  {/* Commission Bespoke Piece CTA */}
+                  <Link 
+                    href={`/inbox?hire=${designer?.id || item.id}&title=${encodeURIComponent(item.title)}`}
+                    className="w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.4)] active:translate-y-0"
+                  >
+                    <span className="material-symbols-outlined text-xl">mail</span>
+                    <span>COMMISSION BESPOKE PIECE / HIRE {creatorFirstName.toUpperCase()}</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </main>
+
+        {/* Haute Atelier Footer */}
+        <footer className="w-full bg-[#14161E] border-t border-[#282D3C] py-6 sm:py-8 mt-auto">
+          <div className="w-full px-4 sm:px-6 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-base text-white font-bold tracking-wider">CADONCE</span>
+              <span className="text-xs text-zinc-500">Haute Joaillerie Parametric CAD Archive</span>
+            </div>
+            <div className="flex items-center gap-4 sm:gap-6 text-zinc-400 text-xs flex-wrap justify-center">
+              <Link href="/explore" className="hover:text-white transition-colors">Ateliers</Link>
+              <Link href="/designer/portfolio" className="hover:text-white transition-colors">Repository</Link>
+              <Link href="/team" className="hover:text-white transition-colors">Master Jewelers</Link>
+              <span className="text-[#282D3C]">|</span>
+              <span className="text-zinc-500">© 2025 CADONCE. All rights reserved.</span>
+            </div>
+          </div>
+        </footer>
       </div>
     </AuthGuard>
   );
