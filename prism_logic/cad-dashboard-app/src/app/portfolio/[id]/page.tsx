@@ -353,6 +353,31 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [isDesignerFollowed, setIsDesignerFollowed] = useState<boolean>(false);
   const [copiedModalLink, setCopiedModalLink] = useState<boolean>(false);
 
+  // Sync modal with URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (selectedPortfolioItem) {
+        window.history.replaceState(null, '', `?item=${selectedPortfolioItem.id}`);
+      } else if (window.location.search.includes('item=')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, [selectedPortfolioItem]);
+
+  // Read item from URL on load
+  useEffect(() => {
+    if (typeof window !== 'undefined' && portfolioItems.length > 0 && !selectedPortfolioItem) {
+      const urlParams = new URLSearchParams(window.location.search);
+      const itemId = urlParams.get('item');
+      if (itemId) {
+        const item = portfolioItems.find((it: any) => it.id === itemId || it.id?.toString() === itemId);
+        if (item) {
+          setSelectedPortfolioItem(item);
+        }
+      }
+    }
+  }, [portfolioItems]);
+
   useEffect(() => {
     if (!selectedPortfolioItem) return;
     const handleKeyDown = (e: KeyboardEvent) => {
