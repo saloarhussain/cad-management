@@ -1526,7 +1526,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         <span>Back to Dossiers</span>
                       </button>
                       <span className="text-[#282D3C]">/</span>
-                      <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold hidden sm:inline">Haute Joaillerie CAD</span>
+                      <span className="text-[11px] text-zinc-500 uppercase tracking-wider font-bold hidden sm:inline">{categoryName}</span>
                       <span className="text-[#282D3C] hidden sm:inline">/</span>
                       <span className="text-white font-semibold text-xs sm:text-sm truncate max-w-[180px] sm:max-w-xs">
                         {selectedPortfolioItem.title || 'Parametric Showcase'}
