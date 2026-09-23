@@ -357,13 +357,17 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [isDesignerFollowed, setIsDesignerFollowed] = useState<boolean>(false);
   const [copiedModalLink, setCopiedModalLink] = useState<boolean>(false);
 
+  const isClosingModal = React.useRef(false);
+
   // Sync modal with URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (selectedPortfolioItem) {
+        isClosingModal.current = true;
         router.replace(`${pathname}?item=${selectedPortfolioItem.id}`, { scroll: false });
-      } else if (searchParams.has('item')) {
+      } else if (searchParams.has('item') && isClosingModal.current) {
         router.replace(pathname, { scroll: false });
+        isClosingModal.current = false;
       }
     }
   }, [selectedPortfolioItem, pathname, router, searchParams]);
