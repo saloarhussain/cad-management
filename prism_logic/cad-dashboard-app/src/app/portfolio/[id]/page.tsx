@@ -345,7 +345,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [copiedLink, setCopiedLink] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'agenda'>('grid');
-  const [activeTab, setActiveTab] = useState<'portfolio' | 'spins' | 'saved' | 'collabs' | 'shop'>('portfolio');
+  const [activeTab, setActiveTab] = useState<'portfolio' | 'saved' | 'collabs' | 'shop'>('portfolio');
   const [selectedPortfolioItem, setSelectedPortfolioItem] = useState<any | null>(null);
 
   // Lightbox Modal Extended States
@@ -639,17 +639,6 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         </span>
                       </button>
 
-                      <button 
-                        onClick={() => setActiveTab('spins')}
-                        className={`shrink-0 py-2 sm:py-2.5 text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:gap-2 tracking-wider uppercase transition-colors whitespace-nowrap ${
-                          activeTab === 'spins' 
-                            ? 'border-b-2 border-[#d9ee3c] text-[#d9ee3c]' 
-                            : 'text-zinc-400 hover:text-white border-b-2 border-transparent'
-                        }`}
-                      >
-                        <span className="material-symbols-outlined text-sm sm:text-base">movie</span>
-                        <span>3D SPINS</span>
-                      </button>
 
                       <button 
                         onClick={() => setActiveTab('shop')}
