@@ -360,24 +360,22 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [isDesignerFollowed, setIsDesignerFollowed] = useState<boolean>(false);
   const [copiedModalLink, setCopiedModalLink] = useState<boolean>(false);
 
-  const isClosingModal = React.useRef(false);
+  const hasInitializedFromUrl = React.useRef(false);
 
   // Sync modal with URL
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (selectedPortfolioItem) {
-        isClosingModal.current = true;
         router.replace(`${pathname}?item=${selectedPortfolioItem.id}`, { scroll: false });
-      } else if (searchParams.has('item') && isClosingModal.current) {
+      } else if (hasInitializedFromUrl.current) {
         router.replace(pathname, { scroll: false });
-        isClosingModal.current = false;
       }
     }
-  }, [selectedPortfolioItem, pathname, router, searchParams]);
+  }, [selectedPortfolioItem, pathname, router]);
 
   // Read item from URL on load
   useEffect(() => {
-    if (portfolioItems.length > 0 && !selectedPortfolioItem) {
+    if (portfolioItems.length > 0 && !hasInitializedFromUrl.current) {
       const itemId = searchParams.get('item');
       if (itemId) {
         const item = portfolioItems.find((it: any) => it.id === itemId || it.id?.toString() === itemId);
@@ -385,8 +383,9 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           setSelectedPortfolioItem(item);
         }
       }
+      hasInitializedFromUrl.current = true;
     }
-  }, [portfolioItems, searchParams, selectedPortfolioItem]);
+  }, [portfolioItems, searchParams]);
 
   useEffect(() => {
     if (!selectedPortfolioItem) return;
