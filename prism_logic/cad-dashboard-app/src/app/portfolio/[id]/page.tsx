@@ -409,6 +409,20 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedPortfolioItem, portfolioItems]);
 
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (selectedPortfolioItem || (isDataLoading && searchParams.has('item'))) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [selectedPortfolioItem, isDataLoading, searchParams]);
+
   useEffect(() => {
     const fetchStatus = async () => {
       if (designer?.email) {
