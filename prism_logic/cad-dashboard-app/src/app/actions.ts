@@ -1282,7 +1282,10 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
     }
 
     if (writeError) {
-      console.error('[saveAllSettings] Critical Persistence Error:', writeError.message);
+      console.error('[saveAllSettings] Critical Persistence Error:', writeError);
+      if (writeError.code === '23505' || writeError.message?.includes('unique constraint')) {
+        return { success: false, error: 'This username is already taken. Please choose a different one.' };
+      }
       return { success: false, error: `Database Error: ${writeError.message}` };
     }
 
@@ -1304,7 +1307,10 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
     revalidatePath('/settings');
     return { success: true };
   } catch (err: any) {
-    console.error('[saveAllSettings] Error:', err.message);
+    console.error('[saveAllSettings] Error:', err);
+    if (err.code === '23505' || err.message?.includes('unique constraint') || err.message?.includes('duplicate key')) {
+      return { success: false, error: 'This username is already taken. Please choose a different one.' };
+    }
     return { success: false, error: err.message || 'Failed to save settings.' };
   }
 }
