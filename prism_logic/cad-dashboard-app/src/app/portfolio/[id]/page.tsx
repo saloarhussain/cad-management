@@ -286,6 +286,8 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
     customValue: ''
   });
 
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
   useEffect(() => {
     const loadData = async () => {
       // Robust ID extraction: extract valid UUID from params, pathname, or logged-in user
@@ -338,6 +340,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           console.error('[portfolio] readDb failed:', e);
         }
       }
+      setIsDataLoading(false);
     };
     loadData();
   }, [params.id]);
@@ -1323,6 +1326,14 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
               </aside>
             </div>
           </div>
+
+          {/* Loading Overlay if data is loading and an item is requested via URL */}
+          {isDataLoading && searchParams.has('item') && (
+            <div className="fixed inset-0 z-[100] bg-[#08090C] flex flex-col items-center justify-center">
+              <div className="size-12 rounded-full border-4 border-[#282D3C] border-t-[#d9ee3c] animate-spin mb-4"></div>
+              <span className="text-[#d9ee3c] text-sm font-bold tracking-wider uppercase animate-pulse">Loading Dossier...</span>
+            </div>
+          )}
 
           {/* Lightbox / Modal for Viewing Selected Portfolio Item */}
           {selectedPortfolioItem && (() => {
