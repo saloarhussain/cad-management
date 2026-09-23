@@ -1534,10 +1534,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <div className="hidden md:flex items-center gap-1.5 text-zinc-400 text-[11px] font-bold tracking-wider uppercase">
-                        <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_6px_rgba(79,254,185,0.8)]"></span>
-                        <span>PROJECT DOSSIER #{dossierId}</span>
-                      </div>
+
                       <div className="flex items-center gap-1">
                         <button 
                           onClick={handlePrevItem}
