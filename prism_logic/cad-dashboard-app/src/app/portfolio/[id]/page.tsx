@@ -1529,52 +1529,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   <div className="w-full flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
                     {/* LEFT COLUMN: CAD Interactive Viewport & High-Res Renders (~60%) */}
                     <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none h-full min-h-0 overflow-y-auto overscroll-contain">
-                      {/* Viewport Top Header Bar */}
-                      <div className="sticky top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-[#0D0E12]/95 backdrop-blur-md border-b border-[#282D3C]/60 shrink-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C]">
-                            <span className="w-2 h-2 rounded-full bg-[#34D399] shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
-                            <span className="text-[11px] font-bold text-white tracking-wider uppercase">{softwareName}</span>
-                          </div>
-                          <div className="inline-flex items-center px-3 py-1 rounded bg-[#1A1C23]/90 border border-[#282D3C]">
-                            <span className="text-[11px] font-bold text-[#ffb955] uppercase tracking-wider">{categoryName}</span>
-                          </div>
-                        </div>
 
-                        <div className="flex items-center gap-2">
-                          {has3D && (
-                            <button 
-                              onClick={() => {
-                                setSelectedProductForView({
-                                  id: selectedPortfolioItem.id,
-                                  name: selectedPortfolioItem.title || '3D Model',
-                                  cadFiles: [{ name: selectedPortfolioItem.title || '3D Model', size: 0, url: cadUrl }]
-                                });
-                              }}
-                              className="px-3 py-1 rounded-lg bg-[#d9ee3c] text-[#1a1e00] hover:brightness-110 text-xs font-bold transition-all flex items-center gap-1.5 shadow-[0_0_12px_rgba(217,238,60,0.3)]"
-                              title="Interactive 3D WebGL Viewport"
-                            >
-                              <span className="material-symbols-outlined text-base">view_in_ar</span>
-                              <span className="text-[11px] font-bold uppercase tracking-wider">VIEW 3D</span>
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => {
-                              if (typeof document !== 'undefined') {
-                                if (!document.fullscreenElement) {
-                                  document.documentElement.requestFullscreen?.();
-                                } else {
-                                  document.exitFullscreen?.();
-                                }
-                              }
-                            }}
-                            className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-[#1A1C23]/90 border border-[#282D3C] flex items-center justify-center text-zinc-400 hover:text-white hover:border-[#d9ee3c] transition-all shadow-lg" 
-                            title="Toggle Fullscreen CAD View"
-                          >
-                            <span className="material-symbols-outlined text-lg sm:text-xl">fullscreen</span>
-                          </button>
-                        </div>
-                      </div>
 
                       {/* Renders / Views Feed */}
                       <div className="flex-1 flex flex-col gap-6 p-4 sm:p-6">
