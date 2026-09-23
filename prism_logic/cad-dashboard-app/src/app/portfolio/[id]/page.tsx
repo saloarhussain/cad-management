@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
 import { getPublicPortfolioItems, getPublicDesignerStatus, getPublicDesignerProfile } from '@/app/actions';
@@ -253,6 +254,9 @@ const getModalImages = (item: any): string[] => {
 
 export default function PublicPortfolio({ params }: { params: { id: string } }) {
   const { user } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [orgCount, setOrgCount] = useState(0);
   const [jobsCount, setJobsCount] = useState(0);
   const [projects, setProjects] = useState<any[]>([]);
@@ -357,18 +361,17 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       if (selectedPortfolioItem) {
-        window.history.replaceState(null, '', `?item=${selectedPortfolioItem.id}`);
-      } else if (window.location.search.includes('item=')) {
-        window.history.replaceState(null, '', window.location.pathname);
+        router.replace(`${pathname}?item=${selectedPortfolioItem.id}`, { scroll: false });
+      } else if (searchParams.has('item')) {
+        router.replace(pathname, { scroll: false });
       }
     }
-  }, [selectedPortfolioItem]);
+  }, [selectedPortfolioItem, pathname, router, searchParams]);
 
   // Read item from URL on load
   useEffect(() => {
-    if (typeof window !== 'undefined' && portfolioItems.length > 0 && !selectedPortfolioItem) {
-      const urlParams = new URLSearchParams(window.location.search);
-      const itemId = urlParams.get('item');
+    if (portfolioItems.length > 0 && !selectedPortfolioItem) {
+      const itemId = searchParams.get('item');
       if (itemId) {
         const item = portfolioItems.find((it: any) => it.id === itemId || it.id?.toString() === itemId);
         if (item) {
@@ -376,7 +379,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
         }
       }
     }
-  }, [portfolioItems]);
+  }, [portfolioItems, searchParams, selectedPortfolioItem]);
 
   useEffect(() => {
     if (!selectedPortfolioItem) return;
