@@ -1474,13 +1474,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                         <span className="material-symbols-outlined text-base">{copiedModalLink ? 'check' : 'ios_share'}</span>
                         <span className="hidden md:inline">{copiedModalLink ? 'Copied' : 'Share Dossier'}</span>
                       </button>
-                      <button 
-                        onClick={() => setSelectedPortfolioItem(null)}
-                        className="w-8 h-8 rounded-full bg-zinc-800 border border-[#282D3C] hover:border-[#d9ee3c] flex items-center justify-center transition-colors"
-                        title="Back to Dossiers"
-                      >
-                        <span className="material-symbols-outlined text-zinc-300 text-[18px]">close</span>
-                      </button>
+
                     </div>
                   </div>
                 </header>
