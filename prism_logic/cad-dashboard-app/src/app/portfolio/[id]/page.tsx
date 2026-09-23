@@ -287,18 +287,14 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
       // Robust ID extraction: extract valid UUID from params, pathname, or logged-in user
       let targetId = params.id;
       if (typeof window !== 'undefined') {
-        const match = window.location.pathname.match(/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}/);
-        if (match) {
-          targetId = match[0];
-        } else {
-          const rawClean = window.location.pathname.replace(/^\/portfolio\/?/i, '').replace(/[^0-9a-fA-F-]/g, '');
-          if (rawClean.length >= 30) {
-            targetId = rawClean;
-          }
+        const rawClean = window.location.pathname.replace(/^\/portfolio\/?/i, '').replace(/[^a-zA-Z0-9_-]/g, '');
+        if (rawClean.length > 0) {
+          targetId = rawClean;
         }
       }
 
-      if ((!targetId || targetId.length < 20) && user?.id) {
+      // If there is still no targetId (e.g. somehow empty), fallback to user.id
+      if (!targetId && user?.id) {
         targetId = user.id;
       }
 
@@ -389,12 +385,14 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   }, [designer?.email]);
 
   const handleShare = async () => {
-    let cleanId = params.id;
-    if (typeof window !== 'undefined') {
-      const match = window.location.pathname.match(/[0-9a-fA-F]{8}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{4}-?[0-9a-fA-F]{12}/);
-      if (match) cleanId = match[0];
+    let cleanId = designer?.username || params.id;
+    if (typeof window !== 'undefined' && !designer?.username) {
+      const rawClean = window.location.pathname.replace(/^\/portfolio\/?/i, '').replace(/[^a-zA-Z0-9_-]/g, '');
+      if (rawClean.length > 0) {
+        cleanId = rawClean;
+      }
     }
-    if ((!cleanId || cleanId.length < 20) && user?.id) {
+    if (!cleanId && user?.id) {
       cleanId = user.id;
     }
     const cleanUrl = typeof window !== 'undefined' ? `${window.location.origin}/portfolio/${cleanId}` : '';

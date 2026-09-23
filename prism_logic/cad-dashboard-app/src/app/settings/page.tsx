@@ -94,6 +94,7 @@ export default function SettingsPage() {
 
   // New Identity State
   const [ownerName, setOwnerName] = useState('');
+  const [username, setUsername] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -183,6 +184,7 @@ export default function SettingsPage() {
         setGmailClientSecret(s.gmailClientSecret || '');
         setOrganizationTitle(s.organizationName || organizationName || user?.user_metadata?.organization_name || '');
         setOwnerName(s.ownerName || user?.user_metadata?.full_name || '');
+        setUsername(s.username || '');
         setSmtpHost(systemConfig.smtpHost || s.smtpHost || 'smtp.gmail.com');
         setSmtpPort(systemConfig.smtpPort?.toString() || s.smtpPort?.toString() || '465');
         setSmtpSecure(systemConfig.smtpSecure !== undefined ? systemConfig.smtpSecure : (s.smtpSecure !== undefined ? s.smtpSecure : true));
@@ -309,6 +311,7 @@ export default function SettingsPage() {
         const { saveAllSettings } = await import('@/app/actions');
         const formData = new FormData();
         formData.append('whatsapp', whatsapp);
+        formData.append('username', username);
         formData.append('avatarUrl', avatarUrl);
         formData.append('country', designerCountry);
         formData.append('pointsBalance', pointsBalance.toString());
@@ -340,6 +343,7 @@ export default function SettingsPage() {
         formData.append('orgCountry', orgCountry);
         formData.append('organizationName', organizationTitle);
         formData.append('ownerName', ownerName);
+        formData.append('username', username);
         formData.append('whatsapp', whatsapp);
         formData.append('avatarUrl', avatarUrl);
         formData.append('country', designerCountry);
@@ -696,6 +700,16 @@ export default function SettingsPage() {
                           </div>
                         </>
                       )}
+                      
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-zinc-300 ml-0.5">Username (Portfolio URL)</label>
+                        <input
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+                          className="w-full bg-zinc-950/60 border border-zinc-800 hover:border-zinc-700 rounded-xl px-4 py-2.5 text-white font-medium text-sm focus:border-yellow-400/80 focus:ring-2 focus:ring-yellow-400/10 outline-none transition-all shadow-inner"
+                          placeholder="e.g. minecom"
+                        />
+                      </div>
 
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-zinc-300 ml-0.5">Official WhatsApp</label>

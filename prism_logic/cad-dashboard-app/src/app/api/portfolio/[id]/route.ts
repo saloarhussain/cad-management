@@ -14,12 +14,24 @@ export async function GET(
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-    const cleanId = rawId.replace(/[^0-9a-fA-F-]/g, '');
+    const cleanId = rawId.replace(/[^a-zA-Z0-9_-]/g, '');
     let authUserId = cleanId;
     let designerProfile: any = null;
 
     try {
-      const { data: { user } } = await supabase.auth.admin.getUserById(cleanId);
+      // 1. Try to find user by username in settings
+      const { data: usernameMatch } = await supabase
+        .from("settings")
+        .select("user_id")
+        .eq("username", cleanId)
+        .limit(1);
+
+      if (usernameMatch && usernameMatch.length > 0) {
+        authUserId = usernameMatch[0].user_id;
+      }
+
+      // 2. Lookup auth user
+      const { data: { user } } = await supabase.auth.admin.getUserById(authUserId);
       if (user?.id) {
         authUserId = user.id;
         const { data: records } = await supabase
@@ -51,6 +63,7 @@ export async function GET(
             : "Professional 3D CAD Designer");
 
         const skills = records?.[0]?.skills || ["3D CAD Modeling", "Jewelry Design", "Rendering", "Rhino 3D"];
+        const username = s.username || null;
 
         designerProfile = {
           fullName,
@@ -58,7 +71,8 @@ export async function GET(
           avatarUrl,
           email: user.email,
           specialty,
-          skills
+          skills,
+          username
         };
       }
     } catch (e) {
