@@ -1484,12 +1484,19 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     <div className="flex items-center gap-6 shrink-0">
                       <button 
                         onClick={() => setSelectedPortfolioItem(null)} 
-                        className="flex items-center gap-2 group cursor-pointer text-left"
+                        className="flex items-center gap-2 sm:gap-3 group shrink-0 cursor-pointer text-left"
                       >
-                        <div className="w-8 h-8 rounded bg-[#d9ee3c] flex items-center justify-center shadow-[0_0_16px_rgba(217,238,60,0.35)] group-hover:scale-105 transition-transform">
-                          <span className="material-symbols-outlined text-[#1a1e00] font-bold text-xl">diamond</span>
+                        <div className="size-8 sm:size-9 bg-[#F59E0B] rounded-xl flex items-center justify-center text-black shadow-[0_0_16px_rgba(245,158,11,0.35)] shrink-0 group-hover:scale-105 transition-transform">
+                          <span className="material-symbols-outlined text-black font-black text-lg sm:text-xl leading-none">architecture</span>
                         </div>
-                        <span className="font-extrabold text-base sm:text-xl text-white tracking-tight uppercase">CADONCE</span>
+                        <div className="flex flex-col">
+                          <span className="font-headline font-black text-base sm:text-lg text-white tracking-tighter uppercase italic leading-none">
+                            CAD<span className="text-[#F59E0B]">ONCE</span>
+                          </span>
+                          <span className="text-[8px] sm:text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">
+                            Studio Archive
+                          </span>
+                        </div>
                       </button>
                       <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E222D] border border-[#282D3C]">
                         <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,0.8)] animate-pulse"></span>
