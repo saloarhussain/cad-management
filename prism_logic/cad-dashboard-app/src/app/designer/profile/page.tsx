@@ -352,7 +352,7 @@ export default function DesignerProfile() {
               <div className="p-4 bg-[#0a0a0a]">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-sm font-bold uppercase tracking-wider text-[#ffe30c]">Your Portfolio</h3>
-                  <Link href="/designer/portfolio/new" className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors">
+                  <Link href="/portfolio/edit/new" className="bg-[#ffe30c] hover:bg-[#e6cc00] text-black px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors">
                     <span className="material-symbols-outlined text-sm">add_circle</span>
                     Add Project
                   </Link>
@@ -375,7 +375,7 @@ export default function DesignerProfile() {
                       
                       return (
                         <Link 
-                          href={item.__type === 'project' ? `/projects/${item.id}` : `/designer/portfolio/${item.id}`} 
+                          href={item.__type === 'project' ? `/projects/${item.id}` : `/portfolio/edit/${item.id}`} 
                           key={item.id} 
                           className="aspect-square relative overflow-hidden bg-[#0a0a0a] group cursor-pointer"
                         >

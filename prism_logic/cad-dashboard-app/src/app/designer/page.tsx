@@ -277,7 +277,7 @@ export default function DesignerDashboard() {
               <div className="w-2 h-2 rounded-full bg-[#ffe311] pulse-dot"></div>
               <span className="text-[10px] font-bold tracking-tighter text-[#e2e2e2] uppercase">Render Node Active</span>
             </div>
-            <Link href="/designer/portfolio" className="flex items-center gap-1 text-[#ffe30c] hover:text-white transition-colors">
+            <Link href="/portfolio" className="flex items-center gap-1 text-[#ffe30c] hover:text-white transition-colors">
               <span className="material-symbols-outlined text-sm">folder_special</span>
               <span className="text-[9px] font-black uppercase tracking-widest">Portfolio</span>
             </Link>

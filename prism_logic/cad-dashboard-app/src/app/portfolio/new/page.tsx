@@ -177,7 +177,7 @@ export default function AddPortfolioPage() {
       
       if (res.success) {
         alert('Portfolio project published successfully!');
-        router.push('/designer/portfolio');
+        router.push('/portfolio');
       } else {
         alert('Failed to publish project: ' + res.error);
       }
@@ -205,14 +205,14 @@ export default function AddPortfolioPage() {
             <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-500">
               <Link href="/designer/profile" className="hover:text-amber-400 transition-colors">Designer Studio</Link>
               <span className="text-stone-700">/</span>
-              <Link href="/designer/portfolio" className="hover:text-amber-400 transition-colors">Portfolio</Link>
+              <Link href="/portfolio" className="hover:text-amber-400 transition-colors">Portfolio</Link>
               <span className="text-stone-700">/</span>
               <span className="text-amber-400">Add Project</span>
             </div>
 
             <div className="flex items-center gap-3">
               <Link 
-                href="/designer/portfolio" 
+                href="/portfolio" 
                 className="p-2.5 -ml-2 text-stone-400 hover:text-white hover:bg-white/5 rounded-xl border border-white/5 transition-all active:scale-95"
                 title="Back to portfolio"
               >
@@ -235,7 +235,7 @@ export default function AddPortfolioPage() {
           {/* Quick status & discard */}
           <div className="flex items-center gap-3 shrink-0">
             <Link
-              href="/designer/portfolio"
+              href="/portfolio"
               className="px-4 py-2.5 rounded-xl text-xs font-bold text-stone-400 hover:text-white hover:bg-white/5 border border-white/10 transition-all"
             >
               Discard

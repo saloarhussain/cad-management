@@ -225,13 +225,13 @@ export default function PortfolioDetailPage() {
   const handlePrev = () => {
     if (siblingItems.length <= 1) return;
     const prevIndex = currentIdxInSiblings > 0 ? currentIdxInSiblings - 1 : siblingItems.length - 1;
-    router.push(`/designer/portfolio/${siblingItems[prevIndex].id}`);
+    router.push(`/portfolio/edit/${siblingItems[prevIndex].id}`);
   };
 
   const handleNext = () => {
     if (siblingItems.length <= 1) return;
     const nextIndex = currentIdxInSiblings < siblingItems.length - 1 ? currentIdxInSiblings + 1 : 0;
-    router.push(`/designer/portfolio/${siblingItems[nextIndex].id}`);
+    router.push(`/portfolio/edit/${siblingItems[nextIndex].id}`);
   };
 
   const handleShare = () => {
@@ -310,7 +310,7 @@ export default function PortfolioDetailPage() {
             {/* Nav Links */}
             <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold">
               <Link href="/explore" className="text-zinc-400 hover:text-white transition-colors">Haute Ateliers</Link>
-              <Link href="/designer/portfolio" className="text-zinc-400 hover:text-white transition-colors">Jewellery CAD Vault</Link>
+              <Link href="/portfolio" className="text-zinc-400 hover:text-white transition-colors">Jewellery CAD Vault</Link>
               <Link href="/team" className="text-zinc-400 hover:text-white transition-colors">Master Goldsmiths</Link>
               <Link href="/projects" className="text-zinc-400 hover:text-white transition-colors">Couture Awards</Link>
             </nav>

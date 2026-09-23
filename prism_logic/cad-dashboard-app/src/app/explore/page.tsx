@@ -125,7 +125,7 @@ export default function ExplorePage() {
 
         {isDesigner && (
           <Link
-            href="/designer/portfolio/new"
+            href="/portfolio/edit/new"
             className="px-5 py-3 bg-[#F59E0B] text-black font-headline font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-[#F59E0B]/10 active:scale-95 transition-all flex items-center gap-2 hover:brightness-110"
           >
             <span className="material-symbols-outlined text-sm">share</span>

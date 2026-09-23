@@ -11,7 +11,7 @@ export default function DesignerPortfolio() {
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
   const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isDesigner } = useAuth();
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function DesignerPortfolio() {
           {/* Header */}
           <div className="flex justify-between items-center mb-10 relative z-10">
             <div>
-              <Link href="/designer" className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1 hover:text-[#d9ee3c] transition-colors mb-3">
+              <Link href={isDesigner ? "/designer" : "/"} className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1 hover:text-[#d9ee3c] transition-colors mb-3">
                 <span className="material-symbols-outlined text-sm">arrow_back</span>
                 Back to Dashboard
               </Link>
@@ -132,7 +132,7 @@ export default function DesignerPortfolio() {
                 <span className="material-symbols-outlined text-[#d9ee3c]">imagesmode</span>
                 Featured Work
               </h2>
-              <Link href="/designer/portfolio/new" className="px-4 py-2 bg-[#d9ee3c] text-[#1a1e00] font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-[0_0_15px_rgba(217,238,60,0.3)] hover:shadow-[0_0_20px_rgba(217,238,60,0.5)] active:scale-95 transition-all flex items-center gap-1.5">
+              <Link href="/portfolio/edit/new" className="px-4 py-2 bg-[#d9ee3c] text-[#1a1e00] font-bold uppercase tracking-widest text-[10px] rounded-xl shadow-[0_0_15px_rgba(217,238,60,0.3)] hover:shadow-[0_0_20px_rgba(217,238,60,0.5)] active:scale-95 transition-all flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm">add</span>
                 Add Item
               </Link>
