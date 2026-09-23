@@ -489,6 +489,26 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             -ms-overflow-style: none !important;
             scrollbar-width: none !important;
           }
+
+          /* Sleek Custom Scrollbar */
+          ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+          }
+          ::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: #282D3C;
+            border-radius: 8px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: #3f475f;
+          }
+          * {
+            scrollbar-width: thin;
+            scrollbar-color: #282D3C transparent;
+          }
         `}</style>
         {/* MainContainer - Expansive modern widescreen container eliminating empty side margins */}
         <div className="w-full max-w-[1720px] mx-auto min-h-screen flex flex-col relative overflow-x-hidden">
