@@ -1498,29 +1498,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           </span>
                         </div>
                       </button>
-                      <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-[#1E222D] border border-[#282D3C]">
-                        <span className="w-2 h-2 rounded-full bg-[#4ffeb9] shadow-[0_0_8px_rgba(79,254,185,0.8)] animate-pulse"></span>
-                        <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Atelier Online</span>
-                      </div>
                     </div>
-
-                    <div className="hidden md:flex flex-1 max-w-md items-center">
-                      <div className="relative w-full">
-                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-lg">search</span>
-                        <input 
-                          type="text" 
-                          placeholder="Search High-Jewellery CAD, gemstone maps, ateliers..." 
-                          className="w-full bg-[#0D0E12] border border-[#282D3C] rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder:text-zinc-500 focus:outline-none focus:border-[#d9ee3c] focus:ring-1 focus:ring-[#d9ee3c] transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <nav className="hidden xl:flex items-center gap-6 text-xs font-semibold">
-                      <Link href="/explore" className="text-zinc-400 hover:text-white transition-colors">Haute Ateliers</Link>
-                      <Link href="/designer/portfolio" className="text-zinc-400 hover:text-white transition-colors">Jewellery CAD Vault</Link>
-                      <Link href="/team" className="text-zinc-400 hover:text-white transition-colors">Master Goldsmiths</Link>
-                      <Link href="/projects" className="text-zinc-400 hover:text-white transition-colors">Couture Awards</Link>
-                    </nav>
 
                     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                       <button 
