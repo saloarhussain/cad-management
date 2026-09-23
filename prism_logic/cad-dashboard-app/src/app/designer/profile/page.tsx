@@ -193,7 +193,7 @@ export default function DesignerProfile() {
   }, []);
 
   const handleShare = async () => {
-    const publicUrl = `${window.location.origin}/portfolio/${user?.id}`;
+    const publicUrl = `${window.location.origin}/portfolio/${designer?.username || user?.id}`;
     const shareData = {
       title: 'Check out my 3D Jewelry Portfolio',
       text: 'I create custom 3D jewelry designs. Check out my portfolio!',

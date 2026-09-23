@@ -1510,7 +1510,7 @@ export async function getDesignerDb(organizationId?: string) {
     // 2. Fetch Organization Metadata
     const { data: settings } = await adminSupabase
       .from('settings')
-      .select('organizationName')
+      .select('organizationName, username')
       .eq('user_id', designer.user_id)
       .maybeSingle();
 
@@ -1523,7 +1523,10 @@ export async function getDesignerDb(organizationId?: string) {
 
     return {
       projects: assignedProjects || [],
-      designer: designer,
+      designer: {
+        ...designer,
+        username: settings?.username || null
+      },
       organization: {
         id: designer.user_id,
         name: settings?.organizationName || 'Unnamed Organization'
@@ -1568,7 +1571,18 @@ export async function getDesignerPortfolio() {
       projects = projectData || [];
     }
 
-    return { projects, portfolioItems: portfolioItems || [] };
+    // 4. Fetch settings for username
+    const { data: settings } = await adminSupabase
+      .from('settings')
+      .select('username')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    return { 
+      projects, 
+      portfolioItems: portfolioItems || [],
+      username: settings?.username || null
+    };
   } catch (err) {
     console.error('[getDesignerPortfolio] Error:', err);
     return { projects: [], portfolioItems: [] };

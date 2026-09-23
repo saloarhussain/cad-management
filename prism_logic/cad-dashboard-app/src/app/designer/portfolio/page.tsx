@@ -9,6 +9,7 @@ import { getDesignerPortfolio } from '@/app/actions';
 export default function DesignerPortfolio() {
   const [projects, setProjects] = useState<any[]>([]);
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
+  const [username, setUsername] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { user, isAuthenticated } = useAuth();
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
@@ -20,6 +21,7 @@ export default function DesignerPortfolio() {
         const res = await getDesignerPortfolio();
         setProjects(res.projects || []);
         setPortfolioItems(res.portfolioItems || []);
+        setUsername(res.username || null);
       } catch (err) {
         console.error('Failed to load portfolio data', err);
       } finally {
@@ -77,7 +79,7 @@ export default function DesignerPortfolio() {
             <button
               onClick={async () => {
                 try {
-                  const publicUrl = `${window.location.origin}/portfolio/${user?.id}`;
+                  const publicUrl = `${window.location.origin}/portfolio/${username || user?.id}`;
                   await navigator.clipboard.writeText(publicUrl);
                   setNotification({ message: 'Portfolio link copied to clipboard! 🔗', type: 'success' });
                 } catch {
