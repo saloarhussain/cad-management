@@ -705,10 +705,10 @@ export default function PortfolioDetailPage() {
                   {/* Commission Bespoke Piece CTA */}
                   <Link 
                     href={`/inbox?hire=${designer?.id || item.id}&title=${encodeURIComponent(item.title)}`}
-                    className="w-full min-h-[44px] flex items-center justify-center gap-2 py-3 px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.4)] active:translate-y-0"
+                    className="w-full min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.4)] active:translate-y-0"
                   >
-                    <span className="material-symbols-outlined text-xl">mail</span>
-                    <span>COMMISSION BESPOKE PIECE / HIRE {creatorFirstName.toUpperCase()}</span>
+                    <span className="material-symbols-outlined text-lg sm:text-xl">mail</span>
+                    <span className="text-center leading-tight">COMMISSION <span className="hidden sm:inline">BESPOKE PIECE </span>/ HIRE {creatorFirstName.toUpperCase()}</span>
                   </Link>
                 </div>
               </div>
