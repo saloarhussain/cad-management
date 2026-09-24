@@ -1556,9 +1556,9 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   </div>
 
                   {/* Full-Screen 2-Column Split: Viewport & Details */}
-                  <div className="w-full flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+                  <div className="w-full flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0">
                     {/* LEFT COLUMN: CAD Interactive Viewport & High-Res Renders (~60%) */}
-                    <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none h-full min-h-0 overflow-y-auto overscroll-contain">
+                    <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none h-auto lg:h-full min-h-0 lg:overflow-y-auto overscroll-contain">
 
 
                       {/* Renders / Views Feed */}
@@ -1623,7 +1623,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </div>
 
                     {/* RIGHT COLUMN: Creator Header, Dossier Specs, Engagement & Sticky Commission CTA (~40%) */}
-                    <div className="flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] overflow-hidden h-full min-h-0">
+                    <div className="flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] lg:overflow-hidden h-auto lg:h-full min-h-0">
                       {/* Top Creator Profile Header Bar */}
                       <div className="p-4 sm:p-5 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/90 backdrop-blur-sm shrink-0">
                           <div className="flex items-center gap-3 min-w-0">
