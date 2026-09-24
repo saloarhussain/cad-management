@@ -386,7 +386,7 @@ export default function PortfolioDetailPage() {
           {/* 2-Column Dossier Workspace */}
           <div className="w-full flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0">
             {/* LEFT COLUMN: CAD Interactive Viewport (~60%) */}
-            <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none h-auto lg:h-full min-h-0 lg:overflow-y-auto overscroll-contain">
+            <div className="relative w-full lg:w-[60%] flex flex-col bg-[#0D0E12] border-b lg:border-b-0 lg:border-r border-[#282D3C] select-none flex-none lg:h-full lg:min-h-0 lg:overflow-y-auto overscroll-contain">
               {/* Viewport Top Badges & Controls Header */}
               <div className="sticky top-0 left-0 right-0 z-20 flex items-center justify-between p-3 sm:p-4 bg-[#0D0E12]/95 backdrop-blur-md border-b border-[#282D3C]/60 shrink-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -495,7 +495,7 @@ export default function PortfolioDetailPage() {
             </div>
 
             {/* RIGHT COLUMN: Creator Header, Dossier Specs, Engagement & Sticky Commission CTA (~40%) */}
-            <div className="flex-none lg:flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] lg:overflow-hidden h-auto lg:h-full min-h-0">
+            <div className="flex-none lg:flex-1 lg:w-[40%] flex flex-col justify-between bg-[#14161E] lg:overflow-hidden lg:h-full lg:min-h-0">
                 {/* Top Creator Profile Header Bar */}
                 <div className="p-4 sm:p-5 border-b border-[#282D3C] flex items-center justify-between gap-3 bg-[#14161E]/90 backdrop-blur-sm shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
@@ -544,7 +544,7 @@ export default function PortfolioDetailPage() {
                 </div>
 
                 {/* Scrollable Dossier Content & Technical Specifications */}
-                <div className="flex-1 overflow-y-visible lg:overflow-y-auto p-4 sm:p-6 flex flex-col gap-5 min-h-0 overscroll-contain">
+                <div className="flex-none lg:flex-1 lg:overflow-y-auto p-4 sm:p-6 flex flex-col gap-5 lg:min-h-0 overscroll-contain">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-[11px] text-[#ffb955] font-bold uppercase tracking-wider">{category}</span>
