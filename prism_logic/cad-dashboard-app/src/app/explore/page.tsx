@@ -1,456 +1,575 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/components/AuthProvider';
-import { getExploreItems } from '@/app/actions';
-import dynamic from 'next/dynamic';
-
-const ViewportCanvas = dynamic(() => import('@/components/viewport/ViewportCanvas'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[400px] flex items-center justify-center bg-[#0c0a04] text-[#F59E0B] rounded-2xl border border-white/5">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
-        <div className="text-[#F59E0B] font-headline font-black text-[10px] tracking-widest uppercase animate-pulse">
-          Initializing 3D Viewport...
-        </div>
-      </div>
-    </div>
-  )
-});
+import React from "react";
 
 export default function ExplorePage() {
-  const { user, isDesigner, isAuthenticated } = useAuth();
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [activeMediaTab, setActiveMediaTab] = useState<'render' | '3d'>('render');
-  const [activeImageIdx, setActiveImageIdx] = useState(0);
-
-  // Search and Filter State
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
-  useEffect(() => {
-    const fetchItems = async () => {
-      setLoading(true);
-      const res = await getExploreItems();
-      if (res.success && res.data) {
-        setItems(res.data);
-      }
-      setLoading(false);
-    };
-    fetchItems();
-  }, []);
-
-  // Filter items based on search and category selection
-  const filteredItems = useMemo(() => {
-    return items.filter(item => {
-      // 1. Category Filter
-      const categoryMatch = selectedCategory === 'All' || 
-        (item.description && item.description.includes(`[CATEGORY] ${selectedCategory}`)) ||
-        item.category === selectedCategory; // Fallback if schema maps it directly
-
-      // 2. Search Query Filter
-      const lowerQuery = searchQuery.toLowerCase();
-      const titleMatch = item.title && item.title.toLowerCase().includes(lowerQuery);
-      const descMatch = item.description && item.description.toLowerCase().includes(lowerQuery);
-      const designerMatch = item.designer && item.designer.fullName && item.designer.fullName.toLowerCase().includes(lowerQuery);
-      
-      return categoryMatch && (titleMatch || descMatch || designerMatch);
-    });
-  }, [items, searchQuery, selectedCategory]);
-
-  const categories = ['All', '3D CAD Modeling', 'High-Detail Rendering', 'Digital Sculpting', 'Parametric Design'];
-
-  // Parse custom metadata out of the description block
-  const parseDescription = (descStr: string) => {
-    if (!descStr) return { category: '', software: '', cadFile: '', narrative: '' };
-    
-    const categoryMatch = descStr.match(/\[CATEGORY\]\s*(.*?)(?=\n|\[|$)/);
-    const softwareMatch = descStr.match(/\[SOFTWARE\]\s*(.*?)(?=\n|\[|$)/);
-    const cadFileMatch = descStr.match(/\[CAD_FILE\]\s*(.*?)(?=\n|\[|$)/);
-    
-    // The narrative is everything after the tags
-    let narrative = descStr;
-    const cleanTags = ['[CATEGORY]', '[SOFTWARE]', '[CAD_FILE]'];
-    cleanTags.forEach(tag => {
-      const idx = narrative.indexOf(tag);
-      if (idx !== -1) {
-        const nextLineIdx = narrative.indexOf('\n', idx);
-        if (nextLineIdx !== -1) {
-          narrative = narrative.slice(nextLineIdx + 1);
-        } else {
-          narrative = '';
-        }
-      }
-    });
-
-    return {
-      category: categoryMatch?.[1]?.trim() || '',
-      software: softwareMatch?.[1]?.trim() || '',
-      cadFile: cadFileMatch?.[1]?.trim() || '',
-      narrative: narrative.trim()
-    };
-  };
-
-  const handleCardClick = (item: any) => {
-    setSelectedItem(item);
-    setActiveImageIdx(0);
-    setActiveMediaTab('render');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-[#0c0a04] text-white font-body pb-32">
-      {/* Explore Page Header */}
-      <header className="max-w-6xl mx-auto px-6 pt-24 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5">
-        <div>
-          <h1 className="text-3xl font-black text-white uppercase tracking-tight flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#F59E0B] text-3xl">explore</span>
-            Explore Designs
-          </h1>
-          <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest mt-1">
-            Discover outstanding CAD models, digital renders, and talent inside our community
-          </p>
-        </div>
+    <div className="bg-surface-canvas font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
+<header className="fixed top-0 inset-x-0 z-50 bg-surface-canvas/80 backdrop-blur-xl border-b border-surface-border"><div className="h-16 w-full px-gutter flex items-center justify-between gap-space-lg"><div className="flex items-center gap-space-lg shrink-0"><a className="flex items-center gap-space-sm group" data-path="explore" href="#"><div className="w-9 h-9 rounded-lg bg-surface-card-elevated border border-surface-border flex items-center justify-center transition-all group-hover:border-primary-fixed"><span className="material-symbols-outlined text-primary-fixed text-[20px]">deployed_code</span></div><span className="font-headline-md text-headline-md tracking-tight font-extrabold text-text-primary uppercase">CAD<span className="text-primary-fixed">ONCE</span></span></a></div><div className="flex-1 max-w-xl hidden md:block"><div className="relative flex items-center"><span className="material-symbols-outlined absolute left-space-md text-text-muted pointer-events-none text-[18px]">search</span><input className="w-full h-10 pl-10 pr-14 bg-surface-card border border-surface-border rounded-lg font-body-sm text-body-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-primary-fixed focus:ring-1 focus:ring-primary-fixed transition-all" placeholder="Search 3D models, CAD blueprints, artists..." type="text"/><kbd className="absolute right-space-sm px-1.5 py-0.5 rounded bg-surface-card-elevated border border-surface-border font-label-caps text-label-caps text-text-muted pointer-events-none">⌘K</kbd></div></div><div className="flex items-center gap-space-lg shrink-0"><nav className="hidden lg:flex items-center gap-space-md h-16" data-active-classes="text-text-primary border-b-2 border-primary-fixed"><a aria-current="page" className="h-full flex items-center px-space-xs font-label-md transition-colors text-text-primary border-b-2 border-primary-fixed" data-path="explore" href="#">Explore</a><a className="h-full flex items-center px-space-xs font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="shop" href="#">Shop</a><a className="h-full flex items-center px-space-xs font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="hire" href="#">Hire</a><a className="h-full flex items-center px-space-xs font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" data-path="find-a-job" href="#">Find a Job</a></nav><div className="flex items-center gap-space-md"><button aria-label="Notifications" className="relative p-2 rounded-lg bg-surface-card border border-surface-border text-on-surface-variant hover:text-on-surface hover:border-surface-card-elevated transition-colors" type="button"><span className="material-symbols-outlined text-[20px]">notifications</span><span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface-card"></span></button><div className="relative flex items-center shrink-0"><img alt="Profile" className="w-8 h-8 rounded-full object-cover ring-1 ring-surface-border" src="https://lh3.googleusercontent.com/aida/AEtjO1VPp09o3ogCTkNQyUym2o0t0CN9A7xJ5b39ixiGpuC02ctfQRtDRE0i4Ysra1tdc-Pq5rqQMVrkvSBuecyYau8hMZnwXjM94x6pvkNT7B92QkrPVH9YHhsMlZpQRFTkphYi8G4oPJppqSCWkwmCveTdYf_XkClNTK0xYUWV--tYjexO_yfHcdXfDTv68hZsxOFuSx0I31in0Tv4gU6j2qeDczwhOnokOH2rOIbGvaTWV8TP0hUziJq1TbGE"/><span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-surface-canvas"></span></div></div></div></div></header><main className="w-full pt-16 flex-1 bg-surface-canvas"><div className="flex flex-col w-full">
+{/* Interactive Viewport Modal (Hidden by Default) */}
+<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-surface-canvas/80 backdrop-blur-md opacity-0 pointer-events-none transition-opacity duration-300" id="quick-inspect-modal">
+<div className="relative w-full max-w-4xl bg-surface-card rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md">
+<div className="flex items-center justify-between">
+<div className="flex items-center gap-space-sm">
+<span className="w-2.5 h-2.5 rounded-full bg-primary-fixed animate-pulse"></span>
+<span className="font-headline-sm text-headline-sm text-text-primary">3D Real-Time Topology Inspector</span>
+<span className="px-2 py-0.5 rounded bg-surface-card-elevated font-label-caps text-label-caps text-primary-fixed uppercase">Rhino 7 / Mesh View</span>
+</div>
+<button className="p-1 rounded-lg bg-surface-card-elevated text-text-secondary hover:text-text-primary transition-colors" id="close-inspect-btn">
+<span className="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div className="relative w-full h-96 rounded-lg bg-surface-deep overflow-hidden flex items-center justify-center group">
+<img className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-105" data-alt="High precision photorealistic close-up CAD wireframe render of an emerald halo luxury engagement ring with glowing cyan laser topology mesh lines overlaying pristine polished platinum and micro-pavé diamonds on pitch-black obsidian backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYG4WOiZykngwBON3G5guC8DsGAMpQvgPnVRUROJ-oCUUO3IdRn0TAGPfiuFwwVBH8M5cKaKDlvNl9-EgPHResV3DWtQHS11zH7Mu2BBm4tFumK8OUmjf7giDwCLT9VGT-SYM3DhtMAca6jj4pVjKJCwO5fYYalkki1qvgJezRhv0w8ewRaqkBbyVBerD89Eyq3llKrS1JMnojQLVwjkmatuHRhacp31Dmx0jhLrhlU_TnodlBEDwX0w"/>
+<div className="absolute inset-0 bg-gradient-to-t from-surface-deep via-transparent to-transparent opacity-80 pointer-events-none"></div>
+<div className="absolute bottom-4 left-4 flex items-center gap-2">
+<span className="px-2.5 py-1 rounded-md bg-surface-card/90 font-label-caps text-label-caps text-tertiary-fixed">Tol: ±0.005mm</span>
+<span className="px-2.5 py-1 rounded-md bg-surface-card/90 font-label-caps text-label-caps text-text-secondary">Polys: 1,842,910</span>
+<span className="px-2.5 py-1 rounded-md bg-surface-card/90 font-label-caps text-label-caps text-text-secondary">SubD Active</span>
+</div>
+<div className="absolute top-4 right-4 flex items-center gap-1.5 bg-surface-card/90 px-3 py-1.5 rounded-lg shadow-lg">
+<span className="material-symbols-outlined text-primary-fixed text-[18px]">view_in_ar</span>
+<span className="font-label-caps text-label-caps text-text-primary uppercase">Orthographic Orbit</span>
+</div>
+</div>
+<div className="flex items-center justify-between pt-2">
+<span className="font-body-sm text-body-sm text-text-muted">Export formats: .STP • .3DM • .OBJ • .STL (Ready for 5-Axis CNC & Wax Printing)</span>
+<button className="px-space-md py-space-xs rounded bg-primary-fixed text-surface-deep font-headline-sm text-headline-sm font-bold shadow-md hover:brightness-110 transition-all">Download Mesh Specs</button>
+</div>
+</div>
+</div>
+{/* Sub-Header Filter Bar */}
+<div className="sticky top-16 z-40 w-full bg-surface-card/90 backdrop-blur-xl">
+<div className="px-gutter py-space-sm flex flex-col md:flex-row items-center justify-between gap-space-md">
+{/* Category Pills Scrollable Row */}
+<div className="w-full md:w-auto overflow-x-auto scrollbar-none flex items-center gap-space-xs">
+<button className="px-3.5 py-1.5 rounded-full bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold whitespace-nowrap shadow-sm hover:brightness-110 transition-all">All 3D & CAD</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors flex items-center gap-1">
+<span className="material-symbols-outlined text-[16px] text-tertiary-fixed">diamond</span>
+          Jewellery & Luxury
+        </button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors">Industrial Design</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors">Automotive & Aero</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors">Architectural Vis</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors">Characters & Sculpt</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-text-secondary hover:text-text-primary hover:bg-surface-container font-label-md text-label-md whitespace-nowrap transition-colors">Game Assets</button>
+<button className="px-3.5 py-1.5 rounded-full bg-surface-card-elevated text-secondary font-label-md text-label-md whitespace-nowrap hover:bg-surface-container transition-colors flex items-center gap-1">
+<span className="material-symbols-outlined text-[16px]">redeem</span>
+          Free Assets
+        </button>
+</div>
+{/* Controls: Sort & Layout Toggle */}
+<div className="flex items-center gap-space-sm shrink-0 self-end md:self-auto">
+<div className="relative">
+<select className="appearance-none bg-surface-card-elevated text-text-primary font-label-md text-label-md pl-3 pr-8 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary-fixed cursor-pointer">
+<option>Trending Now</option>
+<option>Latest Uploads</option>
+<option>Top Rated (All Time)</option>
+<option>Staff Picks Only</option>
+<option>Bench-Ready Printables</option>
+</select>
+<span className="material-symbols-outlined absolute right-2 top-2 pointer-events-none text-text-muted text-[16px]">expand_more</span>
+</div>
+<div className="flex items-center bg-surface-card-elevated p-1 rounded-lg gap-0.5">
+<button className="p-1.5 rounded bg-surface-card text-primary-fixed shadow-sm" title="Masonry Grid">
+<span className="material-symbols-outlined text-[18px]">grid_view</span>
+</button>
+<button className="p-1.5 rounded text-text-muted hover:text-text-primary transition-colors" title="Compact Flow">
+<span className="material-symbols-outlined text-[18px]">view_comfy</span>
+</button>
+<button className="p-1.5 rounded text-text-muted hover:text-text-primary transition-colors" title="Detail Feed">
+<span className="material-symbols-outlined text-[18px]">view_agenda</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div className="px-gutter py-space-lg flex flex-col gap-space-xl">
+{/* Hero / Trending Showcase Banner */}
+<div className="relative w-full rounded-2xl overflow-hidden bg-surface-card shadow-2xl">
+{/* Glow & Accent Mesh Grid */}
+<div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-accent-glow blur-3xl pointer-events-none"></div>
+<div className="absolute top-1/2 right-1/4 w-80 h-80 rounded-full bg-tertiary-container/10 blur-3xl pointer-events-none"></div>
+<div className="relative grid grid-cols-1 lg:grid-cols-12 items-center">
+{/* Visual Render Viewport (Left / Center) */}
+<div className="lg:col-span-7 h-72 md:h-96 lg:h-[430px] relative overflow-hidden group">
+<img className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" data-alt="Intricate photorealistic technical render of an emerald halo cocktail ring with micro-pave diamond split shank, featuring CAD coordinate wireframe callouts in cyan, laser measured dimensions, platinum prong setting details, dark dramatic studio lighting on black slate background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdfL-IobQ1JUkpQ59jdNt22sOwOy6JGDkXX4-LCGcF54Va3N26RbDdBr2Ol2L2K5sRyRAL8ZbqTxSkmGmOO4TLpQ8gYiTPujENPkpbbhVu0jYsvJ84yy92isYSNuC73aU9DZw1dZMw24qYqe1NAcjElxLlswe0H-JqYZV-8-YjpT0_OMpQjR9U5nyanko1qqhDMAjwjost50q0N0VhstUal5Xwq49_ymN4yGBvRKG4FF0dlNfno0h91g"/>
+<div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-surface-card hidden lg:block"></div>
+<div className="absolute inset-0 bg-gradient-to-t from-surface-card via-transparent to-transparent lg:hidden"></div>
+{/* Badges Overlay */}
+<div className="absolute top-space-md left-space-md flex flex-wrap gap-2">
+<div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-card/90 backdrop-blur-md">
+<span className="material-symbols-outlined text-secondary text-[16px]">verified</span>
+<span className="font-label-caps text-label-caps text-text-primary uppercase tracking-wider">Staff Pick of the Week</span>
+</div>
+<div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-card/90 backdrop-blur-md">
+<span className="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-ping"></span>
+<span className="font-label-caps text-label-caps text-tertiary-fixed-dim uppercase tracking-wider">3D Interactive</span>
+</div>
+</div>
+<div className="absolute bottom-space-md left-space-md flex items-center gap-2">
+<div className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-deep/80 backdrop-blur-md">
+<span className="material-symbols-outlined text-[14px] text-text-secondary">straighten</span>
+<span className="font-label-caps text-label-caps text-text-secondary">Bench Ready ±0.008mm</span>
+</div>
+<div className="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-deep/80 backdrop-blur-md">
+<span className="material-symbols-outlined text-[14px] text-primary-fixed">layers</span>
+<span className="font-label-caps text-label-caps text-primary-fixed">Rhino 7 • MatrixGold</span>
+</div>
+</div>
+</div>
+{/* Meta Dossier & Actions (Right) */}
+<div className="lg:col-span-5 p-space-lg lg:p-space-xl flex flex-col justify-between h-full z-10">
+<div>
+<div className="flex items-center gap-space-sm mb-space-sm">
+<img className="w-9 h-9 rounded-full object-cover ring-2 ring-primary-fixed/40" data-alt="Portrait photo of Master CAD Artist Elena Rostova, female jewellery engineer wearing spectacles, clean dramatic side lighting against obsidian studio backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDf5wL8IyidbHgtuKy-dosyoj6B71i5r04p9bamR0CF3q8AS9dCXZNsYYIObigij7Rr-TXdmL-Ez-AWQs2G1PgRdE-KDxW16PzOutd6XBPGQbYvNXFNduhQhmUyqt2b3rxEgsoIVyczGfbf_pw_8Z5LSTYVr1kQEcSl2xqsWjcHHM6RhEcGQwT3Uziv8e81Hn3TDRghAfloL-PyrywKHZYK6r1CmnwRy-8BoL7hZrIp10RqvwX8thL8TQ"/>
+<div className="flex flex-col">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold hover:text-primary-fixed cursor-pointer transition-colors">Elena Rostova, GG</span>
+<span className="font-label-caps text-label-caps text-text-muted">Senior High-Jewelry CAD Director • Geneva</span>
+</div>
+</div>
+<h2 className="font-headline-lg text-headline-lg text-text-primary font-extrabold tracking-tight mb-space-xs">
+              Project Chrono-Pavé Emerald Celestial Ring
+            </h2>
+<p className="font-body-md text-body-md text-text-secondary mb-space-md line-clamp-3">
+              Flawless 4.2ct octagon-cut emerald centerpiece cradled within double-tier micro-prongs. Engineered with CNC-optimized under-gallery open filigree to maximize gemstone luminescence and stone-seat tolerances for casting.
+            </p>
+<div className="grid grid-cols-3 gap-space-sm py-space-sm rounded-xl bg-surface-card-elevated/70 px-space-md mb-space-lg">
+<div className="flex flex-col">
+<span className="font-stat-counter text-stat-counter text-text-primary">12.8k</span>
+<span className="font-label-caps text-label-caps text-text-muted uppercase">Impressions</span>
+</div>
+<div className="flex flex-col border-l border-surface-border pl-space-md">
+<span className="font-stat-counter text-stat-counter text-primary-fixed">1,480</span>
+<span className="font-label-caps text-label-caps text-text-muted uppercase">Appreciations</span>
+</div>
+<div className="flex flex-col border-l border-surface-border pl-space-md">
+<span className="font-stat-counter text-stat-counter text-secondary">48</span>
+<span className="font-label-caps text-label-caps text-text-muted uppercase">Downloads</span>
+</div>
+</div>
+</div>
+<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-md">
+<button className="flex-1 px-space-lg py-3 rounded-lg bg-primary-fixed text-surface-deep font-headline-sm text-headline-sm font-extrabold flex items-center justify-center gap-2 shadow-lg shadow-primary-fixed/20 hover:brightness-110 active:scale-[0.98] transition-all" id="open-inspect-btn">
+<span className="material-symbols-outlined text-[20px]">view_in_ar</span>
+              Inspect in 3D Viewport
+            </button>
+<a className="px-space-md py-3 rounded-lg bg-surface-card-elevated hover:bg-surface-container text-text-primary font-headline-sm text-headline-sm font-semibold flex items-center justify-center gap-1.5 transition-colors" href="#">
+<span className="material-symbols-outlined text-[18px]">shopping_bag</span>
+<span>Shop ($185)</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+{/* Top Designers Section */}
+<div className="flex flex-col gap-space-md">
+<div className="flex items-center justify-between">
+<div className="flex items-center gap-space-sm">
+<span className="material-symbols-outlined text-secondary text-[22px]">stars</span>
+<h3 className="font-headline-md text-headline-md text-text-primary font-bold">Top Verified CAD Engineers & Artists</h3>
+</div>
+<a className="font-label-md text-label-md text-primary-fixed hover:underline flex items-center gap-1" href="#">
+          View All 1,420+ Creators
+          <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+</a>
+</div>
+{/* Horizontal Scrollable Designers Stream */}
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-space-md">
+{/* Designer 1 */}
+<div className="relative bg-surface-card hover:bg-surface-card-elevated rounded-xl p-space-md transition-all duration-300 group flex flex-col justify-between shadow-lg">
+<div className="flex items-center gap-space-sm mb-space-sm">
+<div className="relative">
+<img className="w-12 h-12 rounded-full object-cover ring-2 ring-primary-fixed" data-alt="Headshot of jewellery CAD designer Elena Rostova smiling with focused intense artistic gaze, set against dark minimalist ambient lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAbkCAG80N-A2VMEvjqvVFefovuey7PKX2QHTLmOfuGti9wjX1jGBaRVrmvVKQy4VZr_j_A-IPnplso2Dz2PZ0KYgHk2sGMOPAAl1MPC9ZJNqNldMFHn7MbArU2yK9NX-MpWJWzGVoH6grfqotwN7CwzJl5EDIb-dSzNTR6sKaIGzkeqswQv0pOK4Eaup7F95uvjVrZxPxT8CGq2jYh3kDLchUEjJTOCJQsn953TUKT5AQO0OpgZqNvRQ"/>
+<span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-surface-card"></span>
+</div>
+<div className="flex flex-col min-w-0">
+<div className="flex items-center gap-1">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold truncate">Elena Rostova</span>
+<span className="material-symbols-outlined text-[16px] text-tertiary-fixed shrink-0">verified</span>
+</div>
+<span className="font-label-caps text-label-caps text-primary-fixed truncate">Jewellery CAD • MatrixGold</span>
+</div>
+</div>
+<p className="font-body-sm text-body-sm text-text-secondary mb-space-md">42 Production Master Models • 19.4k Followers</p>
+<div className="flex items-center gap-space-xs">
+<button className="flex-1 py-1.5 rounded-lg bg-surface-deep hover:bg-surface-card text-text-primary font-label-md text-label-md transition-colors">Follow</button>
+<button className="px-3 py-1.5 rounded-lg bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold hover:brightness-110 transition-all">Hire</button>
+</div>
+</div>
+{/* Designer 2 */}
+<div className="relative bg-surface-card hover:bg-surface-card-elevated rounded-xl p-space-md transition-all duration-300 group flex flex-col justify-between shadow-lg">
+<div className="flex items-center gap-space-sm mb-space-sm">
+<div className="relative">
+<img className="w-12 h-12 rounded-full object-cover ring-2 ring-tertiary-fixed" data-alt="Portrait of Saloar Hussain, male automotive surface modeler, studio portrait with sharp neon cyan backlighting on dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBopODeq7NiDyODsJuyKIE9q0BBGFY95sN8wrxzENUK_NtNjb9WZSp7bhEGnWV5Si-v_8wjRlHYMK4R9k-PB1XHCb3phYKk5Mn5Mtz936Z3rpmdZ1phUwkroYhkDukj6JhZm-0PInz_WpFnQUD9VtQVT1UXNXm-YjN2-TZjvQue3FvtFYtdzpiZzsDWNkyqoWFYiXgHYnZpQ_Vp-5xM62oMOM5jq00I_9byJ1qQKDSQ5L06ZN2QVKnenQ"/>
+<span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-surface-card"></span>
+</div>
+<div className="flex flex-col min-w-0">
+<div className="flex items-center gap-1">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold truncate">Saloar Hussain</span>
+<span className="material-symbols-outlined text-[16px] text-tertiary-fixed shrink-0">verified</span>
+</div>
+<span className="font-label-caps text-label-caps text-tertiary-fixed truncate">Industrial & Hard Surface</span>
+</div>
+</div>
+<p className="font-body-sm text-body-sm text-text-secondary mb-space-md">88 Assemblies • 24.1k Followers</p>
+<div className="flex items-center gap-space-xs">
+<button className="flex-1 py-1.5 rounded-lg bg-surface-deep hover:bg-surface-card text-text-primary font-label-md text-label-md transition-colors">Follow</button>
+<button className="px-3 py-1.5 rounded-lg bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold hover:brightness-110 transition-all">Hire</button>
+</div>
+</div>
+{/* Designer 3 */}
+<div className="relative bg-surface-card hover:bg-surface-card-elevated rounded-xl p-space-md transition-all duration-300 group flex flex-col justify-between shadow-lg">
+<div className="flex items-center gap-space-sm mb-space-sm">
+<div className="relative">
+<img className="w-12 h-12 rounded-full object-cover ring-2 ring-secondary" data-alt="Portrait of Kenji Sato, concept car CAD designer wearing sleek dark techwear in modern studio with amber side lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrwZdKMjtX_p-v2Bx--9cN76kfe0-bZUikaY8caUY1TPMsyYwR7-8grkjC_o9mox_bSeOtI-JubUod2GU0vcLzQqdSGMxe2xcdICQpQrQSdj1wNQ8SZwAP4ZUlaPI-sbEtQy9L3wPtIgBGFLleYe59mduzssJZD02eXJodnpYtLRM_5cLmDZZV0QAQBb0ESgcaAYIJ1pXVGNj_GA5P7d-7PhadmMGVh8WoIVj17exrPzeeyXg-VmVRMA"/>
+<span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-surface-border ring-2 ring-surface-card"></span>
+</div>
+<div className="flex flex-col min-w-0">
+<div className="flex items-center gap-1">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold truncate">Kenji Sato</span>
+<span className="material-symbols-outlined text-[16px] text-secondary shrink-0">verified</span>
+</div>
+<span className="font-label-caps text-label-caps text-secondary truncate">Automotive & Concept CAD</span>
+</div>
+</div>
+<p className="font-body-sm text-body-sm text-text-secondary mb-space-md">31 Vehicles • 15.6k Followers</p>
+<div className="flex items-center gap-space-xs">
+<button className="flex-1 py-1.5 rounded-lg bg-surface-deep hover:bg-surface-card text-text-primary font-label-md text-label-md transition-colors">Follow</button>
+<button className="px-3 py-1.5 rounded-lg bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold hover:brightness-110 transition-all">Hire</button>
+</div>
+</div>
+{/* Designer 4 */}
+<div className="relative bg-surface-card hover:bg-surface-card-elevated rounded-xl p-space-md transition-all duration-300 group flex flex-col justify-between shadow-lg">
+<div className="flex items-center gap-space-sm mb-space-sm">
+<div className="relative">
+<img className="w-12 h-12 rounded-full object-cover ring-1 ring-surface-border" data-alt="Portrait of Maya Lin, female architectural 3D visualizer with confident expression against cinematic architectural render projection." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUNiY0g_3D-3plWBuZUFicVH2HbZt33Z1-UhfzLMRI3dFhnoGGPSx2W-bhExN64Jy-Hk2Af5HbVQYa5PY5jpNEjKlzO_yRWVtTQuuLhD_qt4gqMoejAlqUwFIZnkYpB1pByIKaXGIAl16ByUSr7oPzNn7GRIobceCTsuv-LZYK9HSwDjEGWjjRidy54Nzzgotz7SGsydO6AJFQnxTrF4mwzNnipbnwaCn3_nVJJcY36hpyJnPVeLIGxA"/>
+<span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-surface-card"></span>
+</div>
+<div className="flex flex-col min-w-0">
+<div className="flex items-center gap-1">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold truncate">Maya Lin</span>
+<span className="material-symbols-outlined text-[16px] text-tertiary-fixed shrink-0">verified</span>
+</div>
+<span className="font-label-caps text-label-caps text-text-muted truncate">ArchViz & Unreal Engine 5</span>
+</div>
+</div>
+<p className="font-body-sm text-body-sm text-text-secondary mb-space-md">114 Environments • 32.0k Followers</p>
+<div className="flex items-center gap-space-xs">
+<button className="flex-1 py-1.5 rounded-lg bg-surface-deep hover:bg-surface-card text-text-primary font-label-md text-label-md transition-colors">Follow</button>
+<button className="px-3 py-1.5 rounded-lg bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold hover:brightness-110 transition-all">Hire</button>
+</div>
+</div>
+{/* Designer 5 */}
+<div className="relative bg-surface-card hover:bg-surface-card-elevated rounded-xl p-space-md transition-all duration-300 group flex flex-col justify-between shadow-lg">
+<div className="flex items-center gap-space-sm mb-space-sm">
+<div className="relative">
+<img className="w-12 h-12 rounded-full object-cover ring-1 ring-surface-border" data-alt="Close-up portrait of David Vance, organic digital sculptor, focused expression in atmospheric low key lighting with green subtle rim light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApmJekmKgYHiYcOnof-yqYlsurG6idKnGc0t_Evej-8cNuPZ6IDrTrLzKQ4uGTcR1Tw0A1luoaq_oQg6Oj74so-AMJn0zuLCSRGc1dZ5pA7N13w5cvj3kWgvNbaVJetfVB90GBqQORNztE3oWJ3hwqXUWXpJkhoC7aiOs8TQLYM2PfOpnuOSiuoSjzuIFwasYUHswzJgJSoSqzIrPyVzzXaE59bz_LXfoep69PHzttze3A7t71sjifDA"/>
+<span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-surface-card"></span>
+</div>
+<div className="flex flex-col min-w-0">
+<div className="flex items-center gap-1">
+<span className="font-headline-sm text-headline-sm text-text-primary font-bold truncate">David Vance</span>
+<span className="material-symbols-outlined text-[16px] text-tertiary-fixed shrink-0">verified</span>
+</div>
+<span className="font-label-caps text-label-caps text-primary-fixed truncate">Digital Sculpt • ZBrush</span>
+</div>
+</div>
+<p className="font-body-sm text-body-sm text-text-secondary mb-space-md">67 Collectibles • 11.2k Followers</p>
+<div className="flex items-center gap-space-xs">
+<button className="flex-1 py-1.5 rounded-lg bg-surface-deep hover:bg-surface-card text-text-primary font-label-md text-label-md transition-colors">Follow</button>
+<button className="px-3 py-1.5 rounded-lg bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold hover:brightness-110 transition-all">Hire</button>
+</div>
+</div>
+</div>
+</div>
+{/* Main Content - The Explore Grid (Masonry Aesthetics) */}
+<div className="flex flex-col gap-space-md">
+<div className="flex items-center justify-between">
+<div className="flex items-center gap-space-sm">
+<span className="material-symbols-outlined text-primary-fixed text-[24px]">view_quilt</span>
+<h3 className="font-headline-md text-headline-md text-text-primary font-bold">Trending Creations & CAD Assemblies</h3>
+</div>
+<span className="font-body-sm text-body-sm text-text-muted">Showing 24 of 18,940 CAD models</span>
+</div>
+{/* High Density Media Masonry Grid */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-space-md">
+{/* Card 1: Luxury Jewelry Wireframe (Visual Focus Matching Prompt) */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Technical CAD wireframe rendering of a micro-pavé three-row diamond band platinum shank with green isocurve topology mesh lines overlaying the metallic polished diamond facets on black backdrop." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtrvawCqrvxzN3kswavhdbBoKOlJLuir8qVbskJ6uf5b_NeLBG9FQZrRHPxfQ3jkcH2DjG1nUTuTzclX7_FL4x4gB0wbx1yM9ZRo6ussbyZYJFBYb56wWl8eEqo1ecQDm9VF7Nq-wZqRUKxxizwYapNxR99PH1DsdfWnUCt5mx9x7Ee3qGV889tHk0LTf260SGn565S7_H9jilFNXKNBWRAqVoe50JUEm4GHlzBnGnhqgsuV-SRrYjBQ"/>
+{/* Badges */}
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-tertiary-fixed">3D View</span>
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-primary-fixed">Rhino 7</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold">$79</span>
+</div>
+{/* Quick View Hover Overlay */}
+<div className="absolute inset-0 bg-surface-deep/60 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity duration-200 flex items-center justify-center gap-2">
+<button className="p-2.5 rounded-full bg-primary-fixed text-surface-deep hover:scale-110 transition-transform shadow-lg" title="Orbit Model">
+<span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+</button>
+<button className="p-2.5 rounded-full bg-surface-card text-text-primary hover:text-secondary hover:scale-110 transition-transform shadow-lg" title="Bookmark">
+<span className="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+</div>
+</div>
+{/* Card Info */}
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Micro-Pavé Split-Shank Band Tolerances</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">Production STL • Wax ready</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of CAD engineer Elena Rostova" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw6xKPs2DVUZ4VwVlFhT7mykaQsX_-t-bmKjC2rh6npJKUAb6UQv0gpZbN_ijonuOVpDn5yNvK38f-0-yKSC-oLktifOuWIs39xVD1TDzdkjHc3egQkmWMpdJj-v5SgSvMjnCWFOechDFXdts347uWqewgAlLwghCs7TvVqosVjmE5gGgbrDToK7POjTTXIqoNhJFKjfvxLCNdgPPFNQO1cW-RnM1G_a_iDVvxD0YFgSKYr7tGLZ193g"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Elena R.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 1.2k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 6.8k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 2: Cybernetic Bionic Hand CAD */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Cinematic engineering 3D model of a robotic prosthetic bionic hand with exposed servo actuators, braided carbon fiber tendons, and precision titanium joints against matte dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDuLtVXhFW2USPQnJTXSzIVougC6sUeEBNZf5HZglBzNpU-Y_ZZ8PJi9PjckIc1lxM35bgVUukuqftg_ppDMVvQW-8_l4YKmEmjq_FCM8GZCmwveH7CukYGSOvSL5TawmLmqtAVkCSErXOL1767-ephhvv7Zp2b6H5RO63PXikIZdr6x4QOH_YZ5ojaGyYP1cYFkhmk8HcjYgGpdE1OXuPtyaRCfrme-_IKrWXZmQXxe06nloZnLEmog"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-secondary">Free STEP</span>
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-text-secondary">SolidWorks</span>
+</div>
+<div className="absolute inset-0 bg-surface-deep/60 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity duration-200 flex items-center justify-center gap-2">
+<button className="p-2.5 rounded-full bg-primary-fixed text-surface-deep hover:scale-110 transition-transform shadow-lg" title="Orbit Model">
+<span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+</button>
+<button className="p-2.5 rounded-full bg-surface-card text-text-primary hover:text-secondary hover:scale-110 transition-transform shadow-lg" title="Bookmark">
+<span className="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Aether-VII Biomorphic Prosthetic Hand</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">Full kinematics assembly (STEP/IGES)</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of designer Saloar Hussain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsM6axTJ0kQyeXf7g9GmDTnZD5iuq9TwR6pM0aKIS6_Bu24lQcmZNWNjVMAG95Fh-EN6INbznMflnNDXAOB516ajuCNmZA6JzOTtPaEDDEV4E5MC_ySoIwKfCJXzf-5k5BI30q-SXFGAM1c4XC_9bCKgr3izc3sSMKa83iElz0xn3xT0BHnOa5D5AfyjDn4T95FH8wLptp8psejkc0ydplQr-oP2xicLq9uFE2vRsWcnvE8G53VWvAkw"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Saloar H.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 3.4k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 14.1k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 3: Automotive Aero Rim */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Turbofan aerodynamics forged monoblock alloy wheel 3D CAD model with directional carbon aero vanes and anodized gold center-lock nut, photographed in low-key studio lighting with neon rim edge highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtLdm57zu8s1Qtc5-jESV2NRiiTEbZPiVs4fd422tMU1lberZUdWBhe1VE_5JLvIZH7TpTBMA-Xhr0ou0d2OmOWQCeLbe_d47QJX2qSZj1WxFDYaJ5TjpU7e4aWk0UBkc0b8OxJ-FCbwEwa-Udo7Eu-bbLitAO-JJKnIErB8ooxz6GgkbonK_DJpASIQqfee8cMugEWizKKZaiXUBhx13DZIo2q4m7J3KqNxOyfNXIAict6A03DGYAMw"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-tertiary-fixed">Portfolio</span>
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-text-secondary">Alias SubD</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-surface-card-elevated font-label-md text-label-md text-text-secondary">Showcase</span>
+</div>
+<div className="absolute inset-0 bg-surface-deep/60 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity duration-200 flex items-center justify-center gap-2">
+<button className="p-2.5 rounded-full bg-primary-fixed text-surface-deep hover:scale-110 transition-transform shadow-lg" title="Orbit Model">
+<span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+</button>
+<button className="p-2.5 rounded-full bg-surface-card text-text-primary hover:text-secondary hover:scale-110 transition-transform shadow-lg" title="Bookmark">
+<span className="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Vortex Formula Forged 21" Aero Wheel</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">CFD thermal venting optimized</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of designer Kenji Sato" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOBEUacg5LVldzfcy8qh7QhNasDjvJMA7J3vcf8CmDO1x2WJkqpza5djcUKAoJTRFS2EXNaPpoRpNWXNHdBQrt1JwH13GhJmpOmdbvn2bnAPNjwSG0FbA4gbPelFrVjSPJdYRFFZFEJh-YtsycZi7X5_QvusIU1BwJ4SOIk8ds3NhKMLcWKSEf-EkIhWByPXHjvPXg51aDb2DTPrRC1ImT6xXDbxN5XP5PQMMGf9UoNKc_fGVoeY8_sw"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Kenji S.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 982</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 4.5k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 4: Mechanical Tourbillon Watch Movement */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Ultra high detail horology mechanical tourbillon escapement cage render showing balance wheel, rubies, escapement gear teeth and hand-beveled bridges under macro lens with cold cyan lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXiE0rEUwPtlzBSnRYXRQ-gk4LmLqtuC-mzS6GYutz1BG9aB4QXAkRQQHRpaD0FDLmGSPIh61gFwJ2WBoLg-tGbs7Y6FL77Zdc5o0iW4XpQ0pjrogrI5STR7I2IqocZMHrcPglbeJXXA-OzSBr0z7G7mcCebk5fDK8cbECSUllfnp6W8JGUw_SNAsJPIl0GM_42kkeBQRH2qypFVqcU8nC2RcunMNNk2P46Qkeu9RoGLzbRk7cPLjCPA"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-primary-fixed">Staff Pick</span>
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-tertiary-fixed">3D View</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold">$149</span>
+</div>
+<div className="absolute inset-0 bg-surface-deep/60 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity duration-200 flex items-center justify-center gap-2">
+<button className="p-2.5 rounded-full bg-primary-fixed text-surface-deep hover:scale-110 transition-transform shadow-lg" title="Orbit Model">
+<span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+</button>
+<button className="p-2.5 rounded-full bg-surface-card text-text-primary hover:text-secondary hover:scale-110 transition-transform shadow-lg" title="Bookmark">
+<span className="material-symbols-outlined text-[20px]">bookmark</span>
+</button>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Tri-Axial Gyro Tourbillon Calibre 01</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">387 Individual Parts • Micro-gears</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of Swiss watchmaker CAD specialist" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBa18eK44ukBnK91aZ06ds6JVYHtH_yqHGmkkoViU4zkTRMB0GpfQbmOtGET6FHGNfPf6r-yNx7UDuoYUX5cyo4cI5ab6ccgTrBv47xDW3z_m1hDqPsSnOUmYEuKnuKMjjjJ61kUb5mhq_xR-QqEXZGTyGdcqVIa5hVnsP70hKQnmhvUkawHHpA4fWT0AHLIbUpsHqN4TgxZbd1iFDxCV8XcQFli8_ExOqDmPU4HUpX9cJo6RivX_Oq4Q"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Atelier V.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 2.8k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 18.2k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 5: Vintage Solitaire CAD Blueprint Render */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Art Deco vintage diamond engagement ring design screen view in Rhino CAD software showing cyan wireframe lines, millimeter measurement arrows, and cross section curves on dark textured grid." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjmLyP-rPrRULZNr6gHlwcGVoZ9zG99WlCKHqB04zhRCJASZsyfKS7SHPmKmAb_G5MEDTEfdM0PWtkZfuWcC2C1YLyNn75fPmQgDMPQuJRVFAFAsT-mcCYNHIjcrfvKKh5uY5_mHOvSG7vU1jVBE6WRseRrgpn6vNdcYUuDH9bbAVwbOM2AejJuU9z9rpqpLIQASJWj_VdxGZ31bhXogAwPB23KzqFuTh_Ldge1etCFTWNMT-XVhWBaw"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-primary-fixed">Blueprint</span>
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-text-secondary">MatrixGold</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold">$49</span>
+</div>
+<div className="absolute inset-0 bg-surface-deep/60 opacity-0 group-hover:opacity-100 backdrop-blur-sm transition-opacity duration-200 flex items-center justify-center gap-2">
+<button className="p-2.5 rounded-full bg-primary-fixed text-surface-deep hover:scale-110 transition-transform shadow-lg">
+<span className="material-symbols-outlined text-[20px]">3d_rotation</span>
+</button>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Belle Époque Filigree Crown Solitaire</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">Prong settings calibrated for 2.0ct oval</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of jewelry artisan" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAODG5tJ669Wf2-rRsMcXUEQe3Vuj-JPIxjTzgo0EOThTkp2YZF9nEXfDQC3dNovNid6HKFC6VE3JcQrFnNszJrMJikv0BPcU5QJav_TYcYObtysaz1mZU6u03pL8sq9vc8a6zl4rdsoJLE358cuTFG4p0UbEg6bYI3CMY01VrubnQxhbp8OhY3mT1f3YjGDP4dB8pU_nXzQTSy5hItsC4sXnkKAE_QK-BOrY42A6K7CWyoZ1Jl5rSTFQ"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Elena R.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 840</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 3.1k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 6: Sci-Fi Drone Thruster Assembly */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Heavy industrial VTOL tilt-rotor drone thruster assembly CAD model showing exploded internal turbine blades and hydraulic swashplate rendered in dark graphite tones with orange hydraulic conduit hoses." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZD3oTSOezbkXyeqOTm6nFaww2Xyx3novg1OE3cP1bP2jCeRudWDnwAyYLw4nv1ZGQrL6B_AeNgSVhBcHyjDPc-gtixDGqokt24wmHzwjk1vCHCZMEFZt-0wr_51AJN4jwfJI1OaNY-9QD8P0ckpm9IkFcvwhfs7B4Dif1fT2k6_dSXlClb0MiOwutUt9SpoOdgm2zsEoJSgOVQVMTPunuwW-rEK-rX2RASBjyirCRoHeFv7kmDSC-Ew"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-tertiary-fixed">Fusion 360</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold">$85</span>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">T-44 Quad-Tilt Vectoring Thruster</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">Includes assembly hierarchy & joints</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of designer David Vance" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCCavpgBC_mS-0SfoY6jKz7QSEQj7Wi-XVN4NaBxAhGOOn7vfIHI2PV2mwsavavSdV5CAd1JnLC_kS0KtMY2kJ7mCQ-BHIWaf6Hjco-BF2GniggwfiSEHDd2aYw7FYf7j7ILTHNjcHk6ttOxfhyO0Gbv9VwNIMbdaFDhgdSZtv5g1LR8SDTdDmvcZVdy5_1NCjVIf25ogkCRUlf89tbOrTxr_WS81UPjX2wQySUNCXyeC5t7ZGnuiftQ"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">David V.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 1.5k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 7.9k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 7: Ergonomic Cyber Gaming Mouse */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Ergonomic skeletonized honeycomb gaming mouse with magnesium alloy chassis and optical switch mechanism exposed, rendered in deep black with neon yellow-green accent lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIAtEdqwk0ggifef-Y2BrnMZWEyAEBojVg_Vq_6TjXDXS7d-Hpi2dQWT0Stdpk2FtF-SLWrn43QVbN66AXaB2AVYvBkXsI_dpbNVLq4ShHJEE8Rt0i7to7HqKVMAMQEeEcsTI3zEbIFn_iES6d1iFfQ2QByQa-FLn1Qyf_hmHtgHRxx1W8IwWHGLhS-jv-1ACH5nRJ7MVR9fAweO1mZFo5uq2NugTEkoZDJY6HH11MXpcoNKDYgUtSLA"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-secondary">Free STL</span>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">ExoGrip Ultra-Light 48g Mouse Shell</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">3D SLA Resin printable casing</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of maker designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH5ZMLAOqX53GlbS1KycjH2PFrmuMDVw7RZRZdptmis7SRMtRZE-v1S0Albwlkgbh6JK-CiBfOdRI1S2qzBpGyOpVlQpzDp0k8o36XUZQzxoAy1JwtNie5KNcGwN4Ge7sfjjg891QmeqYn9eBq7NP7BXH61mtNE5WsCbSgJ-VO8elXXm9wJsFXAG-ZPU4jCzPkWj5EzMDDKwzV2WLBJmhubLUXkQkvqUgc6nzdBCsC4xkjy8LNpFYKeQ"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Nox Lab</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 4.1k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 22k</span>
+</div>
+</div>
+</div>
+</div>
+{/* Card 8: Cyberpunk High-Poly Mecha Helmet */}
+<div className="group relative rounded-xl overflow-hidden bg-surface-card shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col">
+<div className="relative w-full aspect-square bg-surface-deep overflow-hidden">
+<img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Futuristic cybernetic pilot helmet sculpt in ZBrush with modular rebreather filters and iridescent optical visor, rendered in dramatic moody studio rim lighting on black obsidian background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1WcRsoUTVfrb6Np23aOKLqPL2WdZ3P1Po9qlQ3wDEdM9NxGvMn7nBMkC5w-R16iuDAXO4s44p-0x6B1Uipgwu2JJgQtoLoQPvxFkpcYS36Y4ZHYPwSMnv4Sg7f5klVQWUVeLMSwSvoUOMLGHzLzd5thEvvslhBitmJUH_-Do79W5mjfOYy3bGsJSbUNNXRFqXeP_1B4T4jFLYIgv51DVitJbjFrmEu9qV8ahom_8HtplukL-m6_g7Iw"/>
+<div className="absolute top-3 left-3 flex items-center gap-1.5">
+<span className="px-2 py-0.5 rounded bg-surface-deep/80 backdrop-blur font-label-caps text-label-caps text-tertiary-fixed">ZBrush</span>
+</div>
+<div className="absolute top-3 right-3">
+<span className="px-2 py-0.5 rounded bg-primary-fixed text-surface-deep font-label-md text-label-md font-bold">$62</span>
+</div>
+</div>
+<div className="p-space-md flex flex-col justify-between flex-1">
+<div>
+<h4 className="font-headline-sm text-headline-sm text-text-primary font-bold line-clamp-1 group-hover:text-primary-fixed transition-colors">Valkyrie Recon Pilot Helmet Sculpt</h4>
+<p className="font-body-sm text-body-sm text-text-muted mt-0.5">High poly ZTL + Decimated 4K textures</p>
+</div>
+<div className="flex items-center justify-between pt-space-sm mt-space-sm border-t border-surface-border">
+<div className="flex items-center gap-1.5">
+<img className="w-6 h-6 rounded-full object-cover" data-alt="Avatar of Maya Lin" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFqHfCX8CAYBDMsDVOYw9ZkI8F2kGD4EQgOLTedWSPALT6aVxPdyKaK-B0VG4XxaevzU5GSTq8waFlwjIMF6Lg_z2G-lk4EujAqBChJVBYSlAqXw8q21JwE_n3EZkOdET-lC8vVDM7NaUVwvEhAGUBOMjAwZKW5wwoByKKE3LkxIL_ftw1OJxTV2fU8kKHXGAkHuv4JLkxBw04zYTSwuoFLVok0LiYGyEKvEckL9YaBTtnGc1Cv-jZ2Q"/>
+<span className="font-label-md text-label-md text-text-secondary truncate max-w-[100px]">Maya L.</span>
+</div>
+<div className="flex items-center gap-space-sm text-text-muted font-label-caps text-label-caps">
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">favorite</span> 1.9k</span>
+<span className="flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">visibility</span> 9.6k</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+{/* Pagination / Endless Load Trigger */}
+<div className="w-full py-space-xl flex flex-col items-center justify-center gap-space-md">
+<button className="px-space-xl py-3 rounded-xl bg-surface-card hover:bg-surface-card-elevated text-text-primary font-headline-sm text-headline-sm font-bold flex items-center gap-2 shadow-lg transition-all group">
+<span className="material-symbols-outlined text-[20px] text-primary-fixed group-hover:rotate-180 transition-transform duration-500">sync</span>
+          Load 48 More Verified 3D Assets
+        </button>
+<span className="font-label-caps text-label-caps text-text-muted uppercase tracking-widest">End of cache • Real-time synchronization active</span>
+</div>
+</div>
+</div>
 
-        {isDesigner && (
-          <Link
-            href="/portfolio/edit/new"
-            className="px-5 py-3 bg-[#F59E0B] text-black font-headline font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-[#F59E0B]/10 active:scale-95 transition-all flex items-center gap-2 hover:brightness-110"
-          >
-            <span className="material-symbols-outlined text-sm">share</span>
-            Share Your Talent
-          </Link>
-        )}
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-6 mt-8 space-y-8">
-        
-        {/* Toolbar: Search & Categories */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Categories Chips */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all whitespace-nowrap ${
-                  selectedCategory === cat 
-                    ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-[#F59E0B]/10' 
-                    : 'bg-white/5 border-white/5 text-white/60 hover:text-white hover:bg-white/10'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Search Input */}
-          <div className="relative w-full md:w-80 group">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-lg group-focus-within:text-[#F59E0B] transition-colors">
-              search
-            </span>
-            <input
-              type="text"
-              placeholder="Search designs, software, designers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/5 rounded-full pl-11 pr-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B] transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Designs Grid */}
-        {filteredItems.length === 0 ? (
-          <div className="bg-white/5 border border-white/5 border-dashed rounded-3xl p-16 text-center">
-            <span className="material-symbols-outlined text-white/20 text-5xl mb-4">art_track</span>
-            <p className="text-[11px] font-black text-white/40 uppercase tracking-widest">No showcase designs found</p>
-            <p className="text-[10px] text-white/20 mt-1">Try updating your search queries or category filters.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredItems.map(item => {
-              const parsed = parseDescription(item.description);
-              const previewImage = item.images?.[0] || 'https://images.unsplash.com/photo-1558655146-9f40138edfeb?w=800&auto=format&fit=crop&q=60';
-              return (
-                <div 
-                  key={item.id}
-                  onClick={() => handleCardClick(item)}
-                  className="bg-white/[0.03] border border-white/5 rounded-2xl overflow-hidden group hover:border-[#F59E0B]/20 hover:bg-white/[0.05] transition-all duration-300 cursor-pointer shadow-xl"
-                >
-                  {/* Thumbnail */}
-                  <div className="aspect-[4/3] bg-black/40 overflow-hidden relative">
-                    <img 
-                      src={previewImage} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                      alt={item.title} 
-                    />
-                    
-                    {/* Hover Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-5">
-                      <div className="space-y-1">
-                        <span className="px-2.5 py-1 bg-white/10 text-white font-mono text-[8px] uppercase tracking-wider rounded-md border border-white/10">
-                          {parsed.category || item.category || 'Portfolio'}
-                        </span>
-                        <p className="text-white text-sm font-headline font-black uppercase tracking-tight pt-1.5">{item.title}</p>
-                      </div>
-                    </div>
-
-                    {/* CAD Badge if OBJ exists */}
-                    {parsed.cadFile && (
-                      <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-[#00fbfe] border border-[#00fbfe]/20 rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-widest flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">deployed_code</span>
-                        3D Viewable
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card Footer */}
-                  <div className="p-5 flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Avatar */}
-                      <div className="w-8 h-8 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center shrink-0 overflow-hidden">
-                        {item.designer?.avatarUrl ? (
-                          <img src={item.designer.avatarUrl} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[10px] font-black text-[#F59E0B]">
-                            {item.designer?.fullName?.charAt(0).toUpperCase() || 'D'}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="min-w-0">
-                        <h3 className="text-[11px] font-black text-white uppercase truncate">{item.title}</h3>
-                        <p className="text-[9px] text-[#F59E0B] font-bold uppercase tracking-tight truncate">
-                          {item.designer?.fullName || 'Anonymous Designer'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <span className="material-symbols-outlined text-white/20 group-hover:text-[#F59E0B] transition-colors shrink-0 text-lg">
-                      arrow_forward_ios
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
-
-      {/* Artstation Detail Modal */}
-      {selectedItem && (() => {
-        const parsed = parseDescription(selectedItem.description);
-        const imagesList = selectedItem.images || [];
-        const hasCad = !!parsed.cadFile;
-        return (
-          <div className="fixed inset-0 z-[500] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black/90 backdrop-blur-md" 
-              onClick={() => setSelectedItem(null)}
-            ></div>
-
-            {/* Modal Box */}
-            <div className="relative w-full max-w-5xl h-[85vh] bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row animate-in fade-in zoom-in duration-300">
-              
-              {/* Close Button */}
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="absolute top-6 right-6 z-50 w-10 h-10 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center border border-white/10 active:scale-95 transition-all"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-
-              {/* Left Column: Media Preview */}
-              <div className="flex-1 bg-black/30 border-r border-white/5 relative flex flex-col">
-                {/* 3D Tab Switcher if CAD file is attached */}
-                {hasCad && (
-                  <div className="absolute left-6 top-6 z-40 bg-black/60 backdrop-blur-md border border-white/10 rounded-full p-1 flex gap-1">
-                    <button
-                      onClick={() => setActiveMediaTab('render')}
-                      className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                        activeMediaTab === 'render' ? 'bg-[#F59E0B] text-black' : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[10px]">photo_library</span>
-                      Renders
-                    </button>
-                    <button
-                      onClick={() => setActiveMediaTab('3d')}
-                      className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
-                        activeMediaTab === '3d' ? 'bg-[#00fbfe] text-black' : 'text-white/60 hover:text-white'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-[10px]">deployed_code</span>
-                      Interactive 3D
-                    </button>
-                  </div>
-                )}
-
-                {/* Display Media based on active tab */}
-                <div className="flex-1 flex items-center justify-center overflow-hidden relative">
-                  {activeMediaTab === '3d' && hasCad ? (
-                    <div className="w-full h-full p-6 pt-16">
-                      <ViewportCanvas 
-                        fileUrl={parsed.cadFile} 
-                        metalType="gold"
-                        isAutoRotate={true}
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center relative bg-black/40">
-                      {imagesList.length > 0 ? (
-                        <>
-                          <img 
-                            src={imagesList[activeImageIdx]} 
-                            className="max-w-full max-h-[80%] object-contain" 
-                            alt={selectedItem.title} 
-                          />
-                          {/* Left / Right arrows if multiple images */}
-                          {imagesList.length > 1 && (
-                            <>
-                              <button
-                                onClick={() => setActiveImageIdx(prev => (prev === 0 ? imagesList.length - 1 : prev - 1))}
-                                className="absolute left-6 w-12 h-12 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/5 active:scale-95 transition-all"
-                              >
-                                <span className="material-symbols-outlined">chevron_left</span>
-                              </button>
-                              <button
-                                onClick={() => setActiveImageIdx(prev => (prev === imagesList.length - 1 ? 0 : prev + 1))}
-                                className="absolute right-6 w-12 h-12 bg-black/40 hover:bg-black/60 text-white rounded-full flex items-center justify-center border border-white/5 active:scale-95 transition-all"
-                              >
-                                <span className="material-symbols-outlined">chevron_right</span>
-                              </button>
-                            </>
-                          )}
-                        </>
-                      ) : (
-                        <div className="text-white/20 flex flex-col items-center gap-2">
-                          <span className="material-symbols-outlined text-5xl">image</span>
-                          <span className="text-xs uppercase font-black">No images available</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Image thumbnails for render tab */}
-                {activeMediaTab === 'render' && imagesList.length > 1 && (
-                  <div className="h-20 bg-black/60 border-t border-white/5 flex items-center justify-center gap-2 overflow-x-auto p-4">
-                    {imagesList.map((imgUrl: string, idx: number) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImageIdx(idx)}
-                        className={`w-12 h-12 rounded-lg overflow-hidden border transition-all ${
-                          activeImageIdx === idx ? 'border-[#F59E0B] scale-105' : 'border-white/10 hover:border-white/30'
-                        }`}
-                      >
-                        <img src={imgUrl} className="w-full h-full object-cover" />
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Details Sidebar */}
-              <div className="w-full md:w-80 bg-[#161308] overflow-y-auto p-8 flex flex-col gap-6 shrink-0 text-left">
-                {/* Title */}
-                <div>
-                  <span className="text-[8px] font-black text-[#F59E0B] uppercase tracking-widest border border-[#F59E0B]/20 bg-[#F59E0B]/5 px-2 py-0.5 rounded">
-                    {parsed.category || selectedItem.category || 'CAD Design'}
-                  </span>
-                  <h2 className="text-xl font-headline font-black text-white uppercase tracking-tight mt-2.5">
-                    {selectedItem.title}
-                  </h2>
-                  <p className="text-[9px] text-white/30 font-bold uppercase tracking-wide mt-1">
-                    Published: {new Date(selectedItem.created_at || selectedItem.createdAt || Date.now()).toLocaleDateString()}
-                  </p>
-                </div>
-
-                {/* Designer Card */}
-                <div className="bg-white/5 border border-white/5 rounded-2xl p-4 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#F59E0B]/10 border border-[#F59E0B]/20 flex items-center justify-center overflow-hidden">
-                      {selectedItem.designer?.avatarUrl ? (
-                        <img src={selectedItem.designer.avatarUrl} className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="text-xs font-black text-[#F59E0B]">
-                          {selectedItem.designer?.fullName?.charAt(0).toUpperCase() || 'D'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-white uppercase truncate">
-                        {selectedItem.designer?.fullName || 'Anonymous Designer'}
-                      </p>
-                      <p className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-0.5 truncate">
-                        {selectedItem.designer?.specialty || 'CAD Designer'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {selectedItem.designer?.email && (
-                    <Link
-                      href={`/inbox/compose?to=${selectedItem.designer.email}&subject=Inquiry about: ${encodeURIComponent(selectedItem.title)}`}
-                      className="w-full bg-[#F59E0B] text-black font-headline font-black text-[9px] uppercase tracking-widest py-3 rounded-xl hover:brightness-110 active:scale-95 transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-[#F59E0B]/10"
-                    >
-                      <span className="material-symbols-outlined text-sm">mail</span>
-                      Contact Designer
-                    </Link>
-                  )}
-                </div>
-
-                {/* Software Used Tags */}
-                {parsed.software && (
-                  <div className="space-y-2">
-                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Software Used</h4>
-                    <div className="flex gap-1.5 flex-wrap">
-                      {parsed.software.split(',').map((sw: string) => {
-                        const trimmed = sw.trim();
-                        const isRhino = trimmed.toLowerCase().includes('rhino');
-                        return (
-                          <span 
-                            key={sw}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 border border-white/5 rounded-lg text-[9px] font-bold text-white/80 uppercase tracking-tight"
-                          >
-                            {isRhino && (
-                              <img src="/rhino-logo.png" alt="Rhino" className="w-3 h-3 object-contain rounded-sm" />
-                            )}
-                            <span>{trimmed}</span>
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Narrative */}
-                <div className="space-y-2 flex-1">
-                  <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest">Project Narrative</h4>
-                  <div className="text-xs text-white/70 leading-relaxed max-h-[25vh] overflow-y-auto pr-1 no-scrollbar whitespace-pre-wrap">
-                    {parsed.narrative || selectedItem.description || 'No narrative provided.'}
-                  </div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        );
-      })()}
-
+</div></main><footer className="w-full bg-surface-deep border-t border-surface-border mt-auto"><div className="w-full px-gutter py-space-xl flex flex-col md:flex-row items-center justify-between gap-space-md"><div className="flex flex-col sm:flex-row items-center gap-space-md"><span className="font-headline-sm text-headline-sm font-bold tracking-tight text-text-primary uppercase">CAD<span className="text-primary-fixed">ONCE</span></span><span className="hidden sm:inline text-text-muted font-body-sm text-body-sm">|</span><p className="font-body-sm text-body-sm text-text-muted">© 2025 CADONCE Engine. Real-time 3D and CAD community ecosystem.</p></div><div className="flex items-center gap-space-lg flex-wrap justify-center"><a className="font-body-sm text-body-sm text-text-muted hover:text-text-primary transition-colors" href="#">Terms</a><a className="font-body-sm text-body-sm text-text-muted hover:text-text-primary transition-colors" href="#">Privacy</a><a className="font-body-sm text-body-sm text-text-muted hover:text-text-primary transition-colors" href="#">API Telemetry</a><div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-surface-card border border-surface-border"><span className="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim animate-pulse"></span><span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Nodes Operational</span></div></div></div></footer>
     </div>
   );
 }
-
