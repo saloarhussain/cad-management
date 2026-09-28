@@ -2404,7 +2404,7 @@ export default function ProjectDetailsPage() {
                     }
                   }}
                   disabled={isCompleting}
-                  className="flex-1 py-4 rounded-xl bg-success text-black font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-success/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                  className="flex-1 py-4 rounded-xl electric-gradient text-[#383100] font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(252,224,3,0.3)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {isCompleting ? (
                     <>
