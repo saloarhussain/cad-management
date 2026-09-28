@@ -140,6 +140,10 @@ export default function ProjectDetailsPage() {
   const [cadFileLoading, setCadFileLoading] = useState(false);
   const [cadFileError, setCadFileError] = useState<string | null>(null);
 
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionForm, setCompletionForm] = useState({ clientPaid: 'PAID', designerPaid: 'PAID' });
+  const [isCompleting, setIsCompleting] = useState(false);
+
   useEffect(() => {
     const fetchRate = async () => {
       try {
@@ -1917,16 +1921,7 @@ export default function ProjectDetailsPage() {
                   </Link>
                   {!isDesigner && project.status !== 'Completed' && (
                     <button
-                      onClick={async () => {
-                        const { updateProjectStatus } = await import('@/app/actions');
-                        const res = await updateProjectStatus(params.id as string, 'Completed');
-                        if (res.success) {
-                          setNotification({ message: 'Project marked as completed! 🏆', type: 'success' });
-                          setProject((prev: any) => ({ ...prev, status: 'Completed' }));
-                        } else {
-                          setNotification({ message: res.error || 'Failed to update status.', type: 'error' });
-                        }
-                      }}
+                      onClick={() => setShowCompletionModal(true)}
                       className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-success/10 border border-success/30 text-success text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all hover:bg-success/20"
                     >
                       <span className="material-symbols-outlined text-lg">workspace_premium</span>
@@ -2331,6 +2326,103 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       )}
+      {/* Completion Modal */}
+      {showCompletionModal && project && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => !isCompleting && setShowCompletionModal(false)}></div>
+          <div className="relative w-full max-w-md bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4 border border-success/20">
+                  <span className="material-symbols-outlined text-success text-3xl">workspace_premium</span>
+                </div>
+                <h2 className="text-xl font-headline font-black text-white uppercase tracking-wider">Mark Project Completed</h2>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Verify Payment Details Before Proceeding</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">1. Did the client pay?</label>
+                  <select 
+                    value={completionForm.clientPaid}
+                    onChange={(e) => setCompletionForm(prev => ({ ...prev, clientPaid: e.target.value }))}
+                    className="w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#fce003] transition-all cursor-pointer"
+                  >
+                    <option value="PAID">Yes, Fully Paid</option>
+                    <option value="ADVANCE">Advance Paid Only</option>
+                    <option value="UNPAID">No, Unpaid</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">2. Did you pay the Designer?</label>
+                  <select 
+                    value={completionForm.designerPaid}
+                    onChange={(e) => setCompletionForm(prev => ({ ...prev, designerPaid: e.target.value }))}
+                    className="w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#fce003] transition-all cursor-pointer"
+                  >
+                    <option value="PAID">Yes, Paid</option>
+                    <option value="PENDING">No, Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-white/5">
+                <button 
+                  onClick={() => setShowCompletionModal(false)}
+                  disabled={isCompleting}
+                  className="flex-1 py-4 rounded-xl border border-white/10 bg-white/5 text-white font-headline font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={async () => {
+                    setIsCompleting(true);
+                    try {
+                      // Import actions dynamically
+                      const { updateProject } = await import('@/app/actions');
+                      
+                      // Update the payment status, payout status, and the overall status at once
+                      const res = await updateProject(project.id, {
+                        paymentStatus: completionForm.clientPaid,
+                        payoutStatus: completionForm.designerPaid,
+                        status: 'Completed'
+                      });
+                      
+                      if (res.success) {
+                        setNotification({ message: 'Project successfully completed & financials updated! 🏆', type: 'success' });
+                        setShowCompletionModal(false);
+                        // Refresh to show all changes instantly
+                        window.location.reload();
+                      } else {
+                        setNotification({ message: res.error || 'Failed to update project.', type: 'error' });
+                      }
+                    } catch (err: any) {
+                      setNotification({ message: 'Error: ' + err.message, type: 'error' });
+                    } finally {
+                      setIsCompleting(false);
+                    }
+                  }}
+                  disabled={isCompleting}
+                  className="flex-1 py-4 rounded-xl bg-success text-black font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-success/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                >
+                  {isCompleting ? (
+                    <>
+                      <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      Confirm
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Invoice Viewer Modal */}
       {showInvoiceModal && project && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-2 sm:p-4">
