@@ -190,7 +190,7 @@ export default function EditProjectPage() {
           </div>
         </header>
 
-        <main className={`pt-24 px-4 mx-auto relative ${isDesigner ? 'max-w-3xl' : 'max-w-4xl'}`}>
+        <main className={`pt-24 px-4 mx-auto relative ${isDesigner ? 'max-w-4xl' : 'max-w-7xl'}`}>
           {isDesigner ? (
             /* HIGH-STABILITY EDGE-TO-EDGE REVISION CONSOLE */
             <div className="space-y-8 relative isolate">
