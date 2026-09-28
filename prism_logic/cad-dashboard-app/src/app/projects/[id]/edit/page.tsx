@@ -136,9 +136,12 @@ export default function EditProjectPage() {
     }
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSubmit = async (formData: FormData) => {
     if (!isAuthenticated) return;
     
+    setIsSaving(true);
     try {
       const pId = String(params.id);
       formData.append('id', pId);
@@ -149,9 +152,11 @@ export default function EditProjectPage() {
         router.push(`/projects/${pId}`);
       } else {
         alert(`Error: ${result.error || 'Failed to save project. Please check all fields.'}`);
+        setIsSaving(false);
       }
     } catch (err: any) {
       alert(`System Error: ${err.message}`);
+      setIsSaving(false);
     }
   };
 
@@ -304,15 +309,15 @@ export default function EditProjectPage() {
                       <div className={`absolute -inset-4 bg-[#fce003]/20 blur-2xl rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity duration-700 -z-10 ${Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0 ? 'hidden' : ''}`}></div>
                       <button 
                         className={`w-full py-6 rounded-2xl active:scale-[0.97] transition-all duration-500 uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 border relative overflow-hidden group/sub shadow-2xl ${
-                          Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0
+                          (Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving
                             ? 'bg-white/[0.08] text-white/40 border-white/10 cursor-not-allowed backdrop-blur-xl'
                             : 'bg-[#fce003] text-black border-white/40 font-black shadow-[0_20px_50px_rgba(252,224,3,0.5)] cursor-pointer hover:scale-[1.02]'
                         }`} 
                         type="submit"
-                        disabled={Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0}
+                        disabled={(Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving}
                       >
                         {/* High-Intensity Shine Animation (Only when active) */}
-                        {!(Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) && (
+                        {!((Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving) && (
                           <>
                             <div className="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent skew-x-[45deg] animate-shine z-0"></div>
                             <div className="absolute inset-0 bg-[#fce003] animate-pulse opacity-20"></div>
@@ -321,8 +326,8 @@ export default function EditProjectPage() {
                         
                         {/* Z-Index Protected Content */}
                         <div className="relative z-10 flex items-center justify-center gap-4">
-                          <span>Secure Submission</span>
-                          <span className="material-symbols-outlined text-lg group-hover/sub:translate-x-1 group-hover/sub:-translate-y-1 transition-transform duration-500">auto_awesome_motion</span>
+                          <span>{isSaving ? 'Submitting...' : 'Secure Submission'}</span>
+                          <span className={`material-symbols-outlined text-lg ${isSaving ? 'animate-spin' : 'group-hover/sub:translate-x-1 group-hover/sub:-translate-y-1 transition-transform duration-500'}`}>{isSaving ? 'sync' : 'auto_awesome_motion'}</span>
                         </div>
                       </button>
                     </div>
@@ -587,9 +592,9 @@ export default function EditProjectPage() {
                   </div>
 
                   <div className="pt-4">
-                    <button className="w-full electric-gradient text-[#383100] font-black py-4 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.3)] active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 border border-white/10" type="submit">
-                      <span>Save Changes</span>
-                      <span className="material-symbols-outlined">bolt</span>
+                    <button disabled={isSaving} className={`w-full electric-gradient text-[#383100] font-black py-4 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.3)] transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 border border-white/10 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'active:scale-95'}`} type="submit">
+                      <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                      <span className={`material-symbols-outlined ${isSaving ? 'animate-spin' : ''}`}>{isSaving ? 'sync' : 'bolt'}</span>
                     </button>
                   </div>
                 </div>
