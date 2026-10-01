@@ -79,8 +79,47 @@ export default function EditProjectPage() {
       const { getDesignerProjectDetail, getDb } = await import('@/app/actions');
       
       const db = await getDb();
-      setDesigners(db.designers || []);
-      setClients(db.clients || []);
+      
+      const dbClients: any[] = [...(db.clients || [])];
+      const dbDesigners: any[] = [...(db.designers || [])];
+      const dbProjects: any[] = db.projects || [];
+
+      // Merge any clients from projects that might not be in clients table
+      const existingClientNames = new Set(
+        dbClients.map((c: any) => (c.companyName || c.name || '').toLowerCase().trim())
+      );
+      dbProjects.forEach((p: any) => {
+        const pClient = (p.client || p.clientCompany || '').trim();
+        if (pClient && !existingClientNames.has(pClient.toLowerCase())) {
+          existingClientNames.add(pClient.toLowerCase());
+          dbClients.push({
+            id: `proj-client-${pClient}`,
+            name: pClient,
+            companyName: pClient
+          });
+        }
+      });
+
+      // Merge any designers from projects that might not be in designers table
+      const existingDesignerNames = new Set(
+        dbDesigners.map((d: any) => (d.fullName || d.name || '').toLowerCase().trim())
+      );
+      dbProjects.forEach((p: any) => {
+        const pDesigner = (p.designer || '').trim();
+        if (pDesigner && !existingDesignerNames.has(pDesigner.toLowerCase())) {
+          existingDesignerNames.add(pDesigner.toLowerCase());
+          dbDesigners.push({
+            id: `proj-designer-${pDesigner}`,
+            fullName: pDesigner,
+            name: pDesigner,
+            specialty: 'CAD Designer',
+            employmentType: 'In-House'
+          });
+        }
+      });
+
+      setDesigners(dbDesigners);
+      setClients(dbClients);
       
       if (isDesigner) {
         const res = await getDesignerProjectDetail(params.id as string);
