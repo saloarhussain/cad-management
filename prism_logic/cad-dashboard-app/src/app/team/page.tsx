@@ -52,20 +52,43 @@ export default function TeamPage() {
       try {
         setIsLoading(true);
         const db = await getDb();
-        if (db.designers) {
+        const dbDesigners: any[] = [...(db.designers || [])];
+        const dbProjects: any[] = db.projects || [];
+
+        // Merge any designers from projects that might not be in designers table
+        const existingDesignerNames = new Set(
+          dbDesigners.map((d: any) => (d.fullName || d.name || '').toLowerCase().trim())
+        );
+        dbProjects.forEach((p: any) => {
+          const pDesigner = (p.designer || '').trim();
+          if (pDesigner && !existingDesignerNames.has(pDesigner.toLowerCase())) {
+            existingDesignerNames.add(pDesigner.toLowerCase());
+            dbDesigners.push({
+              id: `proj-designer-${pDesigner}`,
+              fullName: pDesigner,
+              name: pDesigner,
+              specialty: 'CAD Designer',
+              employmentType: 'In-House'
+            });
+          }
+        });
+
+        if (dbDesigners) {
           // Map DB fields to component fields
-          const formatted = db.designers.map((d: any) => {
+          const formatted = dbDesigners.map((d: any) => {
             const countryKey = (d.country || 'GLOBAL').trim().toLowerCase();
             const matchedKey = Object.keys(countryMap).find(k => k.toLowerCase() === countryKey);
             const cInfo = matchedKey ? countryMap[matchedKey] : countryMap['GLOBAL'];
+            const designerName = d.fullName || d.name || 'Anonymous Designer';
 
             return {
               ...d,
-              name: d.fullName || 'Anonymous Designer',
+              name: designerName,
+              fullName: designerName,
               role: d.specialty || 'Professional Designer',
               experience: d.experience || (Math.floor(Math.random() * 5) + 3) + ' Years Exp',
-              lastJob: db.projects?.find((p: any) => 
-                d.fullName && (p.designer === d.fullName || p.designer === d.fullName.split(' ')[0])
+              lastJob: dbProjects.find((p: any) => 
+                designerName && (p.designer === designerName || p.designer === designerName.split(' ')[0])
               ),
               performance: d.performance || 90, 
               tags: d.skills || [d.specialty || 'CAD', 'Designer'],

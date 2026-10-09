@@ -84,11 +84,13 @@ const CANDIDATE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-fl
 export async function POST(req: Request) {
   let messages: MessageInput[] = [];
   let tone = 'casual';
+  let targetLang: 'banglish' | 'hinglish' = 'banglish';
 
   try {
     const body = await req.json();
     messages = body.messages || [];
     tone = body.tone || 'casual';
+    targetLang = body.targetLang === 'hinglish' ? 'hinglish' : 'banglish';
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: 'No messages provided for translation' }, { status: 400 });
@@ -100,7 +102,7 @@ export async function POST(req: Request) {
     if (translatable.length === 0) {
       return NextResponse.json({
         success: true,
-        translations: messages.map((m) => ({ id: m.id, banglishText: m.text })),
+        translations: messages.map((m) => ({ id: m.id, translatedText: m.text, banglishText: m.text, hinglishText: m.text })),
       });
     }
 
@@ -108,7 +110,9 @@ export async function POST(req: Request) {
       // Fast local transliteration fallback when API key is not present
       const fallbackTranslations = messages.map((m) => ({
         id: m.id,
+        translatedText: fallbackBanglish(m.text),
         banglishText: fallbackBanglish(m.text),
+        hinglishText: fallbackBanglish(m.text),
       }));
       return NextResponse.json({
         success: true,
@@ -125,25 +129,28 @@ export async function POST(req: Request) {
       text: m.text,
     }));
 
-    const prompt = `
-You are an expert translator specializing in modern, conversational BANGLISH.
-"Banglish" is Bengali language written exclusively in the ENGLISH / LATIN ALPHABET (A-Z, a-z), exactly as used by Bengalis in everyday WhatsApp, Messenger, and SMS.
+    const isHinglish = targetLang === 'hinglish';
+    const langLabel = isHinglish ? 'HINGLISH' : 'BANGLISH';
 
-CRITICAL INSTRUCTION - ZERO BENGALI SCRIPT PERMITTED:
+    const prompt = `
+You are an expert translator specializing in modern, conversational ${langLabel}.
+"${langLabel}" is ${isHinglish ? 'Hindi' : 'Bengali'} language written exclusively in the ENGLISH / LATIN ALPHABET (A-Z, a-z), exactly as used in everyday WhatsApp, SMS, and chat (e.g. ${isHinglish ? '"Aaj agar aapko sab documents deta hu toh kitna time lagega loan milne me", "Documents bhejo pehle", "ITR aa gaya hai"' : '"Ami bhalo achi", "Kemon achis?", "Kaj shesh"'}).
+
+CRITICAL INSTRUCTION - ZERO NON-LATIN SCRIPT PERMITTED:
 1. Every single word in the output MUST BE WRITTEN IN THE ENGLISH ALPHABET (Latin letters).
-2. DO NOT USE ANY BENGALI CHARACTERS (বাংলা বর্ণমালা যেমন ক, খ, গ, আ, ই, etc. কখোনোই ব্যবহার করবে না).
-3. If an input is in Bengali script (e.g. "আমি ভালো আছি, আপনি কেমন আছেন?"), convert it to natural English letters: "Ami bhalo achi, apni kemon achen?".
-4. If an input is in English (e.g. "How are you? Are we ready?"), translate it to natural Bengali in English letters: "Kemon achen? Amra ki ready?".
+2. DO NOT USE ANY BENGALI OR DEVANAGARI CHARACTERS.
+3. If input is in Bengali or Hindi script, convert it to natural English letters in ${langLabel}.
+4. If input is in English, translate it to natural conversational ${langLabel} in English letters.
 5. Tone: ${
       tone === 'formal'
-        ? 'Polite, respectful conversational Bengali in English letters (apni, thik ache, dhonnobad)'
+        ? `Polite, respectful conversational ${isHinglish ? 'Hindi' : 'Bengali'} in English letters`
         : tone === 'slang'
-        ? 'Youthful, energetic Dhakaite texting slang in English letters (bro, mama, pera nai, shera, joss)'
-        : 'Friendly, casual everyday WhatsApp conversation in English letters (tumi/tui, kemon acho, thik ache)'
+        ? `Youthful, energetic texting slang in English letters`
+        : `Friendly, casual everyday WhatsApp conversation in English letters`
     }.
 6. Keep all emojis intact.
-7. Keep file extensions (e.g. .3dm, .stl), numbers, percentages, timestamps, and brand names (e.g. CADONCE, WhatsApp) unchanged.
-8. Return STRICTLY a JSON array of objects with keys "id" and "banglishText". No markdown codeblocks, no explanations.
+7. Keep file extensions (e.g. .3dm, .stl, .pdf), numbers, percentages, timestamps, and brand names unchanged.
+8. Return STRICTLY a JSON array of objects with keys "id" and "translatedText". No markdown codeblocks, no explanations.
 
 Input messages to translate:
 ${JSON.stringify(inputPayload, null, 2)}
@@ -201,7 +208,7 @@ ${JSON.stringify(inputPayload, null, 2)}
     }
     text = text.trim();
 
-    let translatedList: { id: string; banglishText: string }[] = [];
+    let translatedList: { id: string; translatedText?: string; banglishText?: string; hinglishText?: string }[] = [];
     try {
       translatedList = JSON.parse(text);
     } catch {
@@ -213,22 +220,24 @@ ${JSON.stringify(inputPayload, null, 2)}
       }
     }
 
-    // Map back into full message list and GUARANTEE ZERO BENGALI CHARACTERS
+    // Map back into full message list
     const translationMap = new Map(
       translatedList.map((item) => [
         item.id,
-        ensureBanglish(item.banglishText || '')
+        item.translatedText || item.banglishText || item.hinglishText || ''
       ])
     );
 
     const fullTranslations = messages.map((m) => {
       if (m.isSystem || m.text.startsWith('<Media omitted>')) {
-        return { id: m.id, banglishText: m.text };
+        return { id: m.id, translatedText: m.text, banglishText: m.text, hinglishText: m.text };
       }
-      const translated = translationMap.get(m.id);
+      const rawTr = translationMap.get(m.id);
+      const cleanTr = rawTr ? (isHinglish ? rawTr : ensureBanglish(rawTr)) : fallbackBanglish(m.text);
       return {
         id: m.id,
-        banglishText: translated ? ensureBanglish(translated) : fallbackBanglish(m.text),
+        translatedText: cleanTr,
+        ...(isHinglish ? { hinglishText: cleanTr } : { banglishText: cleanTr })
       };
     });
 
@@ -238,12 +247,14 @@ ${JSON.stringify(inputPayload, null, 2)}
       source: successModel || 'gemini',
     });
   } catch (error: any) {
-    console.error('WhatsApp Banglish Translation Error:', error);
+    console.error('WhatsApp Translation Error:', error);
 
-    // Guaranteed fallback: return clean phonetic Banglish for all messages
+    // Guaranteed fallback: return clean phonetic output for all messages
     const fallbackTranslations = messages.map((m: any) => ({
       id: m.id,
+      translatedText: fallbackBanglish(m.text || ''),
       banglishText: fallbackBanglish(m.text || ''),
+      hinglishText: fallbackBanglish(m.text || ''),
     }));
 
     return NextResponse.json({

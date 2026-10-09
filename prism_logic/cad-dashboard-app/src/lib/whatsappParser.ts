@@ -8,6 +8,7 @@ export interface ChatMessage {
   sender: string;
   text: string;
   banglishText?: string;
+  hinglishText?: string;
   isSystem?: boolean;
   mediaType?: 'image' | 'video' | 'audio' | 'document' | 'sticker' | null;
 }

@@ -415,11 +415,14 @@ export default function EditProjectPage() {
                           <div className="relative group">
                             <select name="designer" required defaultValue={project.designer} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white">
                               <option value="">Select Designer...</option>
-                              {designers.map((d) => (
-                                <option key={d.id} value={d.fullName}>
-                                  {d.fullName} ({d.specialty})
-                                </option>
-                              ))}
+                              {designers.map((d) => {
+                                const dName = d.fullName || d.name || 'CAD Designer';
+                                return (
+                                  <option key={d.id} value={dName}>
+                                    {dName} ({d.specialty || 'CAD Designer'})
+                                  </option>
+                                );
+                              })}
                             </select>
                             <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
                           </div>

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChatMessage } from '@/lib/whatsappParser';
-import { ensureBanglish } from '@/lib/bengaliTransliterate';
+import { ensureBanglish, ensureHinglish } from '@/lib/bengaliTransliterate';
 
 interface WhatsAppVisualViewerProps {
   messages: ChatMessage[];
@@ -11,6 +11,7 @@ interface WhatsAppVisualViewerProps {
   loadingBanglish?: boolean;
   onTranslateToneChange?: (tone: 'casual' | 'formal' | 'slang') => void;
   currentTone?: 'casual' | 'formal' | 'slang';
+  onViewModeChange?: (mode: 'banglish' | 'hinglish' | 'original') => void;
 }
 
 const SENDER_COLORS = [
@@ -37,17 +38,23 @@ export default function WhatsAppVisualViewer({
   loadingBanglish = false,
   onTranslateToneChange,
   currentTone = 'casual',
+  onViewModeChange,
 }: WhatsAppVisualViewerProps) {
   // Primary user ("Me") whose messages appear on the right in green
   const [selectedMe, setSelectedMe] = useState<string>(participants[0] || '');
-  // Language view toggle: 'banglish' or 'original'
-  const [viewMode, setViewMode] = useState<'banglish' | 'original'>('banglish');
+  // Language view toggle: 'banglish', 'hinglish', or 'original'
+  const [viewMode, setViewMode] = useState<'banglish' | 'hinglish' | 'original'>('banglish');
   // Theme: 'dark' or 'light'
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   // Search filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterParticipant, setFilterParticipant] = useState<string>('all');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const handleModeChange = (mode: 'banglish' | 'hinglish' | 'original') => {
+    setViewMode(mode);
+    if (onViewModeChange) onViewModeChange(mode);
+  };
 
   // Group messages by date
   const filteredMessages = useMemo(() => {
@@ -57,7 +64,11 @@ export default function WhatsAppVisualViewer({
       }
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
-        const textToSearch = viewMode === 'banglish' ? ensureBanglish(m.banglishText || m.text) : m.text;
+        const textToSearch = viewMode === 'banglish' 
+          ? ensureBanglish(m.banglishText || m.text) 
+          : viewMode === 'hinglish' 
+          ? ensureHinglish(m.hinglishText || m.text) 
+          : m.text;
         return (
           textToSearch.toLowerCase().includes(query) ||
           m.sender.toLowerCase().includes(query) ||
@@ -78,7 +89,7 @@ export default function WhatsAppVisualViewer({
         <div className="flex flex-wrap items-center gap-3">
           <div className="inline-flex rounded-xl bg-black/40 p-1 border border-white/5">
             <button
-              onClick={() => setViewMode('banglish')}
+              onClick={() => handleModeChange('banglish')}
               className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                 viewMode === 'banglish'
                   ? 'bg-[#25D366] text-black shadow-md'
@@ -89,7 +100,18 @@ export default function WhatsAppVisualViewer({
               <span>Banglish (AI)</span>
             </button>
             <button
-              onClick={() => setViewMode('original')}
+              onClick={() => handleModeChange('hinglish')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+                viewMode === 'hinglish'
+                  ? 'bg-[#F59E0B] text-black shadow-md'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <span className="material-symbols-outlined text-sm font-bold">language</span>
+              <span>Hinglish (AI)</span>
+            </button>
+            <button
+              onClick={() => handleModeChange('original')}
               className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                 viewMode === 'original'
                   ? 'bg-white/20 text-white shadow-md'
@@ -310,8 +332,12 @@ export default function WhatsAppVisualViewer({
                 );
               }
 
-              // Text to display: Banglish or Original
-              const displayText = viewMode === 'banglish' ? ensureBanglish(msg.banglishText || msg.text) : msg.text;
+              // Text to display: Banglish, Hinglish, or Original
+              const displayText = viewMode === 'banglish' 
+                ? ensureBanglish(msg.banglishText || msg.text) 
+                : viewMode === 'hinglish' 
+                ? ensureHinglish(msg.hinglishText || msg.text) 
+                : msg.text;
 
               return (
                 <div key={msg.id} className="flex flex-col">

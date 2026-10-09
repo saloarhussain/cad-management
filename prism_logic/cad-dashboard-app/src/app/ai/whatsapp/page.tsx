@@ -19,27 +19,29 @@ export default function WhatsAppBanglishPage() {
   const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Automatically translate messages to Banglish via our AI route
-  const translateMessagesToBanglish = async (rawMessages: ChatMessage[], currentTone: 'casual' | 'formal' | 'slang') => {
+  // Automatically translate messages to Banglish or Hinglish via AI route
+  const translateMessagesToBanglish = async (
+    rawMessages: ChatMessage[], 
+    currentTone: 'casual' | 'formal' | 'slang',
+    targetLang: 'banglish' | 'hinglish' = 'banglish'
+  ) => {
     setIsTranslating(true);
-    setStatusMessage('Translating messages to Banglish with Gemini AI...');
+    setStatusMessage(`Translating messages to ${targetLang === 'hinglish' ? 'Hinglish' : 'Banglish'} with Gemini AI...`);
 
     try {
-      // 1. Immediately ensure EVERY message is in Banglish right away so zero Bengali script shows
       const updatedMessages = rawMessages.map((m) => ({
         ...m,
         banglishText: ensureBanglish(m.banglishText || m.text),
+        hinglishText: m.hinglishText || m.text,
       }));
 
-      // Render immediately with 100% Banglish
       setMessages([...updatedMessages]);
 
-      // 2. Upgrade to conversational AI Banglish in batches of 25
       const batchSize = 25;
 
       for (let i = 0; i < rawMessages.length; i += batchSize) {
         const chunk = rawMessages.slice(i, i + batchSize);
-        setStatusMessage(`Refining with AI Banglish... (${Math.min(i + batchSize, rawMessages.length)}/${rawMessages.length} messages)`);
+        setStatusMessage(`Refining with AI ${targetLang === 'hinglish' ? 'Hinglish' : 'Banglish'}... (${Math.min(i + batchSize, rawMessages.length)}/${rawMessages.length} messages)`);
 
         try {
           const res = await fetch('/api/ai/whatsapp-banglish', {
@@ -53,6 +55,7 @@ export default function WhatsAppBanglishPage() {
                 isSystem: m.isSystem,
               })),
               tone: currentTone,
+              targetLang,
             }),
           });
 
@@ -60,26 +63,27 @@ export default function WhatsAppBanglishPage() {
             const data = await res.json();
             if (data.translations && Array.isArray(data.translations)) {
               const map = new Map<string, string>(
-                data.translations.map((t: any) => [t.id, ensureBanglish(t.banglishText)])
+                data.translations.map((t: any) => [t.id, t.translatedText || t.banglishText || t.hinglishText || ''])
               );
               for (let j = i; j < Math.min(i + batchSize, rawMessages.length); j++) {
                 const m = updatedMessages[j];
-                if (map.has(m.id) && map.get(m.id)) {
-                  m.banglishText = ensureBanglish(map.get(m.id)!);
-                } else {
-                  m.banglishText = ensureBanglish(m.banglishText || m.text);
+                const tr = map.get(m.id);
+                if (tr) {
+                  if (targetLang === 'hinglish') {
+                    m.hinglishText = tr;
+                  } else {
+                    m.banglishText = ensureBanglish(tr);
+                  }
                 }
               }
             }
           }
         } catch (chunkErr) {
-          console.warn('Chunk AI translation error, keeping flawless transliteration:', chunkErr);
+          console.warn('Chunk AI translation error:', chunkErr);
         }
 
-        // Update state incrementally so user sees live translation upgrade
         setMessages([...updatedMessages]);
 
-        // Gentle pause to avoid hitting Gemini RPM rate limits
         if (i + batchSize < rawMessages.length) {
           await new Promise((resolve) => setTimeout(resolve, 250));
         }
@@ -385,6 +389,19 @@ export default function WhatsAppBanglishPage() {
               loadingBanglish={isTranslating}
               onTranslateToneChange={handleToneChange}
               currentTone={tone}
+              onViewModeChange={async (mode) => {
+                if (mode === 'hinglish' && messages.length > 0) {
+                  const needsHinglish = messages.some(m => !m.hinglishText || m.hinglishText === m.text);
+                  if (needsHinglish) {
+                    await translateMessagesToBanglish(messages, tone, 'hinglish');
+                  }
+                } else if (mode === 'banglish' && messages.length > 0) {
+                  const needsBanglish = messages.some(m => !m.banglishText);
+                  if (needsBanglish) {
+                    await translateMessagesToBanglish(messages, tone, 'banglish');
+                  }
+                }
+              }}
             />
           </div>
         )}
