@@ -134,13 +134,15 @@ export async function POST(req: Request) {
 
     const prompt = `
 You are an expert translator specializing in modern, conversational ${langLabel}.
-"${langLabel}" is ${isHinglish ? 'Hindi' : 'Bengali'} language written exclusively in the ENGLISH / LATIN ALPHABET (A-Z, a-z), exactly as used in everyday WhatsApp, SMS, and chat (e.g. ${isHinglish ? '"Aaj agar aapko sab documents deta hu toh kitna time lagega loan milne me", "Documents bhejo pehle", "ITR aa gaya hai"' : '"Ami bhalo achi", "Kemon achis?", "Kaj shesh"'}).
+"${langLabel}" is ${isHinglish ? 'Hindi' : 'Bengali'} language written exclusively in the ENGLISH / LATIN ALPHABET (A-Z, a-z), exactly as used in everyday WhatsApp, SMS, and chat.
 
-CRITICAL INSTRUCTION - ZERO NON-LATIN SCRIPT PERMITTED:
-1. Every single word in the output MUST BE WRITTEN IN THE ENGLISH ALPHABET (Latin letters).
-2. DO NOT USE ANY BENGALI OR DEVANAGARI CHARACTERS.
-3. If input is in Bengali or Hindi script, convert it to natural English letters in ${langLabel}.
-4. If input is in English, translate it to natural conversational ${langLabel} in English letters.
+CRITICAL INSTRUCTIONS FOR HIGHLY READABLE & CONVERSATIONAL ${langLabel}:
+1. OUTPUT MUST BE 100% LATIN/ENGLISH ALPHABET (A-Z). NO BENGALI OR DEVANAGARI CHARACTERS AT ALL.
+2. Use standard, highly readable, authentic spellings used in everyday texting.
+   - For Banglish: use natural spellings like "ami", "tumi", "apni", "bhalo", "thik ache", "korte", "parbo", "ekhon", "dekho", "kotha", "pera nai", "bhai", "shob", "deta", "puro", "check".
+   - For Hinglish: use natural spellings like "aaj", "aapko", "sab", "documents", "deta", "hu", "toh", "kitna", "lagega", "loan", "milne", "me", "bhejo", "pehle", "check", "karta", "hu", "token", "dedunga", "resale", "property".
+3. Preserve all English business, tax, banking, file and technical terms cleanly in Latin: e.g. "ITR", "document", "loan", "property", "token", "file", "resale", "wait", "check", "amount", "payment", "bank", "PDF", "CAD", "3DM", "STL".
+4. If the input text is ALREADY in Hinglish/Banglish (e.g. "ITR agya hai", "Aaj agar aapko sab documents deta hu toh kitna kitna lagega loan milne me"), retain the natural human spellings and DO NOT distort or mangle the words!
 5. Tone: ${
       tone === 'formal'
         ? `Polite, respectful conversational ${isHinglish ? 'Hindi' : 'Bengali'} in English letters`
@@ -148,9 +150,8 @@ CRITICAL INSTRUCTION - ZERO NON-LATIN SCRIPT PERMITTED:
         ? `Youthful, energetic texting slang in English letters`
         : `Friendly, casual everyday WhatsApp conversation in English letters`
     }.
-6. Keep all emojis intact.
-7. Keep file extensions (e.g. .3dm, .stl, .pdf), numbers, percentages, timestamps, and brand names unchanged.
-8. Return STRICTLY a JSON array of objects with keys "id" and "translatedText". No markdown codeblocks, no explanations.
+6. Keep all emojis, numbers, percentages, timestamps, file names (e.g. ITR AY 2024-2025.pdf) intact.
+7. Return STRICTLY a JSON array of objects with keys "id" and "translatedText".
 
 Input messages to translate:
 ${JSON.stringify(inputPayload, null, 2)}

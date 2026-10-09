@@ -329,7 +329,7 @@ export const BANGLISH_WORD_DICTIONARY: Record<string, string> = {
   'ম্যাডাম': 'madam',
   'বস': 'boss',
 
-  // Work & Technology
+  // Work & Technology & Financial
   'কাজ': 'kaj',
   'কাজটা': 'kajta',
   'কাজের': 'kajer',
@@ -377,6 +377,25 @@ export const BANGLISH_WORD_DICTIONARY: Record<string, string> = {
   'বাড়ি': 'bari',
   'রাস্তা': 'rasta',
   'গাড়ি': 'gari',
+  'লোন': 'loan',
+  'প্রপার্টি': 'property',
+  'রিসেল': 'resale',
+  'টোকেন': 'token',
+  'ওয়েট': 'wait',
+  'অপেক্ষা': 'wait',
+  'আইটিআর': 'ITR',
+  'ডকুমেন্ট': 'document',
+  'ডকুমেন্টস': 'documents',
+  'পেমেন্ট': 'payment',
+  'অ্যামাউন্ট': 'amount',
+  'রিসিট': 'receipt',
+  'অ্যাপ্রুভ': 'approve',
+  'অ্যাপ্রুভাল': 'approval',
+  'অফিসিয়াল': 'official',
+  'ব্যালেন্স': 'balance',
+  'ডিসকাউন্ট': 'discount',
+  'অর্ডার': 'order',
+  'আইডি': 'ID',
 };
 
 const BENGALI_VOWELS: Record<string, string> = {
