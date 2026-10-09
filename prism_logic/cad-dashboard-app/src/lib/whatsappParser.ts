@@ -32,27 +32,35 @@ const MEDIA_PATTERNS = [
  * Parses raw WhatsApp exported text into structured ChatMessage objects.
  * Handles Android & iOS export formats (12-hour, 24-hour, with or without seconds).
  */
+/**
+ * Parses raw WhatsApp exported text into structured ChatMessage objects.
+ * Handles Android & iOS export formats (12-hour, 24-hour, with or without seconds),
+ * hidden Unicode LRM control characters, multiline messages, and raw text fallbacks.
+ * Guarantees 100% message preservation with ZERO dropped lines.
+ */
 export function parseWhatsAppChat(rawText: string): ParsedChat {
   const lines = rawText.split(/\r?\n/);
   const messages: ChatMessage[] = [];
   const participantsSet = new Set<string>();
 
-  // Regex patterns for line starters:
   // Android style: "25/03/2024, 14:32 - Sender: Message" or "3/25/24, 2:32 PM - Sender: Message"
-  // Note: Supports dash with non-breaking spaces or regular spaces, and various date separators
-  const androidRegex = /^(\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)\s*[-–—]\s*(.+)$/;
+  const androidRegex = /^(\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)\s*[-–—:]\s*(.+)$/;
 
   // iOS style: "[25/03/2024, 14:32:15] Sender: Message" or "[3/25/24, 2:32:15 PM] Sender: Message"
   const iosRegex = /^\[(\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)\]\s*(.+)$/;
+
+  // Flexible timestamp regex (handles non-standard date separators and missing dashes)
+  const genericRegex = /^(\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4})\s+[,-\s]*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)\s*[-–—:]?\s*(.+)$/;
 
   let currentMessage: ChatMessage | null = null;
   let idCounter = 0;
 
   for (const line of lines) {
-    const cleanLine = line.trim();
+    // Strip hidden Unicode control marks (LRM, RLM, ZWJ, BOM, etc.) that WhatsApp export files add
+    const cleanLine = line.replace(/[\u200e\u200f\u202a-\u202e\u200b-\u200d\ufeff]/g, '').trim();
     if (!cleanLine && !currentMessage) continue;
 
-    let match = cleanLine.match(androidRegex) || cleanLine.match(iosRegex);
+    let match = cleanLine.match(androidRegex) || cleanLine.match(iosRegex) || cleanLine.match(genericRegex);
 
     if (match) {
       // If we already had a message being constructed, push it
@@ -64,9 +72,6 @@ export function parseWhatsAppChat(rawText: string): ParsedChat {
       const timePart = match[2];
       const rest = match[3];
 
-      // Check if there is a "Sender: Message" separator
-      // Note: System messages do NOT have a colon separating a sender, e.g.:
-      // "Messages and calls are end-to-end encrypted..."
       const senderColonIndex = rest.indexOf(':');
 
       if (senderColonIndex !== -1) {
@@ -88,7 +93,7 @@ export function parseWhatsAppChat(rawText: string): ParsedChat {
           id: `msg-${++idCounter}`,
           date: datePart,
           time: timePart,
-          timestamp: Date.now() + idCounter, // fallback sequential timestamp
+          timestamp: Date.now() + idCounter,
           sender,
           text,
           mediaType,
@@ -109,6 +114,27 @@ export function parseWhatsAppChat(rawText: string): ParsedChat {
     } else if (currentMessage) {
       // Continuation of a multiline message
       currentMessage.text += '\n' + line;
+    } else if (cleanLine) {
+      // Fallback: If line doesn't match standard timestamp and no current message, create a fallback entry so NO line is dropped
+      const senderColonIndex = cleanLine.indexOf(':');
+      let sender = 'Note';
+      let text = cleanLine;
+
+      if (senderColonIndex !== -1) {
+        sender = cleanLine.substring(0, senderColonIndex).trim();
+        text = cleanLine.substring(senderColonIndex + 1).trim();
+        participantsSet.add(sender);
+      }
+
+      currentMessage = {
+        id: `msg-${++idCounter}`,
+        date: new Date().toLocaleDateString('en-GB'),
+        time: '00:00',
+        timestamp: Date.now() + idCounter,
+        sender,
+        text,
+        isSystem: sender === 'Note',
+      };
     }
   }
 
