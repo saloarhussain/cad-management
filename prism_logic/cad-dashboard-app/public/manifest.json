@@ -1,0 +1,17 @@
+{
+  "name": "CADONCE",
+  "short_name": "CADONCE",
+  "description": "High-performance CAD Project Management & Organization Dashboard",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0a04",
+  "theme_color": "#0c0a04",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

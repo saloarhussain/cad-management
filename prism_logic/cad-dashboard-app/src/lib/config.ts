@@ -13,6 +13,17 @@ export const PLATFORM_CONFIG = {
   // Platform Owner's Wallet for manual settlements
   FOUNDER_ESCROW_WALLET: 'cadonce.treasury@paypal.com', // Replace with your ID
   
+  // Platform Owner's Bank Details for Manual Payments (Wise / Wire Transfer / PayPal)
+  MANUAL_PAYMENT_DETAILS: {
+    paypal: 'cadonce.treasury@paypal.com',
+    wise: 'wise.treasury@cadonce.com',
+    bankName: 'HDFC Bank Ltd',
+    accountName: 'CADONCE Technologies Private Limited',
+    accountNumber: '50200012345678',
+    ifscCode: 'HDFC0001234',
+    swiftCode: 'HDFCINBBXXX'
+  },
+  
   // Platform Display Name
   PLATFORM_NAME: 'CADONCE',
 
@@ -48,27 +59,5 @@ export const GLOBAL_CURRENCIES = [
   { label: 'Malaysian Ringgit', code: 'MYR', symbol: 'RM' },
   { label: 'Philippine Peso', code: 'PHP', symbol: '₱' },
   { label: 'Thai Baht', code: 'THB', symbol: '฿' },
+  { label: 'Vietnamese Dong', code: 'VND', symbol: '₫' }
 ];
-
-export function getCurrencySymbol(code: string): string {
-  if (!code) return '$';
-  const upper = code.toUpperCase();
-  const mapping: Record<string, string> = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'INR': '₹',
-    'JPY': '¥',
-    'AUD': 'A$',
-    'CAD': 'C$',
-    // Fallback for existing symbols in database
-    '$': '$',
-    '€': '€',
-    '£': '£',
-    '₹': '₹',
-    '¥': '¥',
-    'A$': 'A$',
-    'C$': 'C$'
-  };
-  return mapping[upper] || code;
-}

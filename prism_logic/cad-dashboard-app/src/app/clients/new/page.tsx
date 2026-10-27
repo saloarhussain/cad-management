@@ -1,40 +1,92 @@
 "use client";
-import React, { useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { saveClient } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
 import { CountrySearch } from '@/components/CountrySearch';
-import { getTaxIdLabel } from '@/lib/tax';
 
 export default function NewClientPage() {
   const { isAuthenticated } = useAuth();
-  const router = useRouter();
   const [saving, setSaving] = React.useState(false);
-  const [country, setCountry] = React.useState('');
+  const [draftCountry, setDraftCountry] = React.useState("");
+  const formRef = React.useRef<HTMLFormElement | null>(null);
 
-  useEffect(() => {
-    router.prefetch('/clients');
-  }, [router]);
+  // Load draft when form mounts in DOM (callback ref prevents AuthGuard delay race condition)
+  const formRefCallback = React.useCallback((node: HTMLFormElement | null) => {
+    formRef.current = node;
+    if (node) {
+      try {
+        const saved = localStorage.getItem('cad_client_draft');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.country) {
+            setDraftCountry(data.country);
+          }
+          Object.keys(data).forEach((key) => {
+            if (key !== 'country') {
+              const element = node.querySelector(`[name="${key}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+              if (element) {
+                if (element.type === 'checkbox') {
+                  (element as HTMLInputElement).checked = data[key] === 'true';
+                } else {
+                  element.value = data[key];
+                }
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error restoring draft:', e);
+      }
+    }
+  }, []);
+
+  // Save draft on any input change (safeguarded against storage blockages)
+  const handleFormChange = () => {
+    if (formRef.current) {
+      try {
+        const formData = new FormData(formRef.current);
+        const data: Record<string, string> = {};
+        formData.forEach((value, key) => {
+          if (typeof value === 'string') {
+            data[key] = value;
+          }
+        });
+        // Explicitly handle unchecked checkboxes so their state is stored as "false"
+        const checkboxes = formRef.current.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((cb: any) => {
+          if (cb.name) {
+            data[cb.name] = cb.checked ? 'true' : 'false';
+          }
+        });
+        localStorage.setItem('cad_client_draft', JSON.stringify(data));
+      } catch (e) {
+        console.warn('Draft auto-save blocked:', e);
+      }
+    }
+  };
 
   const handleSubmit = async (formData: FormData) => {
-    if (!isAuthenticated || saving) return;
+    if (!isAuthenticated) return;
     setSaving(true);
     try {
       const result = await saveClient(formData);
       if (result.success) {
+        try {
+          localStorage.removeItem('cad_client_draft');
+        } catch (e) {}
         if (result.warning) {
           alert(result.warning);
         }
-        router.push('/clients');
+        window.location.href = '/clients';
       } else {
         alert(result.error || 'Failed to save client. Please try again.');
-        setSaving(false);
       }
     } catch (err: any) {
       console.error('Save error:', err);
       alert(err.message || 'An unexpected error occurred. Please ensure you are logged in.');
+    } finally {
       setSaving(false);
     }
   };
@@ -46,10 +98,10 @@ export default function NewClientPage() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-[#7b7767]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(252,224,3,0.12)]">
           <div className="flex justify-between items-center w-full px-6 py-4">
             <div className="flex items-center gap-4">
-              <Link href="/clients" className="text-[#F59E0B] active:scale-95 duration-200 hover:bg-[#F59E0B]/10 p-2 rounded-lg">
+              <Link href="/clients" className="text-[#fce003] active:scale-95 duration-200 hover:bg-[#fce003]/10 p-2 rounded-lg">
                 <span className="material-symbols-outlined">arrow_back</span>
               </Link>
-              <h1 className="font-headline font-bold tracking-tight text-xl text-[#F59E0B]">Add New Client</h1>
+              <h1 className="font-headline font-bold tracking-tight text-xl text-[#fce003]">Add New Client</h1>
             </div>
           </div>
         </header>
@@ -64,7 +116,12 @@ export default function NewClientPage() {
             <p className="text-on-surface-variant text-sm max-w-md mt-2">Initialize a new client profile within the CADONCE ecosystem. All data is encrypted and synced across CAD nodes.</p>
           </div>
 
-          <form action={handleSubmit} className="bg-surface-container-low p-8 rounded-xl space-y-8 relative overflow-hidden border border-white/5">
+          <form 
+            ref={formRefCallback}
+            onChange={handleFormChange}
+            action={handleSubmit} 
+            className="bg-surface-container-low p-8 rounded-xl space-y-8 relative overflow-hidden border border-white/5"
+          >
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-yellow-400/5 blur-[80px] rounded-full"></div>
             
             <div className="space-y-6 text-left">
@@ -92,19 +149,6 @@ export default function NewClientPage() {
                     type="text"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-neutral-500 group-focus-within:text-yellow-400 transition-colors">business</span>
-                </div>
-              </div>
-
-              <div className="group">
-                <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Brand Website URL</label>
-                <div className="relative">
-                  <input 
-                    name="website"
-                    className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white" 
-                    placeholder="https://www.example.com" 
-                    type="url"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-neutral-500 group-focus-within:text-yellow-400 transition-colors">language</span>
                 </div>
               </div>
 
@@ -139,7 +183,15 @@ export default function NewClientPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="group">
                   <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Country</label>
-                  <CountrySearch name="country" required onChange={(val) => setCountry(val)} />
+                  <CountrySearch 
+                    name="country" 
+                    required 
+                    defaultValue={draftCountry}
+                    onChange={(val) => {
+                      setDraftCountry(val);
+                      setTimeout(handleFormChange, 0);
+                    }}
+                  />
                 </div>
 
                 <div className="group">
@@ -157,66 +209,17 @@ export default function NewClientPage() {
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Billing & Address */}
-            <div className="pt-6 mt-6 border-t border-white/10 text-left">
-              <h4 className="font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-6">Billing & Address Details</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="group">
-                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">{getTaxIdLabel(country).toUpperCase()}</label>
-                  <div className="relative">
-                    <input
-                      name="taxId"
-                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
-                      placeholder={`Enter ${getTaxIdLabel(country)}`}
-                      type="text"
-                    />
-                  </div>
-                </div>
-                <div className="group md:col-span-2">
-                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Address</label>
-                  <div className="relative">
-                    <input
-                      name="address"
-                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
-                      placeholder="Street Address"
-                      type="text"
-                    />
-                  </div>
-                </div>
-                <div className="group">
-                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">City</label>
-                  <div className="relative">
-                    <input
-                      name="city"
-                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
-                      placeholder="City"
-                      type="text"
-                    />
-                  </div>
-                </div>
-                <div className="group">
-                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">State / Province</label>
-                  <div className="relative">
-                    <input
-                      name="state"
-                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
-                      placeholder="State"
-                      type="text"
-                    />
-                  </div>
-                </div>
-                <div className="group">
-                  <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Zip Code</label>
-                  <div className="relative">
-                    <input
-                      name="pincode"
-                      className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white"
-                      placeholder="Zip Code"
-                      type="text"
-                    />
-                  </div>
+              <div className="group">
+                <label className="block font-body text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Website URL</label>
+                <div className="relative">
+                  <input 
+                    name="website"
+                    className="w-full bg-surface-container-lowest border border-outline-variant focus:border-yellow-400 focus:ring-0 rounded-lg py-4 px-5 text-on-surface placeholder:text-neutral-500 transition-all duration-300 group-hover:border-outline text-white" 
+                    placeholder="https://example.com" 
+                    type="text"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-neutral-500 group-focus-within:text-yellow-400 transition-colors">language</span>
                 </div>
               </div>
             </div>
@@ -268,4 +271,3 @@ export default function NewClientPage() {
     </AuthGuard>
   );
 }
-

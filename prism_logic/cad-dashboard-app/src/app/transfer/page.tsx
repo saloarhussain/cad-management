@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useAuth } from '@/components/AuthProvider';
+import { sendTransferEmailAction } from '@/app/actions';
 
 export default function TransferPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -15,13 +16,19 @@ export default function TransferPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [requirePayment, setRequirePayment] = useState(false);
-  const [applyWatermark, setApplyWatermark] = useState(true);
   const [price, setPrice] = useState<string>('');
+  const [watermarkEnabled, setWatermarkEnabled] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadStartTimeRef = useRef<number>(0);
 
-  const [recipients, setRecipients] = useState<{ id: string; name: string; type: 'client' | 'team'; email?: string }[]>([]);
+  const hasMediaFile = files.some(f => {
+    const isImage = f.type?.startsWith('image/') || f.name.match(/\.(jpg|jpeg|png|gif|webp|heic|bmp|svg)$/i);
+    const isVideo = f.type?.startsWith('video/') || f.name.match(/\.(mp4|mov|webm|avi|mkv)$/i);
+    return isImage || isVideo;
+  });
+
+  const [recipients, setRecipients] = useState<{ id: string; name: string; type: 'client' | 'team' }[]>([]);
   const [selectedRecipient, setSelectedRecipient] = useState<string>('General Link');
 
   React.useEffect(() => {
@@ -31,23 +38,23 @@ export default function TransferPage() {
         
         const { data: clientsData } = await supabase
           .from('clients')
-          .select('id, name, email')
+          .select('id, name')
           .order('name');
           
         if (clientsData && clientsData.length > 0) {
           clientsData.forEach((c: any) => {
-            list.push({ id: c.id, name: c.name, type: 'client', email: c.email });
+            list.push({ id: c.id, name: c.name, type: 'client' });
           });
         }
         
         const { data: designersData } = await supabase
           .from('designers')
-          .select('id, fullName, email')
+          .select('id, fullName')
           .order('fullName');
           
         if (designersData && designersData.length > 0) {
           designersData.forEach((d: any) => {
-            list.push({ id: d.id, name: d.fullName, type: 'team', email: d.email });
+            list.push({ id: d.id, name: d.fullName, type: 'team' });
           });
         }
         
@@ -115,7 +122,14 @@ export default function TransferPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
     if (selectedFiles && selectedFiles.length > 0) {
-      setFiles(Array.from(selectedFiles));
+      const fileList = Array.from(selectedFiles);
+      const totalSize = fileList.reduce((acc, f) => acc + f.size, 0);
+      if (totalSize > 52428800) {
+        alert('File size exceeds the 50MB limit on the Free tier. Please select files under 50MB.');
+        e.target.value = '';
+        return;
+      }
+      setFiles(fileList);
     }
   };
 
@@ -123,12 +137,34 @@ export default function TransferPage() {
     e.preventDefault();
     const selectedFiles = e.dataTransfer.files;
     if (selectedFiles && selectedFiles.length > 0) {
-      setFiles(Array.from(selectedFiles));
+      const fileList = Array.from(selectedFiles);
+      const totalSize = fileList.reduce((acc, f) => acc + f.size, 0);
+      if (totalSize > 52428800) {
+        alert('File size exceeds the 50MB limit on the Free tier. Please select files under 50MB.');
+        return;
+      }
+      setFiles(fileList);
     }
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+  };
+
+  const resetForm = () => {
+    setFiles([]);
+    setProgress(0);
+    setSpeed('0.0 MB/s');
+    setShareLink('');
+    setError('');
+    setCopied(false);
+    setRequirePayment(false);
+    setPrice('');
+    setWatermarkEnabled(false);
+    setSelectedRecipient('General Link');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   const generateLink = async () => {
@@ -173,13 +209,10 @@ export default function TransferPage() {
         fileExt = files[0].name.split('.').pop() || '';
       }
 
-      if (applyWatermark) {
-        if (finalFileName.includes('.')) {
-          const nameWithoutExt = finalFileName.substring(0, finalFileName.lastIndexOf('.'));
-          finalFileName = `${nameWithoutExt} [WATERMARKED].${fileExt}`;
-        } else {
-          finalFileName = `${finalFileName} [WATERMARKED]`;
-        }
+      if (fileToUpload.size > 52428800) {
+        alert('The uploaded file size (or combined ZIP size) exceeds the 50MB Free tier limit. Please ensure transfers are under 50MB.');
+        setUploading(false);
+        return;
       }
 
       const randomName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
@@ -191,10 +224,7 @@ export default function TransferPage() {
       xhr.open('POST', url);
       
       const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || key;
-      
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('Authorization', `Bearer ${key}`);
       xhr.setRequestHeader('apikey', key);
       xhr.setRequestHeader('Content-Type', fileToUpload.type || 'application/octet-stream');
 
@@ -230,69 +260,70 @@ export default function TransferPage() {
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-      const { data: dbData, error: dbError } = await supabase
+      let dbData: any = null;
+      const insertObj: any = {
+        file_path: filePath,
+        file_name: finalFileName,
+        file_size: fileToUpload.size,
+        mime_type: fileToUpload.type || 'application/octet-stream',
+        expires_at: expiresAt.toISOString(),
+        price: requirePayment && price ? parseFloat(price) : 0,
+        uploader_id: isAuthenticated ? user?.id : null,
+        recipient: selectedRecipient !== 'General Link' ? selectedRecipient : null,
+        watermark_enabled: watermarkEnabled
+      };
+
+      const { data: resData, error: dbError } = await supabase
         .from('file_transfers')
-        .insert([
-          {
-            file_path: filePath,
-            file_name: finalFileName,
-            file_size: fileToUpload.size,
-            mime_type: fileToUpload.type || 'application/octet-stream',
-            expires_at: expiresAt.toISOString(),
-            price: requirePayment && price ? parseFloat(price) : 0,
-            uploader_id: isAuthenticated ? user?.id : null,
-            recipient: selectedRecipient !== 'General Link' ? selectedRecipient : null
-          },
-        ])
+        .insert([insertObj])
         .select();
 
-      if (dbError) throw dbError;
+      if (dbError) {
+        // If it failed because watermark_enabled column is not in the schema cache, catch and retry without it
+        if (dbError.message?.includes('watermark_enabled') || dbError.details?.includes('watermark_enabled')) {
+          console.warn('watermark_enabled column does not exist in schema cache yet, retrying with mime_type fallback...');
+          delete insertObj.watermark_enabled;
+          
+          if (watermarkEnabled) {
+            insertObj.mime_type = `${fileToUpload.type || 'application/octet-stream'};watermark=true`;
+          }
+
+          const { data: retryData, error: retryError } = await supabase
+            .from('file_transfers')
+            .insert([insertObj])
+            .select();
+
+          if (retryError) throw retryError;
+          dbData = retryData;
+        } else {
+          throw dbError;
+        }
+      } else {
+        dbData = resData;
+      }
       console.log('Database record created successfully:', dbData);
 
-      const finalShareLink = `${window.location.origin}/transfer/${dbData[0].id}`;
-      setShareLink(finalShareLink);
+      const transferId = dbData[0].id;
+      const link = `${window.location.origin}/transfer/${transferId}`;
       
-      // Auto-send email if recipient is assigned
+      // If a recipient (client or teammate) was selected, trigger secure email dispatch
       if (selectedRecipient !== 'General Link') {
-        const recipientObj = recipients.find(r => r.name === selectedRecipient);
-        if (recipientObj) {
-          if (!recipientObj.email) {
-            alert(`Link generated, but we couldn't send an email because ${recipientObj.name} does not have an email address on file.`);
+        console.log(`Triggering secure email transfer to recipient: ${selectedRecipient}`);
+        try {
+          const mailRes = await sendTransferEmailAction(transferId, selectedRecipient, link);
+          if (!mailRes.success) {
+            console.error('Email dispatch failed:', mailRes.error);
+            alert(`Link generated successfully, but email dispatch failed: ${mailRes.error}. Please configure your Gmail app password in settings, or copy and send the link manually.`);
           } else {
-            try {
-              console.log(`Sending email via Gmail API to ${recipientObj.email}...`);
-              const emailRes = await fetch('/api/gmail/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  toEmail: recipientObj.email,
-                  toName: recipientObj.name,
-                  shareLink: finalShareLink,
-                  fileName: finalFileName,
-                  requirePayment,
-                  price
-                })
-              });
-              const emailData = await emailRes.json();
-              if (!emailRes.ok || !emailData.success) {
-                if (emailData.code === 'NO_GMAIL') {
-                  alert(`Link generated! However, we couldn't auto-send the email because you haven't connected your Gmail account in the Settings yet.`);
-                } else {
-                  alert(`Link generated, but email sending failed: ${emailData.error}`);
-                  console.error('Failed to send email:', emailData.error);
-                }
-              } else {
-                alert(`Link generated and email successfully sent to ${recipientObj.name}!`);
-                console.log('Email sent successfully:', emailData);
-              }
-            } catch (err) {
-              alert(`Link generated, but a network error occurred while sending the email.`);
-              console.error('Network error sending email:', err);
-            }
+            console.log('Secure transfer email dispatched successfully.');
           }
+        } catch (mailErr: any) {
+          console.error('Error triggering email dispatch action:', mailErr);
+          alert('Link generated successfully, but there was an error sending the notification email. Please check your SMTP configuration.');
         }
       }
 
+      setShareLink(link);
       setReloadTrigger(prev => prev + 1);
 
     } catch (err: any) {
@@ -309,7 +340,7 @@ export default function TransferPage() {
       <style>{`
         .electric-gradient-border {
             background: linear-gradient(#121414, #121414) padding-box,
-                        linear-gradient(45deg, #F59E0B, #00fbfe) border-box;
+                        linear-gradient(45deg, #fce003, #00fbfe) border-box;
             border: 2px dashed transparent;
         }
         .kinetic-btn {
@@ -326,14 +357,14 @@ export default function TransferPage() {
       {!isAuthenticated && (
         <header className="flex items-center justify-between px-6 py-4 border-b border-[#4b4732]/10 bg-[#1a1c1c]/50 backdrop-blur-xl sticky top-0 z-50">
           <div className="flex items-center gap-4">
-             <div className="w-12 h-12 bg-[#F59E0B] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
+             <div className="w-12 h-12 bg-[#fce003] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
                 <span className="material-symbols-outlined text-black text-2xl font-black">architecture</span>
              </div>
              <div>
                 <h1 className="text-2xl font-headline font-black text-white tracking-tighter uppercase italic leading-none">
-                  CAD<span className="text-[#F59E0B]">ONCE</span>
+                  CAD<span className="text-[#fce003]">ONCE</span>
                 </h1>
-                <p className="text-[10px] font-bold text-[#F59E0B] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
+                <p className="text-[10px] font-bold text-[#fce003] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
                   For Organizations
                 </p>
              </div>
@@ -359,11 +390,11 @@ export default function TransferPage() {
       )}
 
       {/* Main Centralized Content - Two Column Responsive Layout */}
-      <main className="flex-1 w-full px-4 sm:px-8 xl:px-12 py-8 lg:py-12">
+      <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Left Column: Analytics & Ledger */}
-          <div className="lg:col-span-7 w-full space-y-8">
+          <div className="lg:col-span-7 w-full space-y-8 order-2 lg:order-1">
             
             {/* Storage & Clicks Analytics */}
             <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-2xl p-6 shadow-xl relative overflow-hidden group">
@@ -490,19 +521,18 @@ export default function TransferPage() {
           </div>
 
           {/* Right Column: Upload Form */}
-          <div className="lg:col-span-5 w-full flex flex-col gap-8">
+          <div className="lg:col-span-5 w-full max-w-md mx-auto lg:mx-0 flex flex-col gap-8 order-1 lg:order-2">
             {/* Upload Zone */}
             <div 
               onClick={() => fileInputRef.current?.click()}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
-              className="group relative aspect-square max-w-md w-full mx-auto lg:mx-0 rounded-xl flex flex-col items-center justify-center gap-6 p-8 bg-gradient-to-br from-[#1a1c1c] to-[#0c0a04] cursor-pointer transition-all hover:scale-[1.01] shadow-[0_10px_50px_rgba(0,0,0,0.5)]"
+              className="group relative aspect-square w-full rounded-xl flex flex-col items-center justify-center gap-6 p-8 bg-gradient-to-br from-[#1a1c1c] to-[#0c0a04] cursor-pointer transition-all hover:scale-[1.01] shadow-[0_10px_50px_rgba(0,0,0,0.5)]"
             >
               <input 
                 type="file" 
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                onClick={(e) => e.stopPropagation()}
                 className="hidden"
                 multiple
               />
@@ -527,7 +557,7 @@ export default function TransferPage() {
                   {files.length > 0 ? `${(files.reduce((acc, f) => acc + f.size, 0) / (1024 * 1024)).toFixed(2)} MB` : 'Drag files or click to browse'}
                 </p>
                 <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1e2020] border border-[#4b4732]/30">
-                  <span className="text-[11px] font-mono font-bold text-[#ffe311] uppercase tracking-widest">Max 2GB</span>
+                  <span className="text-[11px] font-mono font-bold text-[#ffe311] uppercase tracking-widest">Max 50MB (Free Tier)</span>
                 </div>
               </div>
               
@@ -548,132 +578,113 @@ export default function TransferPage() {
             </div>
 
             {/* Recipient Selector */}
-            <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-3 shadow-lg transition-all">
-              <div>
-                <h4 className="text-white font-bold text-sm">Assign Recipient</h4>
-                <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Assign this link to a client or team member</p>
-              </div>
-              
-              <select
-                value={selectedRecipient}
-                onChange={(e) => setSelectedRecipient(e.target.value)}
-                className="w-full bg-[#0c0a04] border border-[#4b4732]/50 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#ffe311] transition-all color-scheme-dark"
-              >
-                <option value="General Link">No Recipient (Generate General Share Link)</option>
+            {!shareLink && (
+              <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-3 shadow-lg transition-all">
+                <div>
+                  <h4 className="text-white font-bold text-sm">Assign Recipient</h4>
+                  <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Assign this link to a client or team member</p>
+                </div>
                 
-                {(() => {
-                  const { clients, team } = getGroupedRecipients();
-                  return (
-                    <>
-                      <optgroup label="Clients" className="bg-[#1a1c1c] text-white">
-                        {clients.map(c => (
-                          <option key={c.id} value={c.name} className="bg-[#1a1c1c]">
-                            {c.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                      {team.length > 0 && (
-                        <optgroup label="Team Members" className="bg-[#1a1c1c] text-white">
-                          {team.map(t => (
-                            <option key={t.id} value={t.name} className="bg-[#1a1c1c]">
-                              {t.name} (Team)
+                <select
+                  value={selectedRecipient}
+                  onChange={(e) => setSelectedRecipient(e.target.value)}
+                  className="w-full bg-[#0c0a04] border border-[#4b4732]/50 rounded-lg px-4 py-3 text-white text-sm outline-none focus:border-[#ffe311] transition-all color-scheme-dark"
+                >
+                  <option value="General Link">No Recipient (Generate General Share Link)</option>
+                  
+                  {(() => {
+                    const { clients, team } = getGroupedRecipients();
+                    return (
+                      <>
+                        <optgroup label="Clients" className="bg-[#1a1c1c] text-white">
+                          {clients.map(c => (
+                            <option key={c.id} value={c.name} className="bg-[#1a1c1c]">
+                              {c.name}
                             </option>
                           ))}
                         </optgroup>
-                      )}
-                    </>
-                  );
-                })()}
-              </select>
-            </div>
-
-            {/* Watermark Options */}
-            <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-white font-bold text-sm">Apply Watermark</h4>
-                  <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Protect media with CADONCE watermark</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={applyWatermark} onChange={(e) => setApplyWatermark(e.target.checked)} />
-                  <div className="w-11 h-6 bg-[#333535] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ffe311]"></div>
-                </label>
+                        {team.length > 0 && (
+                          <optgroup label="Team Members" className="bg-[#1a1c1c] text-white">
+                            {team.map(t => (
+                              <option key={t.id} value={t.name} className="bg-[#1a1c1c]">
+                                {t.name} (Team)
+                              </option>
+                            ))}
+                          </optgroup>
+                        )}
+                      </>
+                    );
+                  })()}
+                </select>
               </div>
-            </div>
+            )}
 
             {/* Payment Options */}
-            <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-white font-bold text-sm">Require Payment</h4>
-                  <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Charge users to download</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" checked={requirePayment} onChange={(e) => setRequirePayment(e.target.checked)} />
-                  <div className="w-11 h-6 bg-[#333535] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ffe311]"></div>
-                </label>
-              </div>
-              
-              {requirePayment && (
-                <div className="animate-in slide-in-from-top-2 duration-200 mt-2 pt-4 border-t border-[#4b4732]/30">
-                  {!isAuthenticated ? (
-                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-bold text-center">
-                      You must be logged in to collect payments.
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-[#333535] flex items-center justify-center border border-[#4b4732]/50 text-[#ffe311] font-black">
-                        $
-                      </div>
-                      <input 
-                        type="number" 
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        placeholder="0.00"
-                        min="0.50"
-                        step="0.01"
-                        className="flex-1 bg-[#0c0a04] border border-[#4b4732]/50 rounded-lg px-4 py-2 text-white font-mono text-lg outline-none focus:border-[#ffe311] transition-all"
-                      />
-                      <div className="px-3 py-2 bg-[#1e2020] rounded-lg border border-[#4b4732]/30 text-[#979177] font-bold text-xs uppercase tracking-widest">
-                        USD
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Action Area */}
-            {shareLink ? (
-              <div className="flex flex-col gap-3 w-full animate-in slide-in-from-bottom-2 duration-300">
-                <div className="flex items-center gap-2 p-3 bg-[#1a1c1c] border border-[#ffe311]/50 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.15)]">
-                  <div className="flex-1 overflow-hidden">
-                    <p className="text-[10px] text-[#ffe311] font-bold uppercase tracking-widest mb-1">Shareable Link Ready</p>
-                    <p className="text-white text-sm truncate font-mono">{shareLink}</p>
+            {!shareLink && (
+              <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-bold text-sm">Require Payment</h4>
+                    <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Charge users to download</p>
                   </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={requirePayment} onChange={(e) => setRequirePayment(e.target.checked)} />
+                    <div className="w-11 h-6 bg-[#333535] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ffe311]"></div>
+                  </label>
                 </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(shareLink);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-lg tracking-widest uppercase transition-all active:scale-[0.98] ${copied ? 'bg-white text-black shadow-[0_10px_40px_rgba(255,255,255,0.3)]' : 'bg-[#ffe311] text-[#383100] shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)]'}`}
-                >
-                  {copied ? 'COPIED TO CLIPBOARD!' : 'COPY LINK'}
-                </button>
-                <button 
-                  onClick={() => setShareLink('')} 
-                  className="w-full h-12 bg-[#1a1c1c] border border-[#4b4732]/50 hover:border-[#ffe311]/50 rounded-lg text-[#979177] hover:text-[#ffe311] text-xs uppercase tracking-widest font-bold mt-1 transition-all active:scale-[0.98]"
-                >
-                  Generate New Link
-                </button>
+                
+                {requirePayment && (
+                  <div className="animate-in slide-in-from-top-2 duration-200 mt-2 pt-4 border-t border-[#4b4732]/30">
+                    {!isAuthenticated ? (
+                      <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-xs font-bold text-center">
+                        You must be logged in to collect payments.
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#333535] flex items-center justify-center border border-[#4b4732]/50 text-[#ffe311] font-black">
+                          $
+                        </div>
+                        <input 
+                          type="number" 
+                          value={price}
+                          onChange={(e) => setPrice(e.target.value)}
+                          placeholder="0.00"
+                          min="0.50"
+                          step="0.01"
+                          className="flex-1 bg-[#0c0a04] border border-[#4b4732]/50 rounded-lg px-4 py-2 text-white font-mono text-lg outline-none focus:border-[#ffe311] transition-all"
+                        />
+                        <div className="px-3 py-2 bg-[#1e2020] rounded-lg border border-[#4b4732]/30 text-[#979177] font-bold text-xs uppercase tracking-widest">
+                          USD
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            ) : (
+            )}
+
+            {/* Watermark Options */}
+            {!shareLink && hasMediaFile && (
+              <div className="bg-[#1a1c1c] border border-[#4b4732]/30 rounded-xl p-5 flex flex-col gap-4 shadow-lg transition-all animate-in slide-in-from-top-2 duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-white font-bold text-sm">Cadonce Watermark</h4>
+                    <p className="text-[#979177] text-[10px] uppercase tracking-widest mt-1">Add secure logo watermark overlay</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={watermarkEnabled} onChange={(e) => setWatermarkEnabled(e.target.checked)} />
+                    <div className="w-11 h-6 bg-[#333535] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#ffe311]"></div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Action Button */}
+            {!shareLink && (
               <button 
                 onClick={generateLink}
                 disabled={uploading || files.length === 0}
-                className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-[#383100] text-lg tracking-widest uppercase shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)] transition-all active:scale-[0.98] ${uploading || files.length === 0 ? 'opacity-50 cursor-not-allowed bg-[#ffe311]/50' : 'bg-[#ffe311]'}`}
+                className={`kinetic-btn w-full h-16 rounded-lg font-display font-extrabold text-[#383100] text-lg tracking-widest uppercase shadow-[0_10px_40px_rgba(252,224,3,0.2)] hover:shadow-[0_15px_50px_rgba(252,224,3,0.3)] transition-all active:scale-[0.98] ${uploading || files.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {uploading ? 'UPLOADING...' : 'GENERATE LINK'}
               </button>
@@ -684,6 +695,61 @@ export default function TransferPage() {
                 {error}
               </div>
             )}
+
+            {shareLink && (
+              <div className="mt-4 p-5 bg-[#1a1c1c] rounded-xl border border-[#4b4732]/30 flex flex-col gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="text-center sm:text-left">
+                  <p className="text-xs text-[#979177] uppercase tracking-wider font-bold">
+                    Shareable Link {selectedRecipient !== 'General Link' ? `for ${selectedRecipient}` : ''}:
+                  </p>
+                  <div className="mt-2 p-3.5 bg-[#0c0a04] rounded-lg border border-[#4b4732]/20 flex items-center justify-between gap-3 overflow-hidden">
+                    <a href={shareLink} className="text-[#ffe311] break-all hover:underline text-xs font-mono select-all truncate pr-2" target="_blank" rel="noopener noreferrer">
+                      {shareLink}
+                    </a>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(shareLink);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="shrink-0 size-8 rounded-md bg-[#ffe311]/10 border border-[#ffe311]/20 text-[#ffe311] hover:bg-[#ffe311]/20 transition-all flex items-center justify-center active:scale-95"
+                      title="Copy to Clipboard"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {copied ? 'check' : 'content_copy'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Prominent Action Buttons: Copy Link & Send Another File */}
+                <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(shareLink);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                    className="flex-1 py-3.5 rounded-lg bg-[#ffe311] hover:bg-[#ffe311]/90 text-[#0c0a04] text-xs font-extrabold uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(252,224,3,0.15)] animate-pulse"
+                  >
+                    <span className="material-symbols-outlined text-sm">
+                      {copied ? 'check_circle' : 'link'}
+                    </span>
+                    {copied ? 'COPIED!' : 'COPY LINK'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="flex-1 py-3.5 rounded-lg bg-[#333535] hover:bg-[#ffe311]/10 text-white border border-[#ffe311]/30 text-xs font-extrabold uppercase tracking-widest hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                  >
+                    <span className="material-symbols-outlined text-sm">upload_file</span>
+                    SEND ANOTHER FILE
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
@@ -691,4 +757,3 @@ export default function TransferPage() {
     </div>
   );
 }
-

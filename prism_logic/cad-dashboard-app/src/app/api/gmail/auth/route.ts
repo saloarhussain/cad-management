@@ -1,18 +1,38 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabaseServer';
 
 export async function GET() {
-  // Read Client ID from Supabase settings (user entered it in Settings page)
-  const { data } = await supabase.from('settings').select('"gmailClientId"').limit(1);
-  const clientId = data?.[0]?.gmailClientId;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!clientId) {
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL || 'https://cad-dashboard-app.vercel.app'}/inbox?error=no_client_id`
-    );
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cad-dashboard-app.vercel.app';
+
+  if (!user) {
+    return NextResponse.redirect(`${appUrl}/auth/login`);
   }
 
-  const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL || 'https://cad-dashboard-app.vercel.app'}/api/gmail/callback`;
+  // Read Client ID from Supabase settings for this logged-in user
+  const { data } = await supabase
+    .from('settings')
+    .select('gmailClientId, payment_methods')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  let clientId = data?.gmailClientId;
+
+  // Fallback to payment_methods JSONB system_config if root column is not populated yet
+  if (!clientId && data?.payment_methods) {
+    const config = data.payment_methods.find((m: any) => m.id === 'system_config');
+    if (config) {
+      clientId = config.gmailClientId;
+    }
+  }
+
+  if (!clientId) {
+    return NextResponse.redirect(`${appUrl}/inbox?error=no_client_id`);
+  }
+
+  const redirectUri = `${appUrl}/api/gmail/callback`;
 
   const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   authUrl.searchParams.set('client_id', clientId);
@@ -20,7 +40,6 @@ export async function GET() {
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', [
     'https://www.googleapis.com/auth/gmail.readonly',
-    'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/userinfo.email',
   ].join(' '));
   authUrl.searchParams.set('access_type', 'offline');

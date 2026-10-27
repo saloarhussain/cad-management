@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabaseServer';
 
 export async function GET() {
-  const { data, error } = await supabase.from('settings').select('*').limit(1);
+  const supabaseServer = await createClient();
+  const { data: { user } } = await supabaseServer.auth.getUser();
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { data, error } = await supabaseServer.from('settings').select('*').eq('user_id', user.id).limit(1);
   const s = data?.[0] || {};
 
   const hasAccessToken = !!s.gmailAccessToken;

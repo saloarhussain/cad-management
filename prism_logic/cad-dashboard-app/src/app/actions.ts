@@ -5,7 +5,7 @@ import { PLATFORM_CONFIG } from '@/lib/config';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { sendEmail, invoiceTemplate, composeTemplate, projectAssignmentTemplate, fundsReleasedTemplate, feedbackReceivedTemplate } from '@/lib/mailer';
-import { createClient } from '@/lib/supabaseServer';
+import { createClient, createAdminClient } from '@/lib/supabaseServer';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/lib/payment';
 import { getSignedUrl } from '@/lib/storage';
 
@@ -54,11 +54,12 @@ export async function saveDesigner(formData: FormData) {
       newDesigner.hasPortalAccess = true;
     }
 
-    // Check for existing designer in DB
+    // Check for existing designer in DB for this organization
     const { data: existingDbDesigner } = await supabase
       .from('designers')
       .select('*')
       .ilike('email', newDesigner.email)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     let designerId = existingDbDesigner?.id;
@@ -468,50 +469,13 @@ export async function deleteDesigner(id: string) {
   }
 }
 
-async function getNextOrderId(userId: string, supabase: any, orderDate?: any): Promise<string> {
-  const projectDate = orderDate ? new Date(orderDate) : new Date();
-  const year = projectDate.getFullYear();
-  const month = projectDate.getMonth();
-  let fyStart = year;
-  let fyEnd = year + 1;
-  if (month < 3) {
-    fyStart = year - 1;
-    fyEnd = year;
-  }
-  const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
-
-  const { data: latestProjects } = await supabase
-    .from('projects')
-    .select('orderId')
-    .eq('user_id', userId)
-    .ilike('orderId', `MC/${fyString}/%`)
-    .order('orderId', { ascending: false })
-    .limit(1);
-
-  let maxSerial = 0;
-  if (latestProjects && latestProjects.length > 0 && latestProjects[0].orderId) {
-    const match = latestProjects[0].orderId.match(new RegExp(`MC\\/${fyString}\\/(\\d+)`, 'i'));
-    if (match) {
-      maxSerial = parseInt(match[1], 10) || 0;
-    }
-  }
-  const serialNo = (maxSerial + 1).toString().padStart(4, '0');
-  return `MC/${fyString}/${serialNo}`;
-}
-
 export async function saveProject(formData: FormData) {
   try {
     const { user, supabase } = await getAuthenticatedUser();
-    
-    let orderId = formData.get('orderId') as string;
-    if (!orderId) {
-      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
-    }
-
     const newProject = {
       id: Date.now().toString(),
       title: formData.get('title'),
-      orderId,
+      orderId: formData.get('orderId'),
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -535,60 +499,63 @@ export async function saveProject(formData: FormData) {
       paidAmount: formData.get('paidAmount') || '0',
       useEscrow: formData.get('useEscrow') === 'on',
       status: 'High Priority',
-      createdAt: new Date().toISOString(),
       tags: (() => {
-        const val = formData.get('tags');
+        const val = formData.get('skills');
         if (!val) return [];
         try {
           return JSON.parse(val as string);
         } catch {
-          return (val as string).split(',').map(s => s.trim()).filter(Boolean);
+          return [val as string];
         }
-      })()
+      })(),
+      createdAt: new Date().toISOString()
     };
 
     await insertRecord('projects', newProject, user.id, supabase);
 
-    // [ASYNC BACKGROUND EMAIL] Send Email to Designer if assigned without blocking the API response
+    // [NEW] Send Email to Designer if assigned
     if (newProject.designer) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.cadonce.com';
-      (async () => {
-        try {
-          const { data: designer } = await supabase
-            .from('designers')
-            .select('email')
-            .ilike('fullName', String(newProject.designer))
+      try {
+        const { data: designer } = await supabase
+          .from('designers')
+          .select('email')
+          .ilike('fullName', String(newProject.designer))
+          .maybeSingle();
+
+        if (designer?.email) {
+          const { data: invitingUserSettings } = await supabase
+            .from('settings')
+            .select('organizationName')
+            .eq('user_id', user.id)
             .maybeSingle();
+          
+          const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
+          
+          // [DYNAMIC ORIGIN] Resolve the base URL for links
+          const headerList = await headers();
+          const host = headerList.get('host');
+          const protocol = headerList.get('x-forwarded-proto') || 'http';
+          const baseUrl = `${protocol}://${host}`;
+          const magicLink = `${baseUrl}/projects/${newProject.id}`;
 
-          if (designer?.email) {
-            const { data: invitingUserSettings } = await supabase
-              .from('settings')
-              .select('organizationName')
-              .eq('user_id', user.id)
-              .maybeSingle();
-            
-            const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
-            const magicLink = `${baseUrl}/projects/${newProject.id}`;
-
-            await sendEmail({
-              to: designer.email,
-              subject: `New Project Assigned: ${newProject.title}`,
-              html: projectAssignmentTemplate(newProject, organizationName, magicLink),
-              credentials: {
-                user: PLATFORM_CONFIG.FOUNDER_EMAIL,
-                password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
-                senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
-                smtpHost: 'smtp.gmail.com',
-                smtpPort: 465,
-                smtpSecure: true
-              }
-            });
-            console.log(`[Email] Assignment email sent to ${designer.email}`);
-          }
-        } catch (mailErr: any) {
-          console.error('[Email] Failed to send assignment email:', mailErr.message);
+          await sendEmail({
+            to: designer.email,
+            subject: `New Project Assigned: ${newProject.title}`,
+            html: projectAssignmentTemplate(newProject, organizationName, magicLink),
+            credentials: {
+              user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+              password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+              senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+              smtpHost: 'smtp.gmail.com',
+              smtpPort: 465,
+              smtpSecure: true
+            }
+          });
+          console.log(`[Email] Assignment email sent to ${designer.email}`);
         }
-      })().catch(err => console.error('[saveProject background email error]:', err));
+      } catch (mailErr: any) {
+        console.error('[Email] Failed to send assignment email:', mailErr.message);
+      }
     }
 
     // [ESCROW] If escrow is enabled, initiate the hold protocol
@@ -601,6 +568,7 @@ export async function saveProject(formData: FormData) {
       }
     }
 
+    revalidatePath('/projects');
     return { success: true, id: newProject.id };
   } catch (err: any) {
     console.error('[saveProject] Error:', err.message);
@@ -753,14 +721,9 @@ export async function updateProjectAction(formData: FormData) {
     const { user, supabase } = await getAuthenticatedUser();
     const projectId = formData.get('id') as string;
 
-    let orderId = formData.get('orderId') as string;
-    if (!orderId) {
-      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
-    }
-
     const updatedData: any = {
       title: formData.get('title'),
-      orderId,
+      orderId: formData.get('orderId'),
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -781,18 +744,17 @@ export async function updateProjectAction(formData: FormData) {
       })(),
       cadFile: formData.get('cadFile'),
       paymentStatus: formData.get('paymentStatus'),
-      payoutStatus: formData.get('payoutStatus'),
       paidAmount: formData.get('paidAmount'),
-      updatedAt: new Date().toISOString(),
       tags: (() => {
-        const val = formData.get('tags');
-        if (!val) return undefined;
+        const val = formData.get('skills');
+        if (val === null) return undefined;
         try {
           return JSON.parse(val as string);
         } catch {
-          return (val as string).split(',').map(s => s.trim()).filter(Boolean);
+          return [val as string];
         }
-      })()
+      })(),
+      updatedAt: new Date().toISOString()
     };
 
     // Auto-detect if this is a delivery update by status change or designer action
@@ -825,45 +787,40 @@ export async function updateProjectAction(formData: FormData) {
           .eq('status', 'active');
       }
 
-      // [ASYNC BACKGROUND EMAIL] Send Email to Designer on assignment without blocking API response
+      // [NEW] Send Email to Designer on assignment
       if (newDesigner?.email) {
         try {
+          const { data: invitingUserSettings } = await supabase
+            .from('settings')
+            .select('organizationName')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
+          
+          // [DYNAMIC ORIGIN] Resolve the base URL for links
           const headerList = await headers();
           const host = headerList.get('host');
           const protocol = headerList.get('x-forwarded-proto') || 'http';
           const baseUrl = `${protocol}://${host}`;
+          const magicLink = `${baseUrl}/projects/${projectId}`;
 
-          (async () => {
-            try {
-              const { data: invitingUserSettings } = await supabase
-                .from('settings')
-                .select('organizationName')
-                .eq('user_id', user.id)
-                .maybeSingle();
-              
-              const organizationName = invitingUserSettings?.organizationName || user.user_metadata?.organization_name || 'CADONCE';
-              const magicLink = `${baseUrl}/projects/${projectId}`;
-
-              await sendEmail({
-                to: newDesigner.email,
-                subject: `Project Assignment: ${updatedData.title || oldProject.title}`,
-                html: projectAssignmentTemplate({ ...oldProject, ...updatedData, id: projectId }, organizationName, magicLink),
-                credentials: {
-                  user: PLATFORM_CONFIG.FOUNDER_EMAIL,
-                  password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
-                  senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
-                  smtpHost: 'smtp.gmail.com',
-                  smtpPort: 465,
-                  smtpSecure: true
-                }
-              });
-              console.log(`[Email] Assignment email sent to ${newDesigner.email}`);
-            } catch (mailErr: any) {
-              console.error('[Email] Failed to send assignment email:', mailErr.message);
+          await sendEmail({
+            to: newDesigner.email,
+            subject: `Project Assignment: ${updatedData.title || oldProject.title}`,
+            html: projectAssignmentTemplate({ ...oldProject, ...updatedData, id: projectId }, organizationName, magicLink),
+            credentials: {
+              user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+              password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+              senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+              smtpHost: 'smtp.gmail.com',
+              smtpPort: 465,
+              smtpSecure: true
             }
-          })().catch(err => console.error('[updateProjectAction background email error]:', err));
-        } catch (err: any) {
-          console.error('[updateProjectAction] Header/Email init error:', err.message);
+          });
+          console.log(`[Email] Assignment email sent to ${newDesigner.email}`);
+        } catch (mailErr: any) {
+          console.error('[Email] Failed to send assignment email:', mailErr.message);
         }
       }
     }
@@ -965,14 +922,9 @@ export async function saveClient(formData: FormData) {
       email: (formData.get('email') as string)?.trim()?.toLowerCase(),
       mobile: formData.get('mobile'),
       country: formData.get('country'),
-      website: formData.get('website'),
       platform: formData.get('platform'),
       priority: formData.get('priority'),
-      taxId: formData.get('taxId'),
-      address: formData.get('address'),
-      city: formData.get('city'),
-      state: formData.get('state'),
-      pincode: formData.get('pincode'),
+      website: formData.get('website'),
       createdAt: new Date().toISOString()
     };
 
@@ -1188,8 +1140,20 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // Consolidate ALL extended settings into the system_config record to bypass schema limitations
+    // Check for existing record
+    const { data: existingSettings } = await adminSupabase
+      .from('settings')
+      .select('id, payment_methods')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    // Consolidate ALL extended settings into the system_config record to bypass schema limitations,
+    // merging with existing config to preserve keys like alarmEnabled and pushSubscription
+    const existingPaymentMethods = existingSettings?.payment_methods || [];
+    const existingConfig = existingPaymentMethods.find((m: any) => m.id === 'system_config') || {};
+
     const extendedConfig = {
+      ...existingConfig,
       id: 'system_config',
       type: 'INTERNAL_CONFIG',
       smtpHost: formData.get('smtpHost') as string,
@@ -1204,26 +1168,10 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
       escrowWallet: formData.get('escrowWallet') as string,
       settlementPeriod: formData.get('settlementPeriod') as string,
       owner_name: formData.get('ownerName') as string,
-      username: formData.get('username') as string,
       whatsapp: formData.get('whatsapp') as string,
       avatar_url: formData.get('avatarUrl') as string,
       country: formData.get('country') as string,
-      orgTaxId: formData.get('orgTaxId') as string,
-      orgAddress: formData.get('orgAddress') as string,
-      orgCity: formData.get('orgCity') as string,
-      orgPincode: formData.get('orgPincode') as string,
-      orgState: formData.get('orgState') as string,
-      orgCountry: formData.get('orgCountry') as string,
       pointsBalance: parseInt(formData.get('pointsBalance') as string || '0'),
-      // Alert Notification Integrations
-      freelanceEmail: formData.get('freelanceEmail') as string,
-      freelanceAppPassword: formData.get('freelanceAppPassword') as string,
-      binanceApiKey: formData.get('binanceApiKey') as string,
-      binanceApiSecret: formData.get('binanceApiSecret') as string,
-      twilioAccountSid: formData.get('twilioAccountSid') as string,
-      twilioAuthToken: formData.get('twilioAuthToken') as string,
-      twilioPhoneFrom: formData.get('twilioPhoneFrom') as string,
-      twilioPhoneTo: formData.get('twilioPhoneTo') as string,
     };
 
     const enrichedMethods = [
@@ -1238,21 +1186,15 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
       senderName: formData.get('senderName') as string,
       organization_name: formData.get('organizationName') as string,
       owner_name: formData.get('ownerName') as string,
-      username: formData.get('username') as string,
       whatsapp: formData.get('whatsapp') as string,
       avatar_url: formData.get('avatarUrl') as string,
       points_balance: parseInt(formData.get('pointsBalance') as string || '0'),
       payment_methods: enrichedMethods,
+      gmailClientId: formData.get('gmailClientId') as string,
+      gmailClientSecret: formData.get('gmailClientSecret') as string,
     };
 
     console.log('[saveAllSettings] Target User ID:', user.id);
-
-    // Check for existing record
-    const { data: existingSettings } = await adminSupabase
-      .from('settings')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
 
     let writeError;
     if (existingSettings) {
@@ -1282,10 +1224,7 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
     }
 
     if (writeError) {
-      console.error('[saveAllSettings] Critical Persistence Error:', writeError);
-      if (writeError.code === '23505' || writeError.message?.includes('unique constraint')) {
-        return { success: false, error: 'This username is already taken. Please choose a different one.' };
-      }
+      console.error('[saveAllSettings] Critical Persistence Error:', writeError.message);
       return { success: false, error: `Database Error: ${writeError.message}` };
     }
 
@@ -1307,11 +1246,59 @@ export async function saveAllSettings(formData: FormData, paymentMethods: any[])
     revalidatePath('/settings');
     return { success: true };
   } catch (err: any) {
-    console.error('[saveAllSettings] Error:', err);
-    if (err.code === '23505' || err.message?.includes('unique constraint') || err.message?.includes('duplicate key')) {
-      return { success: false, error: 'This username is already taken. Please choose a different one.' };
-    }
+    console.error('[saveAllSettings] Error:', err.message);
     return { success: false, error: err.message || 'Failed to save settings.' };
+  }
+}
+
+export async function saveAlarmConfig(config: { enabled?: boolean; query?: string; volume?: number; style?: string }) {
+  try {
+    const { user } = await getAuthenticatedUser();
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // Fetch existing settings
+    const { data: settings } = await adminSupabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!settings) {
+      return { success: false, error: 'Settings record not found' };
+    }
+
+    const paymentMethods = settings.payment_methods || [];
+    let systemConfig = paymentMethods.find((m: any) => m.id === 'system_config') || {
+      id: 'system_config',
+      type: 'INTERNAL_CONFIG',
+    };
+
+    // Merge new config keys inside the system config virtual block
+    if (config.enabled !== undefined) systemConfig.alarmEnabled = config.enabled;
+    if (config.query !== undefined) systemConfig.alarmQuery = config.query;
+    if (config.volume !== undefined) systemConfig.alarmVolume = config.volume;
+    if (config.style !== undefined) systemConfig.alarmStyle = config.style;
+
+    const enrichedMethods = [
+      ...paymentMethods.filter((m: any) => m.id !== 'system_config'),
+      systemConfig
+    ];
+
+    const { error: updateError } = await adminSupabase
+      .from('settings')
+      .update({ payment_methods: enrichedMethods })
+      .eq('id', settings.id);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    revalidatePath('/settings');
+    return { success: true };
+  } catch (err: any) {
+    console.error('saveAlarmConfig error:', err);
+    return { success: false, error: err.message || 'Failed to save alarm configurations' };
   }
 }
 
@@ -1347,16 +1334,13 @@ export async function getMySettings() {
         data.avatarUrl = config.avatar_url || config.avatarUrl;
         data.country = config.country;
         data.pointsBalance = config.points_balance || config.pointsBalance || 0;
-        
-        // Alert Notification Integrations
-        data.freelanceEmail = config.freelanceEmail;
-        data.freelanceAppPassword = config.freelanceAppPassword;
-        data.binanceApiKey = config.binanceApiKey;
-        data.binanceApiSecret = config.binanceApiSecret;
-        data.twilioAccountSid = config.twilioAccountSid;
-        data.twilioAuthToken = config.twilioAuthToken;
-        data.twilioPhoneFrom = config.twilioPhoneFrom;
-        data.twilioPhoneTo = config.twilioPhoneTo;
+        data.gmailClientId = config.gmailClientId;
+        data.gmailClientSecret = config.gmailClientSecret;
+        data.alarmEnabled = config.alarmEnabled === true || config.alarmEnabled === 'true';
+        data.alarmQuery = config.alarmQuery;
+        data.alarmVolume = config.alarmVolume;
+        data.alarmStyle = config.alarmStyle;
+        data.pushSubscription = config.pushSubscription;
       }
     }
 
@@ -1462,22 +1446,15 @@ export async function sendInvoice(projectId: string) {
 
     const { data: settings } = await adminSupabase.from('settings').select('*').eq('user_id', user.id).maybeSingle();
     const credentials = getMailCredentials(settings);
-    
-    const methods = settings?.payment_methods || [];
-    const parsedMethods = typeof methods === 'string' ? JSON.parse(methods) : methods;
-    const systemConfig = Array.isArray(parsedMethods) ? parsedMethods.find((m: any) => m.id === 'system_config') : {};
 
     const { sendEmail, invoiceTemplate } = await import('@/lib/mailer');
     await sendEmail({
       to: email,
       subject: `Invoice for Project: ${project.title}`,
-      html: invoiceTemplate(project, client, systemConfig),
+      html: invoiceTemplate(project, clientName),
       text: `Invoice for ${project.title}. Total: $${project.revenue}. Balance: $${parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')}`,
       credentials,
     });
-
-    // Mark invoice as sent in the database
-    await adminSupabase.from('projects').update({ invoiceSent: true }).eq('id', projectId);
 
     return {
       success: true,
@@ -1516,7 +1493,7 @@ export async function getDesignerDb(organizationId?: string) {
     // 2. Fetch Organization Metadata
     const { data: settings } = await adminSupabase
       .from('settings')
-      .select('organizationName, username')
+      .select('organizationName')
       .eq('user_id', designer.user_id)
       .maybeSingle();
 
@@ -1527,16 +1504,34 @@ export async function getDesignerDb(organizationId?: string) {
       .eq('user_id', designer.user_id) // STRICT ISOLATION: Only projects from this organization
       .eq('designer', designer.fullName);
 
+    // 4. Fetch all completed projects for this designer across ALL organizations for lifetime earnings
+    const { data: allCompletedProjects } = await adminSupabase
+      .from('projects')
+      .select('expense, expenseCurrency')
+      .eq('designer', designer.fullName)
+      .in('status', ['Completed', 'Approved', 'Complete', 'Completed', 'Approved', 'Complete']);
+
+    let totalLifetimeUSD = 0;
+    if (allCompletedProjects) {
+      allCompletedProjects.forEach((p: any) => {
+        const amt = parseFloat(p.expense || '0');
+        const currency = p.expenseCurrency || '$';
+        if (currency === '$' || currency === 'USD') {
+          totalLifetimeUSD += amt;
+        } else if (currency === '₹' || currency === 'INR') {
+          totalLifetimeUSD += amt / 83.5;
+        }
+      });
+    }
+
     return {
       projects: assignedProjects || [],
-      designer: {
-        ...designer,
-        username: settings?.username || null
-      },
+      designer: designer,
       organization: {
         id: designer.user_id,
         name: settings?.organizationName || 'Unnamed Organization'
-      }
+      },
+      totalLifetimeUSD
     };
   } catch (err) {
     console.error('[getDesignerDb] Error:', err);
@@ -1553,42 +1548,29 @@ export async function getDesignerPortfolio() {
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // 1. Fetch custom portfolio items by auth user id (always, independently)
-    const { data: portfolioItems } = await adminSupabase
-      .from('designer_portfolio_items')
-      .select('*')
-      .eq('designer_id', user.id);
-
-    // 2. Fetch Designer Profile to get full name (for completed projects)
+    // 1. Fetch Designer Profile to get full name
     const { data: designers } = await adminSupabase
       .from('designers')
       .select('fullName')
       .ilike('email', user.email);
 
-    // 3. Fetch completed projects only if designer profile found
-    let projects: any[] = [];
-    if (designers && designers.length > 0) {
-      const fullName = designers[0].fullName;
-      const { data: projectData } = await adminSupabase
-        .from('projects')
-        .select('*')
-        .eq('designer', fullName)
-        .in('status', ['Completed', 'Approved', 'Complete']);
-      projects = projectData || [];
-    }
+    if (!designers || designers.length === 0) return { projects: [], portfolioItems: [] };
+    const fullName = designers[0].fullName;
 
-    // 4. Fetch settings for username
-    const { data: settings } = await adminSupabase
-      .from('settings')
-      .select('username')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    // 2. Fetch all completed projects for this designer across all orgs
+    const { data: projects } = await adminSupabase
+      .from('projects')
+      .select('*')
+      .eq('designer', fullName)
+      .in('status', ['Completed', 'Approved', 'Complete']);
 
-    return { 
-      projects, 
-      portfolioItems: portfolioItems || [],
-      username: settings?.username || null
-    };
+    // 3. Fetch custom portfolio items
+    const { data: portfolioItems } = await adminSupabase
+      .from('designer_portfolio_items')
+      .select('*')
+      .eq('designer_id', user.id);
+
+    return { projects: projects || [], portfolioItems: portfolioItems || [] };
   } catch (err) {
     console.error('[getDesignerPortfolio] Error:', err);
     return { projects: [], portfolioItems: [] };
@@ -1754,16 +1736,13 @@ export async function createPortfolioProject(data: {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-
     const { title, category, software, narrative, imageUrls, cadFileUrl } = data;
     
     // Serialize description
     const description = `[CATEGORY] ${category}\n[SOFTWARE] ${software.join(', ')}\n[CAD_FILE] ${cadFileUrl}\n\n${narrative}`;
     
-    // Insert into database using admin client to bypass RLS
-    const { error } = await adminSupabase
+    // Insert into database
+    const { error } = await supabase
       .from('designer_portfolio_items')
       .insert({
         designer_id: user.id,
@@ -1839,16 +1818,7 @@ export async function getDesignerProjectDetail(id: string) {
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // 1. Fetch Designer Profile to get full name
-    const { data: designer } = await adminSupabase
-      .from('designers')
-      .select('fullName, email, user_id')
-      .eq('email', user.email)
-      .maybeSingle();
-
-    if (!designer) return { project: null };
-
-    // 2. Fetch the specific project
+    // 1. Fetch the specific project first
     const { data: project } = await adminSupabase
       .from('projects')
       .select('*')
@@ -1857,10 +1827,15 @@ export async function getDesignerProjectDetail(id: string) {
 
     if (!project) return { project: null };
 
-    // 3. Verify Organization Membership (Isolation)
-    // We check if the project belongs to the same organization owner as the designer
-    const isSameOrganization = project.user_id === designer.user_id;
-    if (!isSameOrganization) return { project: null };
+    // 2. Fetch Designer Profile matching the email and organization (isolation)
+    const { data: designer } = await adminSupabase
+      .from('designers')
+      .select('fullName, email, user_id')
+      .eq('email', user.email)
+      .eq('user_id', project.user_id) // STRICT ISOLATION: Match the hiring organization!
+      .maybeSingle();
+
+    if (!designer) return { project: null };
 
     return { project };
   } catch (err) {
@@ -1952,65 +1927,6 @@ export async function getPublicDesignerStatus(designerEmail: string) {
   }
 }
 
-export async function getPublicPortfolioItems(designerId: string) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-
-    const { data, error } = await adminSupabase
-      .from('designer_portfolio_items')
-      .select('*')
-      .eq('designer_id', designerId)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return { items: data || [] };
-  } catch (err: any) {
-    console.error('[getPublicPortfolioItems] Error:', err.message);
-    return { items: [] };
-  }
-}
-
-/**
- * Given a designer's auth user ID (from the shareable portfolio URL),
- * returns their profile: name, specialty, skills, avatar, and email.
- * Strategy: look up the auth user by ID → get their email → find their
- * designer record in the designers table by email.
- */
-export async function getPublicDesignerProfile(userId: string) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-
-    // 1. Get auth user to retrieve their email + verified UUID
-    const { data: { user }, error: authError } = await adminSupabase.auth.admin.getUserById(userId);
-    if (authError || !user?.email) {
-      return { designer: null, authUserId: userId };
-    }
-
-    const email = user.email;
-    const authUserId = user.id; // verified real UUID from auth
-
-    // 2. Find their designer profile record (stored by orgs who added them)
-    const { data: designerRecords } = await adminSupabase
-      .from('designers')
-      .select('*')
-      .ilike('email', email)
-      .limit(1);
-
-    if (designerRecords && designerRecords.length > 0) {
-      return { designer: { ...designerRecords[0], email }, authUserId };
-    }
-
-    // 3. Fallback: return basic profile from auth metadata
-    const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0];
-    return { designer: { fullName, email, specialty: '', skills: [] }, authUserId };
-  } catch (err: any) {
-    console.error('[getPublicDesignerProfile] Error:', err.message);
-    return { designer: null, authUserId: userId };
-  }
-}
-
 export async function getDesignerByEmail(email: string) {
   try {
     const { createAdminClient } = await import('@/lib/supabaseServer');
@@ -2035,63 +1951,59 @@ export async function getDesignerStatus() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user?.email) {
-      return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
-      };
-    }
+    if (!user?.email) return { isDesigner: false, organizations: [] };
 
-    // Rely on Auth User Metadata role as the source of truth to differentiate designer vs organization
-    const isDesignerRole = user.user_metadata?.role === 'designer';
-    if (!isDesignerRole) {
-      return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
-      };
-    }
+    const isDesignerFromMetadata = user.user_metadata?.role === 'designer';
 
+    // Use Admin Client to bypass RLS for role verification
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
-    // Try email match first, then fallback to user_id match
-    let designers: any[] | null = null;
-    const { data: byEmail } = await adminSupabase
+    // 1. Fetch designer records and their settings in as few round trips as possible
+    const { data: designerRecords, error: designerError } = await adminSupabase
       .from('designers')
-      .select('*')
+      .select('user_id')
       .ilike('email', user.email);
 
-    if (byEmail && byEmail.length > 0) {
-      designers = byEmail;
-    } else {
-      // Fallback: match by user_id (handles email mismatch between auth and designers table)
-      const { data: byUserId } = await adminSupabase
-        .from('designers')
-        .select('*')
-        .eq('user_id', user.id);
-      designers = byUserId;
+    const isDesignerFromDb = designerRecords && designerRecords.length > 0;
+    const isDesigner = isDesignerFromMetadata || isDesignerFromDb;
+
+    if (!isDesigner) {
+      return { isDesigner: false, organizations: [] };
     }
 
-    if (!designers || designers.length === 0) {
-      return {
-        isDesigner: false,
-        organizations: [] as { id: string; name: string }[]
-      };
-    }
+    const organizations = [];
 
-    const orgUserIds = Array.from(new Set(designers.map(d => d.user_id).filter(Boolean)));
+    if (designerRecords && designerRecords.length > 0) {
+      const ownerIds = designerRecords.map(r => r.user_id);
 
-    let organizations: { id: string; name: string }[] = [];
-    if (orgUserIds.length > 0) {
-      const { data: settingsList } = await adminSupabase
+      // Fetch organization names for all hiring owners
+      const { data: settings } = await adminSupabase
         .from('settings')
         .select('user_id, organizationName')
-        .in('user_id', orgUserIds);
+        .in('user_id', ownerIds);
 
-      organizations = (settingsList || []).map(s => ({
-        id: s.user_id,
-        name: s.organizationName || 'Unnamed Organization'
+      // Map records to organizations with fallbacks
+      const resolvedOrgs = await Promise.all(designerRecords.map(async (record) => {
+        const setting = settings?.find(s => s.user_id === record.user_id);
+        let name = setting?.organizationName;
+        
+        // Fallback: Check User Metadata if settings are empty
+        if (!name) {
+          try {
+            const { data: { user: owner } } = await adminSupabase.auth.admin.getUserById(record.user_id);
+            name = owner?.user_metadata?.organization_name;
+          } catch (err) {
+            console.warn(`[getDesignerStatus] Failed to fetch owner name for ID ${record.user_id}:`, err);
+          }
+        }
+
+        return {
+          id: record.user_id,
+          name: name || 'Organization Partner'
+        };
       }));
+      organizations.push(...resolvedOrgs);
     }
 
     return {
@@ -2100,10 +2012,7 @@ export async function getDesignerStatus() {
     };
   } catch (err) {
     console.error('[getDesignerStatus] Error:', err);
-    return {
-      isDesigner: false,
-      organizations: [] as { id: string; name: string }[]
-    };
+    return { isDesigner: false, organizations: [] };
   }
 }
 
@@ -2145,29 +2054,7 @@ export async function getDb() {
     // when unauthenticated users hit protected pages behind AuthGuard
     return { projects: [], clients: [], designers: [], settings: {} };
   }
-  const db = await readDb(user.id, supabase);
-  db.settings = db.settings || {};
-  db.settings.favorite_clients = user.user_metadata?.favorite_clients || [];
-  return db;
-}
-
-export async function saveFavoriteClients(clientIds: string[]) {
-  try {
-    const { user } = await getAuthenticatedUser();
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    
-    await adminSupabase.auth.admin.updateUserById(user.id, {
-      user_metadata: {
-        ...user.user_metadata,
-        favorite_clients: clientIds
-      }
-    });
-    return { success: true };
-  } catch (err: any) {
-    console.error('[saveFavoriteClients] Error:', err.message);
-    return { success: false, error: err.message };
-  }
+  return readDb(user.id, supabase);
 }
 
 export async function getViewportProject(projectId: string) {
@@ -2634,10 +2521,10 @@ export async function requestViewportOtp(projectId: string, email: string) {
       subject: `Verification Code for ${project.title}`,
       html: `
         <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px; background-color: #0c0a04; color: white;">
-          <h2 style="color: #F59E0B; text-transform: uppercase; font-size: 16px;">Identity Verification</h2>
+          <h2 style="color: #fce003; text-transform: uppercase; font-size: 16px;">Identity Verification</h2>
           <p style="font-size: 12px; color: #ccc;">Use the code below to access your secure CAD viewport for <b>${project.title}</b>.</p>
           <div style="background: rgba(252, 224, 3, 0.1); padding: 20px; text-align: center; border-radius: 10px; margin: 20px 0; border: 1px solid rgba(252, 224, 3, 0.2);">
-            <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #F59E0B;">${otp}</span>
+            <span style="font-size: 32px; font-weight: bold; letter-spacing: 10px; color: #fce003;">${otp}</span>
           </div>
           <p style="font-size: 10px; color: #888; text-align: center;">This code will expire in 15 minutes.</p>
         </div>
@@ -2760,13 +2647,13 @@ export async function submitViewportFeedback(projectId: string, annotations: any
       subject: `New Viewport Feedback: ${project.title}`,
       html: `
         <div style="font-family: sans-serif; padding: 20px; background: #0c0a04; color: white; border-radius: 15px;">
-          <h2 style="color: #F59E0B; text-transform: uppercase; font-size: 18px;">New 3D Viewport Feedback</h2>
+          <h2 style="color: #fce003; text-transform: uppercase; font-size: 18px;">New 3D Viewport Feedback</h2>
           <p style="color: #ccc; font-size: 14px;">A client has submitted ${annotations.length} feedback pins for project: <b>${project.title}</b>.</p>
-          <div style="background: rgba(252, 224, 3, 0.05); padding: 20px; border-left: 4px solid #F59E0B; margin: 20px 0; border-radius: 0 10px 10px 0;">
+          <div style="background: rgba(252, 224, 3, 0.05); padding: 20px; border-left: 4px solid #fce003; margin: 20px 0; border-radius: 0 10px 10px 0;">
             <pre style="white-space: pre-wrap; font-family: monospace; color: #eee; font-size: 12px;">${note}</pre>
           </div>
           <div style="margin-top: 30px; text-align: center;">
-            <a href="https://www.cadonce.com/projects/${projectId}" style="background: #F59E0B; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 12px; text-transform: uppercase;">Open Project Dashboard</a>
+            <a href="https://www.cadonce.com/projects/${projectId}" style="background: #fce003; color: #000; padding: 12px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 12px; text-transform: uppercase;">Open Project Dashboard</a>
           </div>
         </div>
       `,
@@ -4083,13 +3970,14 @@ export async function releaseProjectEscrow(projectId: string) {
       throw new Error('Funds are not secured in escrow for this project.');
     }
 
-    // 2. Find Designer User ID
+    // 2. Find Designer User ID matching project organization
     let designerUserId = null;
     if (project.designer) {
       const { data: designerRecord } = await supabase
         .from('designers')
         .select('user_id')
         .ilike('fullName', project.designer)
+        .eq('user_id', project.user_id) // STRICT ISOLATION
         .maybeSingle();
       
       designerUserId = designerRecord?.user_id;
@@ -4147,7 +4035,6 @@ export async function releaseProjectEscrow(projectId: string) {
       .from('projects')
       .update({
         paymentStatus: 'Paid',
-        payoutStatus: 'Paid',
         status: 'Completed',
         updatedAt: new Date().toISOString()
       })
@@ -4174,12 +4061,13 @@ export async function releaseProjectEscrow(projectId: string) {
       console.error('[releaseProjectEscrow] Failed to delete screenshots:', err.message);
     }
 
-    // 6. Update Designer Performance and Points
+    // 6. Update Designer Performance and Points matching project organization
     if (project.designer) {
       const { data: designerRecord } = await supabase
         .from('designers')
         .select('performance, id, email, pointsBalance')
         .ilike('fullName', project.designer)
+        .eq('user_id', project.user_id) // STRICT ISOLATION
         .maybeSingle();
 
       if (designerRecord) {
@@ -4505,7 +4393,7 @@ export async function getOnboardingToken(email: string) {
     let role: 'designer' | 'client' = 'designer';
 
     if (!authorized) {
-      const { data: d } = await adminSupabase.from('designers').select('id').ilike('email', plusEmail).maybeSingle();
+      const { data: d } = await adminSupabase.from('designers').select('id').ilike('email', plusEmail).limit(1).maybeSingle();
       const { data: c } = await adminSupabase.from('clients').select('id').ilike('email', plusEmail).maybeSingle();
       if (d || c) {
         authorized = true;
@@ -4680,220 +4568,947 @@ export async function getProjectTimeLogs(projectId: string) {
   }
 }
 
-// ==========================================
-// SUPPORT SYSTEM ACTIONS
-// ==========================================
+export async function sendTransferEmailAction(transferId: string, recipientName: string, shareLink: string) {
+  try {
+    const { user } = await getAuthenticatedUser();
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
 
-export async function createSupportTicket(formData: FormData) {
+    // 1. Fetch uploader settings (smtp/credentials)
+    const { data: uploaderSettings, error: settingsError } = await adminSupabase
+      .from('settings')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (settingsError || !uploaderSettings) {
+      throw new Error('Failed to load your mail configuration settings.');
+    }
+
+    // Extract SMTP details
+    const paymentMethods = uploaderSettings.payment_methods || [];
+    const systemConfig = paymentMethods.find((m: any) => m.id === 'system_config') || {};
+
+    const smtpUser = uploaderSettings.gmailUser;
+    const smtpPassword = uploaderSettings.gmailAppPassword;
+
+    if (!smtpUser || !smtpPassword) {
+      throw new Error('Gmail/SMTP App credentials are not fully integrated on your Workstation settings. Please configure SMTP in your settings.');
+    }
+
+    const credentials = {
+      user: smtpUser,
+      password: smtpPassword,
+      senderName: uploaderSettings.senderName || user.user_metadata?.full_name || 'CADONCE Share',
+      smtpHost: systemConfig.smtpHost || 'smtp.gmail.com',
+      smtpPort: systemConfig.smtpPort || 465,
+      smtpSecure: systemConfig.smtpSecure !== undefined ? systemConfig.smtpSecure : true
+    };
+
+    // 2. Fetch Recipient Details (Email & Name) by matching the name
+    let recipientEmail = '';
+    let cleanName = recipientName.trim();
+    let displayRecipientName = recipientName;
+
+    // Check if recipient has " (Team)" suffix
+    const isTeam = cleanName.endsWith(' (Team)');
+    const searchName = isTeam ? cleanName.slice(0, -7).trim() : cleanName;
+
+    if (isTeam) {
+      // Lookup in designers table by fullName
+      const { data: designer, error: designerErr } = await adminSupabase
+        .from('designers')
+        .select('email, fullName')
+        .ilike('fullName', searchName)
+        .limit(1)
+        .maybeSingle();
+        
+      if (!designerErr && designer) {
+        recipientEmail = designer.email;
+        displayRecipientName = designer.fullName;
+      }
+    } else {
+      // Lookup in clients table by name
+      const { data: client, error: clientErr } = await adminSupabase
+        .from('clients')
+        .select('email, name')
+        .ilike('name', searchName)
+        .limit(1)
+        .maybeSingle();
+
+      if (!clientErr && client) {
+        recipientEmail = client.email;
+        displayRecipientName = client.name;
+      } else {
+        // Fallback check in designers just in case
+        const { data: designer, error: designerErr } = await adminSupabase
+          .from('designers')
+          .select('email, fullName')
+          .ilike('fullName', searchName)
+          .limit(1)
+          .maybeSingle();
+          
+        if (!designerErr && designer) {
+          recipientEmail = designer.email;
+          displayRecipientName = designer.fullName;
+        }
+      }
+    }
+
+    if (!recipientEmail) {
+      throw new Error(`Recipient "${recipientName}" does not have a valid email address linked.`);
+    }
+
+    // 3. Fetch transfer record to get file details
+    const { data: transfer, error: transferErr } = await adminSupabase
+      .from('file_transfers')
+      .select('*')
+      .eq('id', transferId)
+      .single();
+    
+    if (transferErr || !transfer) throw new Error('Transfer record not found.');
+
+    // 4. Generate Professional HTML Template for Transfer File
+    const fileSizeMB = (transfer.file_size / (1024 * 1024)).toFixed(1);
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
+        .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #fce003, #FEA500); padding: 48px 40px; text-align: center; }
+        .header h1 { margin: 0; color: #000; font-size: 30px; font-weight: 900; letter-spacing: -1.5px; text-transform: uppercase; }
+        .header p { margin: 8px 0 0; color: #383100; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 3px; }
+        .body { padding: 48px 40px; }
+        .greeting { font-size: 18px; color: #fff; font-weight: 700; margin-bottom: 16px; }
+        .intro { color: #888878; font-size: 15px; line-height: 1.6; margin-bottom: 32px; }
+        .file-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
+        .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
+        .value { color: #fce003; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+        .cta-button { display: block; background: linear-gradient(135deg, #fce003, #FEA500); color: #000 !important; text-decoration: none; text-align: center; padding: 20px; border-radius: 12px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; transition: transform 0.2s; }
+        .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <p>Secure File Delivery</p>
+          <h1>CONFIDENTIAL TRANSFER</h1>
+        </div>
+        <div class="body">
+          <p class="greeting">Hello ${displayRecipientName},</p>
+          <p class="intro">You have received a secure file transfer from <strong>${credentials.senderName}</strong> via CADONCE. You can download the files directly by clicking the secure link below.</p>
+          
+          <div class="file-card">
+            <span class="label">File Name</span>
+            <span class="value" style="color: #fff; word-break: break-all;">${transfer.file_name}</span>
+            
+            <span class="label">File Size</span>
+            <span class="value">${fileSizeMB} MB</span>
+            
+            <span class="label">Expiry Date</span>
+            <span class="value" style="color: #FEA500; font-size: 12px;">${new Date(transfer.expires_at).toLocaleDateString()} (Expires in 7 days)</span>
+          </div>
+
+          <a href="${shareLink}" class="cta-button">Download Secure Files</a>
+        </div>
+        <div class="footer">
+          CADONCE Studio &bull; Precision Craftsmanship &bull; 2026
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    // 5. Send the email using our nodemailer wrapper
+    const { sendEmail } = await import('@/lib/mailer');
+    await sendEmail({
+      to: recipientEmail,
+      subject: `📁 Secure File Transfer: ${transfer.file_name}`,
+      html,
+      credentials
+    });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('sendTransferEmailAction error:', err);
+    return { success: false, error: err.message || 'Failed to dispatch transfer email.' };
+  }
+}
+
+export async function parsePaymentScreenshot(base64Data: string, mimeType: string) {
+  try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+      // Direct HTTP Call to Google Gemini API (Latest Flash)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [{
+          parts: [
+            { inlineData: { mimeType: mimeType, data: base64Data } },
+            { text: "Extract payment details from this transaction receipt screenshot. Return ONLY a JSON object (no markdown, no backticks, no code block format, just raw JSON) with the following structure: {\"platform\": \"PhonePe\" | \"Google Pay\" | \"PayPal\" | \"Paytm\" | \"Bank Transfer\" | \"Other\", \"transactionId\": \"string\", \"recipientName\": \"string\", \"date\": \"YYYY-MM-DD\", \"time\": \"HH:MM\", \"amountPaid\": number | string}. If any field is not found or is unclear, set its value to null." }
+          ]
+        }]
+      };
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Gemini API returned status ${response.status}`);
+      }
+      
+      const resData = await response.json();
+      const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      // Clean up markdown block formatting if Gemini returned it anyway
+      let cleanJsonText = rawText.trim();
+      if (cleanJsonText.startsWith("```json")) {
+        cleanJsonText = cleanJsonText.slice(7);
+      }
+      if (cleanJsonText.startsWith("```")) {
+        cleanJsonText = cleanJsonText.slice(3);
+      }
+      if (cleanJsonText.endsWith("```")) {
+        cleanJsonText = cleanJsonText.slice(0, -3);
+      }
+      cleanJsonText = cleanJsonText.trim();
+      
+      const parsed = JSON.parse(cleanJsonText);
+      return { success: true, isDemo: false, data: parsed };
+    }
+  } catch (err: any) {
+    console.error('[parsePaymentScreenshot] Gemini parsing failed:', err.message);
+  }
+
+  // Fallback to Smart Mock Extractor (Demo Mode)
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
+  const timeStr = today.toTimeString().split(' ')[0].substring(0, 5);
+  
+  return {
+    success: true,
+    isDemo: true,
+    data: {
+      platform: "Google Pay",
+      transactionId: `CIC${Math.floor(100000000 + Math.random() * 900000000)}`,
+      recipientName: "Cadonce Designer",
+      date: dateStr,
+      time: timeStr,
+      amountPaid: "700"
+    }
+  };
+}
+
+export async function submitManualPayment(projectId: string, paymentData: any) {
+  try {
+    const { user, supabase } = await getAuthenticatedUser();
+    
+    // 1. Get project details
+    const { data: project } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+      
+    if (!project) throw new Error('Project not found');
+    
+    // 2. Format details to append to description
+    const paymentText = `\n\n[MANUAL_PAYMENT]\nPlatform: ${paymentData.platform || 'N/A'}\nTransaction ID: ${paymentData.transactionId || 'N/A'}\nRecipient Name: ${paymentData.recipientName || 'N/A'}\nDate: ${paymentData.date || 'N/A'}\nTime: ${paymentData.time || 'N/A'}\nAmount Paid: ${paymentData.amountPaid || '0'}`;
+    const newDescription = (project.description || '') + paymentText;
+    
+    // 3. Update project in database
+    await updateRecord('projects', projectId, {
+      paymentStatus: 'Paid (Pending Approval)',
+      description: newDescription,
+      updatedAt: new Date().toISOString()
+    }, user.id, supabase);
+    
+    // 4. Find designer's email and user_id to notify
+    const { data: designerRecord } = await supabase
+      .from('designers')
+      .select('user_id, email')
+      .ilike('fullName', project.designer)
+      .eq('user_id', project.user_id) // Match organization!
+      .maybeSingle();
+      
+    // 5. Send In-App Notification
+    if (designerRecord?.user_id) {
+      await createNotification(
+        designerRecord.user_id,
+        'payment_submitted',
+        'Payment Submitted',
+        `Client submitted payment of ${paymentData.amountPaid} via ${paymentData.platform}. Please verify.`,
+        `/projects/${projectId}`
+      );
+    }
+    
+    // 6. Send Email Notification
+    if (designerRecord?.email) {
+      try {
+        const { sendEmail } = await import('@/lib/mailer');
+        
+        const { createAdminClient } = await import('@/lib/supabaseServer');
+        const adminSupabase = await createAdminClient();
+        const { data: settings } = await adminSupabase
+          .from('settings')
+          .select('*')
+          .eq('user_id', project.user_id)
+          .maybeSingle();
+          
+        const credentials = getMailCredentials(settings);
+        
+        const emailHtml = `
+          <div style="font-family: sans-serif; max-width: 600px; padding: 20px; border: 1px solid #eee; border-radius: 10px; background: #0c0a04; color: #fff;">
+            <h2 style="color: #fce003; text-transform: uppercase;">Payment Submitted For Review</h2>
+            <p>Hi ${project.designer},</p>
+            <p>A manual payment has been submitted for project <strong>${project.title}</strong>.</p>
+            <p>Please review the transaction details below and confirm receipt in your Cadonce Studio interface.</p>
+            <div style="background: #1a1a17; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #white/5;">
+              <p><strong>Platform:</strong> ${paymentData.platform}</p>
+              <p><strong>Transaction ID:</strong> ${paymentData.transactionId}</p>
+              <p><strong>Recipient Name:</strong> ${paymentData.recipientName}</p>
+              <p><strong>Date & Time:</strong> ${paymentData.date} ${paymentData.time}</p>
+              <p><strong>Amount:</strong> ${paymentData.amountPaid}</p>
+            </div>
+            <a href="https://www.cadonce.com/projects/${projectId}" style="display: inline-block; padding: 12px 24px; background: #fce003; color: #000; font-weight: bold; text-decoration: none; border-radius: 5px;">Go to Project Workstation</a>
+          </div>
+        `;
+        
+        await sendEmail({
+          to: designerRecord.email,
+          subject: `💰 Payment Submitted: ${project.title}`,
+          html: emailHtml,
+          credentials
+        });
+      } catch (mailErr: any) {
+        console.error('[submitManualPayment] Mail notification error:', mailErr.message);
+      }
+    }
+    
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[submitManualPayment] Error:', err.message);
+    return { success: false, error: err.message || 'Failed to submit payment.' };
+  }
+}
+
+export async function resolveManualPayment(projectId: string, approved: boolean) {
+  try {
+    const { user, supabase } = await getAuthenticatedUser();
+    
+    // We bypass RLS using admin client because designers are resolving payouts owned by organizations
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+    
+    const { data: project } = await adminSupabase
+      .from('projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+      
+    if (!project) throw new Error('Project not found');
+    
+    const newPaymentStatus = approved ? 'Paid' : 'Unpaid';
+    const newProjectStatus = approved ? 'Completed' : 'Payment Dispute';
+    
+    // Clean description: Remove [MANUAL_PAYMENT] block if rejected
+    let cleanedDescription = project.description || '';
+    if (!approved) {
+      cleanedDescription = cleanedDescription.replace(/\[MANUAL_PAYMENT\][\s\S]*/, '').trim();
+    }
+    
+    await adminSupabase
+      .from('projects')
+      .update({
+        paymentStatus: newPaymentStatus,
+        status: newProjectStatus,
+        description: cleanedDescription,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', projectId);
+      
+    // Notify organization owner
+    await createNotification(
+      project.user_id,
+      approved ? 'payment_approved' : 'payment_rejected',
+      approved ? 'Payment Confirmed by Designer' : 'Payment Disputed by Designer',
+      approved 
+        ? `Designer confirmed receipt of payment for project: ${project.title}.`
+        : `Designer reported NOT receiving payment for project: ${project.title}. Please verify details.`,
+      `/projects/${projectId}`
+    );
+    
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('[resolveManualPayment] Error:', err.message);
+    return { success: false, error: err.message || 'Failed to resolve payment.' };
+  }
+}
+
+export async function getDesignerOrganizations() {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const subject = formData.get('subject') as string;
-    const description = formData.get('description') as string;
-    const priority = formData.get('priority') as string || 'medium';
-
-    if (!subject || !description) throw new Error('Subject and description are required');
+    if (!user?.email) return { success: false, error: 'Unauthorized' };
 
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .insert({
-        user_id: user.id,
-        subject,
-        description,
-        priority,
-        status: 'open'
-      })
+
+    // 1. Fetch all designer records for this email
+    const { data: designerRecords } = await adminSupabase
+      .from('designers')
+      .select('*')
+      .ilike('email', user.email);
+
+    if (!designerRecords || designerRecords.length === 0) {
+      return { success: true, organizations: [] };
+    }
+
+    const ownerIds = designerRecords.map(r => r.user_id);
+
+    // 2. Fetch Settings/Metadata for all these organization owners
+    const { data: settings } = await adminSupabase
+      .from('settings')
+      .select('*')
+      .in('user_id', ownerIds);
+
+    // Fetch projects assigned to this designer across all these organizations
+    // To calculate stats per organization
+    const { data: projects } = await adminSupabase
+      .from('projects')
+      .select('*')
+      .in('user_id', ownerIds)
+      .eq('designer', designerRecords[0].fullName); // fullName is the same across records
+
+    // Resolve details for each organization
+    const resolvedOrgs = await Promise.all(designerRecords.map(async (record) => {
+      const setting = settings?.find(s => s.user_id === record.user_id);
+      
+      // Get owner user to fetch email and fallback organization name
+      let ownerEmail = '';
+      let ownerName = '';
+      let ownerMobile = '';
+      let country = setting?.country || 'GLOBAL';
+      
+      try {
+        const { data: { user: owner } } = await adminSupabase.auth.admin.getUserById(record.user_id);
+        ownerEmail = owner?.email || '';
+        ownerName = owner?.user_metadata?.full_name || 'Organization Owner';
+        ownerMobile = owner?.user_metadata?.whatsapp || '';
+      } catch (err) {
+        console.warn(`[getDesignerOrganizations] Failed to fetch owner info for ID ${record.user_id}:`, err);
+      }
+
+      const orgName = setting?.organizationName || setting?.organization_name || 'Organization Partner';
+
+      // Calculate project stats for this organization
+      const orgProjects = (projects || []).filter(p => p.user_id === record.user_id);
+      const doneCount = orgProjects.filter(p => ['Completed', 'Approved', 'Complete'].includes(p.status)).length;
+      const liveCount = orgProjects.length - doneCount;
+      const totalEarnings = orgProjects.reduce((sum, p) => sum + (parseFloat(p.expense) || 0), 0);
+      const currency = orgProjects[0]?.expenseCurrency || '₹';
+
+      return {
+        id: record.user_id,
+        name: orgName,
+        ownerName,
+        email: ownerEmail,
+        mobile: ownerMobile,
+        country,
+        done: doneCount,
+        live: liveCount,
+        earningsValue: totalEarnings,
+        currency
+      };
+    }));
+
+    return { success: true, organizations: resolvedOrgs };
+  } catch (err: any) {
+    console.error('[getDesignerOrganizations] Error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function submitTransferManualPaymentAction(
+  transferId: string,
+  buyerEmail: string,
+  paymentMethod: string,
+  amount: number,
+  transactionId: string,
+  screenshotBase64: string,
+  screenshotMime: string
+) {
+  try {
+    const adminSupabase = await createAdminClient();
+
+    // 1. Fetch transfer details
+    const { data: transfer, error: transferErr } = await adminSupabase
+      .from('file_transfers')
+      .select('*')
+      .eq('id', transferId)
+      .single();
+
+    if (transferErr || !transfer) throw new Error('Transfer record not found.');
+
+    // 2. Fetch uploader email from settings or auth
+    let uploaderEmail = '';
+    let uploaderName = 'Uploader';
+    
+    if (transfer.uploader_id) {
+      const { data: setting } = await adminSupabase
+        .from('settings')
+        .select('gmailUser, senderName')
+        .eq('user_id', transfer.uploader_id)
+        .maybeSingle();
+
+      uploaderEmail = setting?.gmailUser || '';
+      uploaderName = setting?.senderName || 'Uploader';
+
+      try {
+        const { data: { user: uploaderUser } } = await adminSupabase.auth.admin.getUserById(transfer.uploader_id);
+        if (uploaderUser?.email) {
+          if (!uploaderEmail) uploaderEmail = uploaderUser.email;
+        }
+      } catch (err) {
+        console.warn('[submitTransferManualPaymentAction] Failed to fetch uploader user auth email:', err);
+      }
+    }
+
+    if (!uploaderEmail) {
+      uploaderEmail = PLATFORM_CONFIG.FOUNDER_EMAIL;
+    }
+
+    // 3. Upload screenshot to Supabase Storage if provided
+    let publicUrl = '';
+    if (screenshotBase64 && screenshotMime) {
+      const base64Data = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
+      const buffer = Buffer.from(base64Data, 'base64');
+      const filename = `receipts/${transferId}_${Date.now()}.${screenshotMime.split('/')[1] || 'png'}`;
+
+      const { data: uploadData, error: uploadErr } = await adminSupabase
+        .storage
+        .from('file-transfers')
+        .upload(filename, buffer, {
+          contentType: screenshotMime,
+          upsert: true
+        });
+
+      if (uploadErr) {
+        console.error('[submitTransferManualPaymentAction] Storage upload error:', uploadErr);
+      } else {
+        const { data: urlData } = adminSupabase
+          .storage
+          .from('file-transfers')
+          .getPublicUrl(filename);
+        publicUrl = urlData?.publicUrl || '';
+      }
+    }
+
+    // 4. Create the payment record in the database
+    const { data: paymentRecord, error: insertErr } = await adminSupabase
+      .from('file_transfer_payments')
+      .insert([{
+        transfer_id: transferId,
+        buyer_email: buyerEmail,
+        payment_method: paymentMethod,
+        amount: amount,
+        transaction_id: transactionId,
+        screenshot_url: publicUrl,
+        status: 'pending'
+      }])
       .select()
       .single();
 
-    if (error) throw error;
-    
-    revalidatePath('/support');
-    return { success: true, ticket: data };
-  } catch (err: any) {
-    console.error('[createSupportTicket] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
+    if (insertErr) throw insertErr;
 
-export async function getUserSupportTickets() {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
+    // 5. Send email to uploader notifying them of the manual payment
+    const mailCredentials = {
+      user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+      password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+      senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME,
+    };
 
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+    let origin = 'https://www.cadonce.com';
+    try {
+      const headersList = await headers();
+      origin = headersList.get('origin') || headersList.get('host') ? `https://${headersList.get('host')}` : 'https://www.cadonce.com';
+    } catch (e) {
+      console.warn('Failed to get origin headers:', e);
+    }
 
-    if (error) throw error;
-    return { success: true, tickets: data };
-  } catch (err: any) {
-    console.error('[getUserSupportTickets] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
+    const approveUrl = `${origin}/api/approve-transfer-payment?paymentId=${paymentRecord.id}&action=approve`;
+    const rejectUrl = `${origin}/api/approve-transfer-payment?paymentId=${paymentRecord.id}&action=reject`;
 
-export async function getAllSupportTickets() {
-  try {
-    // Only fetch if admin
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data, error } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const formattedPrice = transfer.price.toFixed(2);
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
+        .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .header { background: linear-gradient(135deg, #ffe311, #00fbfe); padding: 48px 40px; text-align: center; }
+        .header h1 { margin: 0; color: #000; font-size: 26px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+        .header p { margin: 8px 0 0; color: #111; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .body { padding: 48px 40px; }
+        .greeting { font-size: 18px; color: #fff; font-weight: 700; margin-bottom: 16px; }
+        .intro { color: #888878; font-size: 14px; line-height: 1.6; margin-bottom: 32px; }
+        .payment-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
+        .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
+        .value { color: #ffe311; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+        .btn-container { display: flex; gap: 12px; margin-top: 32px; }
+        .cta-button { display: inline-block; flex: 1; text-align: center; padding: 18px 24px; border-radius: 12px; font-weight: 900; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; text-decoration: none; transition: transform 0.2s; }
+        .btn-approve { background: linear-gradient(135deg, #10b981, #059669); color: #fff !important; }
+        .btn-reject { background: #222; color: #ef4444 !important; border: 1px solid #ef4444/20; }
+        .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <p>Manual Payment Verification Required</p>
+          <h1>RECEIPT SUBMITTED</h1>
+        </div>
+        <div class="body">
+          <p class="greeting">Hello ${uploaderName},</p>
+          <p class="intro">A buyer (<strong>${buyerEmail}</strong>) has submitted a manual payment screenshot to unlock the secure file transfer: <strong>${transfer.file_name}</strong>.</p>
+          
+          <div class="payment-card">
+            <span class="label">File Name</span>
+            <span class="value" style="color: #fff;">${transfer.file_name}</span>
+            
+            <span class="label">Amount Paid</span>
+            <span class="value">$${formattedPrice} USD</span>
+            
+            <span class="label">Payment Method</span>
+            <span class="value" style="color: #00fbfe;">${paymentMethod}</span>
+ 
+            ${transactionId ? `
+              <span class="label">Transaction Reference</span>
+              <span class="value" style="color: #fff; font-family: monospace;">${transactionId}</span>
+            ` : ''}
+ 
+            ${publicUrl ? `
+              <span class="label">Receipt Image Link</span>
+              <span class="value"><a href="${publicUrl}" style="color: #ffe311;" target="_blank">View Receipt Image</a></span>
+            ` : ''}
+          </div>
 
-    if (error) throw error;
-    return { success: true, tickets: data };
-  } catch (err: any) {
-    console.error('[getAllSupportTickets] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
+          <div class="btn-container">
+            <a href="${approveUrl}" class="cta-button btn-approve">Approve Payment</a>
+            <a href="${rejectUrl}" class="cta-button btn-reject">Reject</a>
+          </div>
+ 
+          <p style="color:#888878; font-size:12px; text-align:center; margin-top: 32px;">
+            Please cross-verify this payment in your ${paymentMethod} account, then click Approve to unlock the download.
+          </p>
+        </div>
+        <div class="footer">
+          CADONCE System &bull; Secure File Transfers &bull; 2026
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
 
-export async function getSupportTicketDetails(ticketId: string) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { data: ticket, error: ticketErr } = await adminSupabase
-      .from('support_tickets')
-      .select('*')
-      .eq('id', ticketId)
-      .single();
-
-    if (ticketErr) throw ticketErr;
-
-    const { data: replies, error: repliesErr } = await adminSupabase
-      .from('support_replies')
-      .select('*')
-      .eq('ticket_id', ticketId)
-      .order('created_at', { ascending: true });
-
-    if (repliesErr) throw repliesErr;
-
-    return { success: true, ticket, replies };
-  } catch (err: any) {
-    console.error('[getSupportTicketDetails] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function addSupportReply(formData: FormData) {
-  try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const ticketId = formData.get('ticketId') as string;
-    const message = formData.get('message') as string;
-    const isAdminReply = formData.get('isAdminReply') === 'true';
-
-    if (!ticketId || !message) throw new Error('Ticket ID and message are required');
-
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
-      .from('support_replies')
-      .insert({
-        ticket_id: ticketId,
-        sender_id: user.id,
-        message,
-        is_admin_reply: isAdminReply
+    const attachments: any[] = [];
+    if (screenshotBase64) {
+      const base64Data = screenshotBase64.replace(/^data:image\/\w+;base64,/, '');
+      attachments.push({
+        filename: `receipt_${transferId}.png`,
+        content: base64Data,
+        encoding: 'base64'
       });
+    }
 
-    if (error) throw error;
-
-    // Update ticket status to answered if admin, or open if user
-    await adminSupabase
-      .from('support_tickets')
-      .update({ 
-        status: isAdminReply ? 'answered' : 'open',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', ticketId);
-
-    revalidatePath(`/support/${ticketId}`);
-    revalidatePath(`/admin/support/${ticketId}`);
-    return { success: true };
-  } catch (err: any) {
-    console.error('[addSupportReply] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function closeSupportTicket(ticketId: string, formData?: FormData) {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-    const { error } = await adminSupabase
-      .from('support_tickets')
-      .update({ status: 'closed', updated_at: new Date().toISOString() })
-      .eq('id', ticketId);
-
-    if (error) throw error;
-    
-    revalidatePath('/support');
-    revalidatePath('/admin/support');
-    return { success: true };
-  } catch (err: any) {
-    console.error('[closeSupportTicket] Error:', err.message);
-    return { success: false, error: err.message };
-  }
-}
-
-export async function getExploreItems() {
-  try {
-    const { createAdminClient } = await import('@/lib/supabaseServer');
-    const adminSupabase = await createAdminClient();
-
-    // 1. Fetch all portfolio items
-    const { data: items, error: itemsError } = await adminSupabase
-      .from('designer_portfolio_items')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (itemsError) throw itemsError;
-
-    // 2. Fetch all designers to map their details
-    const { data: profiles, error: profilesError } = await adminSupabase
-      .from('designers')
-      .select('*');
-
-    if (profilesError) throw profilesError;
-
-    // 3. Map portfolio items with designer profiles
-    const mappedItems = (items || []).map(item => {
-      const designerProfile = (profiles || []).find(p => p.user_id === item.designer_id || p.id === item.designer_id);
-      return {
-        ...item,
-        designer: designerProfile ? {
-          fullName: designerProfile.fullName,
-          avatarUrl: designerProfile.avatarUrl,
-          specialty: designerProfile.specialty || 'CAD Designer',
-          email: designerProfile.email
-        } : {
-          fullName: 'Anonymous Designer',
-          avatarUrl: null,
-          specialty: 'CAD Designer',
-          email: ''
-        }
-      };
+    await sendEmail({
+      to: uploaderEmail,
+      subject: `📁 Manual Payment Action Required: ${transfer.file_name} ($${formattedPrice} USD)`,
+      html,
+      credentials: mailCredentials,
+      attachments
     });
 
-    return { success: true, data: mappedItems };
+    // 6. Send In-App Notification
+    if (transfer.uploader_id) {
+      await createNotification(
+        transfer.uploader_id,
+        'payment',
+        'Pending Transfer Payment',
+        `A buyer (${buyerEmail}) has submitted a payment of $${formattedPrice} for ${transfer.file_name}.`,
+        '/settings?tab=payment'
+      );
+    }
+
+    return { success: true };
   } catch (err: any) {
-    console.error('[getExploreItems] Error:', err.message || err);
-    return { success: false, error: err.message || err.toString() };
+    console.error('[submitTransferManualPaymentAction] Error:', err);
+    return { success: false, error: err.message || 'Failed to submit manual payment' };
   }
 }
+
+export async function getPendingTransferPaymentsAction() {
+  try {
+    const { user } = await getAuthenticatedUser();
+    const adminSupabase = await createAdminClient();
+
+    // 1. Fetch user transfers
+    const { data: transfers } = await adminSupabase
+      .from('file_transfers')
+      .select('id')
+      .eq('uploader_id', user.id);
+
+    if (!transfers || transfers.length === 0) {
+      return { success: true, payments: [] };
+    }
+
+    const transferIds = transfers.map(t => t.id);
+
+    // 2. Fetch payments for these transfers
+    const { data: payments, error } = await adminSupabase
+      .from('file_transfer_payments')
+      .select('*, file_transfers(file_name, file_path)')
+      .in('transfer_id', transferIds)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return { success: true, payments: payments || [] };
+  } catch (err: any) {
+    console.error('[getPendingTransferPaymentsAction] Error:', err);
+    return { success: false, payments: [], error: err.message };
+  }
+}
+
+export async function resolveTransferPaymentAction(paymentId: string, approve: boolean) {
+  try {
+    const adminSupabase = await createAdminClient();
+
+    // 1. Fetch the payment record
+    const { data: payment, error: payErr } = await adminSupabase
+      .from('file_transfer_payments')
+      .select('*, file_transfers(*)')
+      .eq('id', paymentId)
+      .single();
+
+    if (payErr || !payment) throw new Error('Payment record not found.');
+
+    const status = approve ? 'approved' : 'rejected';
+
+    // 2. Update status in database
+    const { error: updateErr } = await adminSupabase
+      .from('file_transfer_payments')
+      .update({ status })
+      .eq('id', paymentId);
+
+    if (updateErr) throw updateErr;
+
+    // 3. Send email to buyer
+    const mailCredentials = {
+      user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+      password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+      senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME,
+    };
+
+    let origin = 'https://www.cadonce.com';
+    try {
+      const headersList = await headers();
+      origin = headersList.get('origin') || headersList.get('host') ? `https://${headersList.get('host')}` : 'https://www.cadonce.com';
+    } catch (e) {
+      console.warn('Failed to get origin headers:', e);
+    }
+
+    const transfer = payment.file_transfers;
+    const downloadLink = `${origin}/transfer/${transfer.id}?success=true&payment_id=${paymentId}`;
+
+    if (approve) {
+      const buyerHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8"/>
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
+          .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+          .header { background: linear-gradient(135deg, #10b981, #059669); padding: 48px 40px; text-align: center; }
+          .header h1 { margin: 0; color: #fff; font-size: 26px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+          .header p { margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+          .body { padding: 48px 40px; }
+          .greeting { font-size: 18px; color: #fff; font-weight: 700; margin-bottom: 16px; }
+          .intro { color: #888878; font-size: 14px; line-height: 1.6; margin-bottom: 32px; }
+          .project-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
+          .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
+          .value { color: #10b981; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+          .cta-button { display: block; background: linear-gradient(135deg, #10b981, #059669); color: #fff !important; text-decoration: none; text-align: center; padding: 20px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; margin-top: 32px; border-radius: 12px; transition: transform 0.2s; }
+          .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <p>Payment Cleared & Approved</p>
+            <h1>DOWNLOAD UNLOCKED</h1>
+          </div>
+          <div class="body">
+            <p class="greeting">Hello,</p>
+            <p class="intro">Great news! Your manual payment for the file transfer has been approved. You can now download the file completely watermark-free.</p>
+            
+            <div class="project-card">
+              <span class="label">File Name</span>
+              <span class="value" style="color: #fff;">${transfer.file_name}</span>
+              
+              <span class="label">Amount Paid</span>
+              <span class="value">$${transfer.price.toFixed(2)} USD</span>
+            </div>
+  
+            <a href="${downloadLink}" class="cta-button">Download Secure File</a>
+          </div>
+          <div class="footer">
+            CADONCE System &bull; Secure File Delivery &bull; 2026
+          </div>
+        </div>
+      </body>
+      </html>
+      `;
+
+      await sendEmail({
+        to: payment.buyer_email,
+        subject: `📁 Payment Approved: Download ${transfer.file_name}`,
+        html: buyerHtml,
+        credentials: mailCredentials
+      });
+    } else {
+      const buyerHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8"/>
+        <style>
+          body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #0c0a04; color: #f0f0f0; margin: 0; padding: 0; }
+          .container { max-width: 620px; margin: 40px auto; background: #14120a; border-radius: 24px; overflow: hidden; border: 1px solid #2a2a18; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+          .header { background: linear-gradient(135deg, #ef4444, #b91c1c); padding: 48px 40px; text-align: center; }
+          .header h1 { margin: 0; color: #fff; font-size: 26px; font-weight: 900; letter-spacing: -1px; text-transform: uppercase; }
+          .header p { margin: 8px 0 0; color: rgba(255,255,255,0.8); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+          .body { padding: 48px 40px; }
+          .greeting { font-size: 18px; color: #fff; font-weight: 700; margin-bottom: 16px; }
+          .intro { color: #888878; font-size: 14px; line-height: 1.6; margin-bottom: 32px; }
+          .project-card { background: #1c1a12; border: 1px solid #2a2a18; border-radius: 16px; padding: 24px; margin-bottom: 40px; }
+          .label { color: #555545; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; display: block; }
+          .value { color: #ef4444; font-weight: 900; font-size: 16px; margin-bottom: 20px; display: block; }
+          .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <p>Verification Failed</p>
+            <h1>PAYMENT DECLINED</h1>
+          </div>
+          <div class="body">
+            <p class="greeting">Hello,</p>
+            <p class="intro">Unfortunately, your payment verification for the file transfer has been declined by the uploader. Please make sure the receipt is correct or upload again.</p>
+            
+            <div class="project-card">
+              <span class="label">File Name</span>
+              <span class="value" style="color: #fff;">${transfer.file_name}</span>
+              
+              <span class="label">Status</span>
+              <span class="value">Declined / Unverified</span>
+            </div>
+          </div>
+          .footer { padding: 32px 40px; border-top: 1px solid #2a2a18; font-size: 10px; color: #444435; text-align: center; line-height: 1.8; text-transform: uppercase; letter-spacing: 1px; }
+        </div>
+      </body>
+      </html>
+      `;
+
+      await sendEmail({
+        to: payment.buyer_email,
+        subject: `❌ Payment Declined: ${transfer.file_name}`,
+        html: buyerHtml,
+        credentials: mailCredentials
+      });
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[resolveTransferPaymentAction] Error:', err);
+    return { success: false, error: err.message || 'Failed to resolve payment' };
+  }
+}
+
+export async function getDesignerPaymentMethodsAction(projectId: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // 1. Fetch project to see who the designer is
+    const { data: project, error: projectError } = await adminSupabase
+      .from('projects')
+      .select('designer, user_id')
+      .eq('id', projectId)
+      .maybeSingle();
+
+    if (projectError || !project || !project.designer) {
+      return { success: false, error: 'Project or assigned designer not found' };
+    }
+
+    // 2. Look up designer by name
+    const { data: designerRecord, error: designerError } = await adminSupabase
+      .from('designers')
+      .select('email, user_id')
+      .ilike('fullName', project.designer.trim())
+      .eq('user_id', project.user_id)
+      .maybeSingle();
+
+    if (designerError || !designerRecord || !designerRecord.email) {
+      return { success: false, error: 'Designer profile or email not found' };
+    }
+
+    // 3. Find designer's auth user ID by email
+    const { data: authData, error: authError } = await adminSupabase.auth.admin.listUsers();
+    if (authError || !authData?.users) {
+      return { success: false, error: 'Failed to access user directory' };
+    }
+
+    const designerUser = authData.users.find(
+      u => u.email?.toLowerCase() === designerRecord.email.toLowerCase()
+    );
+
+    if (!designerUser) {
+      return { success: false, error: 'Designer user account not registered yet' };
+    }
+
+    // 4. Fetch the designer's settings record
+    const { data: settingsRecord, error: settingsError } = await adminSupabase
+      .from('settings')
+      .select('payment_methods')
+      .eq('user_id', designerUser.id)
+      .maybeSingle();
+
+    if (settingsError) {
+      return { success: false, error: 'Failed to retrieve designer payment settings' };
+    }
+
+    const methods = Array.isArray(settingsRecord?.payment_methods)
+      ? settingsRecord.payment_methods.filter((m: any) => m.type && m.type !== 'INTERNAL_CONFIG')
+      : [];
+
+    return { success: true, paymentMethods: methods };
+  } catch (err: any) {
+    console.error('[getDesignerPaymentMethodsAction] Error:', err);
+    return { success: false, error: err.message || 'Failed to fetch designer payment details' };
+  }
+}
+
 
 

@@ -7,15 +7,7 @@ import { updateProjectAction, getDb } from '@/app/actions';
 import CadFileUpload from '@/components/viewport/CadFileUpload';
 import AuthGuard from '@/components/AuthGuard';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
-
-const normalizeCurrency = (curr: string) => {
-  if (curr === '$') return 'USD';
-  if (curr === '€') return 'EUR';
-  if (curr === '£') return 'GBP';
-  if (curr === '¥') return 'JPY';
-  if (curr === '₹') return 'INR';
-  return curr;
-};
+import SearchableDropdown from '@/components/SearchableDropdown';
 
 const DatePickerFacade = ({ label, isDeadline, name, initialValue }: { label: string, isDeadline?: boolean, name?: string, initialValue?: string }) => {
   const [date, setDate] = useState(initialValue || "");
@@ -73,63 +65,34 @@ export default function EditProjectPage() {
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [fixedItems, setFixedItems] = useState<Record<string, boolean>>({});
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState("");
+  const [selectedClientName, setSelectedClientName] = useState("");
+  const [selectedDesignerName, setSelectedDesignerName] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
       const { getDesignerProjectDetail, getDb } = await import('@/app/actions');
       
       const db = await getDb();
-      
-      const dbClients: any[] = [...(db.clients || [])];
-      const dbDesigners: any[] = [...(db.designers || [])];
-      const dbProjects: any[] = db.projects || [];
-
-      // Merge any clients from projects that might not be in clients table
-      const existingClientNames = new Set(
-        dbClients.map((c: any) => (c.companyName || c.name || '').toLowerCase().trim())
-      );
-      dbProjects.forEach((p: any) => {
-        const pClient = (p.client || p.clientCompany || '').trim();
-        if (pClient && !existingClientNames.has(pClient.toLowerCase())) {
-          existingClientNames.add(pClient.toLowerCase());
-          dbClients.push({
-            id: `proj-client-${pClient}`,
-            name: pClient,
-            companyName: pClient
-          });
-        }
-      });
-
-      // Merge any designers from projects that might not be in designers table
-      const existingDesignerNames = new Set(
-        dbDesigners.map((d: any) => (d.fullName || d.name || '').toLowerCase().trim())
-      );
-      dbProjects.forEach((p: any) => {
-        const pDesigner = (p.designer || '').trim();
-        if (pDesigner && !existingDesignerNames.has(pDesigner.toLowerCase())) {
-          existingDesignerNames.add(pDesigner.toLowerCase());
-          dbDesigners.push({
-            id: `proj-designer-${pDesigner}`,
-            fullName: pDesigner,
-            name: pDesigner,
-            specialty: 'CAD Designer',
-            employmentType: 'In-House'
-          });
-        }
-      });
-
-      setDesigners(dbDesigners);
-      setClients(dbClients);
+      setDesigners(db.designers || []);
+      setClients(db.clients || []);
       
       if (isDesigner) {
         const res = await getDesignerProjectDetail(params.id as string);
         if (res.project) {
           setProject(res.project);
+          setSelectedSkills(res.project.tags || []);
+          setSelectedClientName(res.project.client || "");
+          setSelectedDesignerName(res.project.designer || "");
         }
       } else {
         const found = db.projects?.find((p: any) => p.id === params.id);
         if (found) {
           setProject(found);
+          setSelectedSkills(found.tags || []);
+          setSelectedClientName(found.client || "");
+          setSelectedDesignerName(found.designer || "");
         }
       }
       setLoading(false);
@@ -175,12 +138,9 @@ export default function EditProjectPage() {
     }
   };
 
-  const [isSaving, setIsSaving] = useState(false);
-
   const handleSubmit = async (formData: FormData) => {
     if (!isAuthenticated) return;
     
-    setIsSaving(true);
     try {
       const pId = String(params.id);
       formData.append('id', pId);
@@ -191,11 +151,9 @@ export default function EditProjectPage() {
         router.push(`/projects/${pId}`);
       } else {
         alert(`Error: ${result.error || 'Failed to save project. Please check all fields.'}`);
-        setIsSaving(false);
       }
     } catch (err: any) {
       alert(`System Error: ${err.message}`);
-      setIsSaving(false);
     }
   };
 
@@ -234,7 +192,7 @@ export default function EditProjectPage() {
           </div>
         </header>
 
-        <main className={`pt-24 px-6 md:px-12 w-full mx-auto relative`}>
+        <main className={`pt-24 px-4 mx-auto relative ${isDesigner ? 'max-w-3xl' : 'max-w-7xl'}`}>
           {isDesigner ? (
             /* HIGH-STABILITY EDGE-TO-EDGE REVISION CONSOLE */
             <div className="space-y-8 relative isolate">
@@ -319,6 +277,7 @@ export default function EditProjectPage() {
                 <input type="hidden" name="images" value={project.images} />
                 <input type="hidden" name="paymentStatus" value={project.paymentStatus} />
                 <input type="hidden" name="paidAmount" value={project.paidAmount} />
+                <input type="hidden" name="skills" value={JSON.stringify(selectedSkills)} />
 
                 <div className="bg-stone-950/40 backdrop-blur-xl p-8 sm:p-12 rounded-[3rem] border border-white/[0.03] shadow-2xl relative isolate">
                   <div className="flex items-center justify-center gap-3 mb-10">
@@ -348,15 +307,15 @@ export default function EditProjectPage() {
                       <div className={`absolute -inset-4 bg-[#fce003]/20 blur-2xl rounded-full opacity-0 group-hover/btn:opacity-100 transition-opacity duration-700 -z-10 ${Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0 ? 'hidden' : ''}`}></div>
                       <button 
                         className={`w-full py-6 rounded-2xl active:scale-[0.97] transition-all duration-500 uppercase tracking-[0.4em] text-xs flex items-center justify-center gap-4 border relative overflow-hidden group/sub shadow-2xl ${
-                          (Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving
+                          Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0
                             ? 'bg-white/[0.08] text-white/40 border-white/10 cursor-not-allowed backdrop-blur-xl'
                             : 'bg-[#fce003] text-black border-white/40 font-black shadow-[0_20px_50px_rgba(252,224,3,0.5)] cursor-pointer hover:scale-[1.02]'
                         }`} 
                         type="submit"
-                        disabled={(Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving}
+                        disabled={Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0}
                       >
                         {/* High-Intensity Shine Animation (Only when active) */}
-                        {!((Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) || isSaving) && (
+                        {!(Object.values(fixedItems).filter(Boolean).length === 0 && (project.revisions?.filter((r: any) => r.status === 'Pending') || []).length > 0) && (
                           <>
                             <div className="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-white/60 to-transparent skew-x-[45deg] animate-shine z-0"></div>
                             <div className="absolute inset-0 bg-[#fce003] animate-pulse opacity-20"></div>
@@ -365,8 +324,8 @@ export default function EditProjectPage() {
                         
                         {/* Z-Index Protected Content */}
                         <div className="relative z-10 flex items-center justify-center gap-4">
-                          <span>{isSaving ? 'Submitting...' : 'Secure Submission'}</span>
-                          <span className={`material-symbols-outlined text-lg ${isSaving ? 'animate-spin' : 'group-hover/sub:translate-x-1 group-hover/sub:-translate-y-1 transition-transform duration-500'}`}>{isSaving ? 'sync' : 'auto_awesome_motion'}</span>
+                          <span>Secure Submission</span>
+                          <span className="material-symbols-outlined text-lg group-hover/sub:translate-x-1 group-hover/sub:-translate-y-1 transition-transform duration-500">auto_awesome_motion</span>
                         </div>
                       </button>
                     </div>
@@ -398,40 +357,37 @@ export default function EditProjectPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
                           <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Assigned Client</label>
-                          <div className="relative group">
-                            <select name="client" required defaultValue={project.client} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white">
-                              <option value="">Select Client...</option>
-                              {clients.map((c) => (
-                                <option key={c.id} value={c.companyName || c.name}>
-                                  {c.companyName || c.name}
-                                </option>
-                              ))}
-                            </select>
-                            <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
-                          </div>
+                          <SearchableDropdown
+                            name="client"
+                            placeholder="Select Client..."
+                            options={clients.map((c) => ({
+                              value: c.companyName || c.name,
+                              label: c.companyName || c.name
+                            }))}
+                            value={selectedClientName}
+                            onChange={(val) => setSelectedClientName(val)}
+                            required
+                          />
                         </div>
                         <div className="space-y-2">
                           <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Assigned Designer</label>
-                          <div className="relative group">
-                            <select name="designer" required defaultValue={project.designer} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white">
-                              <option value="">Select Designer...</option>
-                              {designers.map((d) => {
-                                const dName = d.fullName || d.name || 'CAD Designer';
-                                return (
-                                  <option key={d.id} value={dName}>
-                                    {dName} ({d.specialty || 'CAD Designer'})
-                                  </option>
-                                );
-                              })}
-                            </select>
-                            <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
-                          </div>
+                          <SearchableDropdown
+                            name="designer"
+                            placeholder="Select Designer..."
+                            options={designers.map((d) => ({
+                              value: d.fullName,
+                              label: `${d.fullName} (${d.specialty})`
+                            }))}
+                            value={selectedDesignerName}
+                            onChange={(val) => setSelectedDesignerName(val)}
+                            required
+                          />
                         </div>
                       </div>
                       
                       <div className="space-y-2">
                         <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Order ID</label>
-                        <input name="orderId" defaultValue={project.orderId} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white" type="text" />
+                        <input name="orderId" required defaultValue={project.orderId} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white" type="text" />
                       </div>
 
                       <div className="space-y-4">
@@ -544,14 +500,14 @@ export default function EditProjectPage() {
                           <div className="relative">
                             <select 
                               name="revenueCurrency" 
-                              defaultValue={normalizeCurrency(project.revenueCurrency) || "USD"}
+                              defaultValue={project.revenueCurrency || "$"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-[#fce003] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
+                              <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
+                              <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
+                              <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
+                              <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
+                              <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#fce003] scale-75">expand_more</span>
                           </div>
@@ -564,42 +520,18 @@ export default function EditProjectPage() {
                           <div className="relative">
                             <select 
                               name="expenseCurrency" 
-                              defaultValue={normalizeCurrency(project.expenseCurrency) || "INR"}
+                              defaultValue={project.expenseCurrency || "₹"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-error font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
+                              <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
+                              <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
+                              <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
+                              <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
+                              <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-error scale-75">expand_more</span>
                           </div>
                           <input name="expense" required defaultValue={project.expense} className="w-full bg-transparent border-none p-3 text-white focus:ring-0" type="number" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 pt-5 border-t border-white/5">
-                      <div className="space-y-2">
-                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Client Payment Status</label>
-                        <div className="relative group">
-                          <select name="paymentStatus" defaultValue={project.paymentStatus || "UNPAID"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
-                            <option value="UNPAID">UNPAID</option>
-                            <option value="ADVANCE">ADVANCE PAID</option>
-                            <option value="PAID">PAID (FULL)</option>
-                          </select>
-                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Designer Payout Status</label>
-                        <div className="relative group">
-                          <select name="payoutStatus" defaultValue={project.payoutStatus || "PENDING"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
-                            <option value="PENDING">PENDING</option>
-                            <option value="PAID">PAID</option>
-                          </select>
-                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
                         </div>
                       </div>
                     </div>
@@ -626,7 +558,88 @@ export default function EditProjectPage() {
                         <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Project Title</label>
                         <input name="title" required defaultValue={project.title} className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-white" type="text" />
                       </div>
-                       <div className="space-y-2">
+                      <div className="space-y-3">
+                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Skills Required</label>
+                        <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-stone-900/40 border border-white/5 rounded-lg text-left">
+                          {selectedSkills.length === 0 ? (
+                            <span className="text-[9px] font-bold text-stone-600 uppercase tracking-widest p-1">No skills selected</span>
+                          ) : (
+                            selectedSkills.map((skill) => (
+                              <span key={skill} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fce003]/10 border border-[#fce003]/20 text-[9px] font-black text-[#fce003] uppercase rounded">
+                                {skill}
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
+                                  className="opacity-60 hover:opacity-100 hover:text-red-400 transition-colors"
+                                >
+                                  <span className="material-symbols-outlined text-[10px]">close</span>
+                                </button>
+                              </span>
+                            ))
+                          )}
+                        </div>
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <select 
+                              value=""
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val && !selectedSkills.includes(val)) {
+                                  setSelectedSkills(prev => [...prev, val]);
+                                }
+                              }}
+                              className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm"
+                            >
+                              <option value="">Add from presets...</option>
+                              <option>3D CAD Jewellery</option>
+                              <option>Rendering</option>
+                              <option>Sketch</option>
+                              <option>Zbrush Modeller</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 my-1">
+                            <div className="h-px bg-white/5 flex-grow"></div>
+                            <span className="text-[8px] font-black text-stone-600 uppercase tracking-widest leading-none">or add custom</span>
+                            <div className="h-px bg-white/5 flex-grow"></div>
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Type custom skill..."
+                              value={customSkill}
+                              onChange={(e) => setCustomSkill(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+                                    setSelectedSkills(prev => [...prev, customSkill.trim()]);
+                                    setCustomSkill('');
+                                  }
+                                }
+                              }}
+                              className="flex-grow bg-surface-container-lowest border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#fce003] outline-none text-white placeholder:text-stone-700"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+                                  setSelectedSkills(prev => [...prev, customSkill.trim()]);
+                                  setCustomSkill('');
+                                }
+                              }}
+                              className="px-4 bg-white/5 border border-white/10 hover:bg-[#fce003] hover:text-black rounded-lg transition-all text-[#fce003] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1"
+                            >
+                              <span className="material-symbols-outlined text-sm leading-none">add</span>
+                              Add
+                            </button>
+                          </div>
+                        </div>
+                        <input type="hidden" name="skills" value={JSON.stringify(selectedSkills)} />
+                      </div>
+                      <div className="space-y-2">
                         <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Design Brief</label>
                         <textarea name="brief" required defaultValue={project.description || project.brief} className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-sm resize-none text-white" rows={4}></textarea>
                       </div>
@@ -634,9 +647,9 @@ export default function EditProjectPage() {
                   </div>
 
                   <div className="pt-4">
-                    <button disabled={isSaving} className={`w-full electric-gradient text-[#383100] font-black py-4 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.3)] transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 border border-white/10 ${isSaving ? 'opacity-70 cursor-not-allowed' : 'active:scale-95'}`} type="submit">
-                      <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
-                      <span className={`material-symbols-outlined ${isSaving ? 'animate-spin' : ''}`}>{isSaving ? 'sync' : 'bolt'}</span>
+                    <button className="w-full electric-gradient text-[#383100] font-black py-4 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.3)] active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 border border-white/10" type="submit">
+                      <span>Save Changes</span>
+                      <span className="material-symbols-outlined">bolt</span>
                     </button>
                   </div>
                 </div>

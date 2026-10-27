@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 
-const countries = [
+export const countries = [
   { name: "Afghanistan", code: "AF", emoji: "🇦🇫" },
   { name: "Albania", code: "AL", emoji: "🇦🇱" },
   { name: "Algeria", code: "DZ", emoji: "🇩🇿" },

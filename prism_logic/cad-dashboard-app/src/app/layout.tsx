@@ -6,16 +6,15 @@ import { AuthProvider } from "@/components/AuthProvider";
 import GlobalLoadingShield from "@/components/GlobalLoadingShield";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import MainLayout from "@/components/MainLayout";
-import { SidebarProvider } from "@/components/SidebarContext";
 
 const gaId = process.env.NEXT_PUBLIC_GA_ID || "";
 
-const interHeadline = Inter({
+const plusJakartaSans = Plus_Jakarta_Sans({
   variable: "--font-headline",
   subsets: ["latin"],
 });
 
-const interBody = Inter({
+const inter = Inter({
   variable: "--font-body",
   subsets: ["latin"],
 });
@@ -96,22 +95,21 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark h-full">
       <head>
+        <link rel="manifest" href="/manifest.json" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" />
         <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
       </head>
       <body
-        className={`${interHeadline.variable} ${interBody.variable} font-body bg-background text-on-surface antialiased min-h-full`}
+        className={`${plusJakartaSans.variable} ${inter.variable} font-body bg-background text-on-surface antialiased min-h-full`}
       >
         <GoogleAnalytics ga_id={gaId} />
         <AuthProvider>
-          <SidebarProvider>
-            <GlobalLoadingShield>
-              <RoleBasedNavigation />
-              <MainLayout>
-                {children}
-              </MainLayout>
-            </GlobalLoadingShield>
-          </SidebarProvider>
+          <GlobalLoadingShield>
+            <RoleBasedNavigation />
+            <MainLayout>
+              {children}
+            </MainLayout>
+          </GlobalLoadingShield>
         </AuthProvider>
       </body>
     </html>

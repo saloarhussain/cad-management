@@ -6,10 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import AuthGuard from '@/components/AuthGuard';
 import { getDesignerDb, sendPayoutReminder } from '@/app/actions';
-import { useSidebar } from '@/components/SidebarContext';
 
 export default function DesignerDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
+  const [totalLifetimeUSD, setTotalLifetimeUSD] = useState<number>(0);
   // const [designer, setDesigner] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [remindingId, setRemindingId] = useState<string | null>(null);
@@ -19,8 +19,12 @@ export default function DesignerDashboard() {
   const [exchangeRate, setExchangeRate] = useState<number>(83.5);
   const [displayCurrency, setDisplayCurrency] = useState<'₹' | '$'>('₹');
   const { user, loading: authLoading, activeOrganizationId, availableOrganizations, organizationName } = useAuth();
-  const { isCollapsed } = useSidebar();
   const searchParams = useSearchParams();
+
+  const currentOrgName = useMemo(() => {
+    const activeOrg = availableOrganizations.find(o => o.id === activeOrganizationId);
+    return activeOrg?.name || organizationName || 'Kinetic CAD';
+  }, [availableOrganizations, activeOrganizationId, organizationName]);
 
   useEffect(() => {
     setHasMounted(true);
@@ -103,6 +107,7 @@ export default function DesignerDashboard() {
         const res = await getDesignerDb(activeOrganizationId);
         console.log('Designer Projects:', res.projects);
         setProjects(res.projects || []);
+        setTotalLifetimeUSD(res.totalLifetimeUSD || 0);
         // setDesigner(res.designer);
       } catch (err) {
         console.error('Failed to load designer data', err);
@@ -125,31 +130,35 @@ export default function DesignerDashboard() {
   //   p.revisions?.some((r: any) => r.status === 'Pending')
   // );
 
-  const activeProjects = projects.filter(p => {
-    const s = p.status?.toLowerCase() || '';
-    return !s.includes('complete') && !s.includes('approve') && !s.includes('deliver');
-  });
+  const activeProjects = projects.filter(p => p.status !== 'Approved' && p.status !== 'Complete' && p.status !== 'Completed');
 
-  const unpaidProjects = projects.filter(p => {
-    const isComplete = p.status === 'Approved' || p.status === 'Complete' || p.status === 'Completed';
-    const isPayoutPaid = p.payoutStatus?.toLowerCase() === 'paid';
-    return isComplete && !isPayoutPaid;
-  });
+  const unpaidProjects = projects.filter(p => 
+    (p.status === 'Approved' || p.status === 'Complete' || p.status === 'Completed') && 
+    p.paymentStatus !== 'Paid'
+  );
 
-  // Calculate unpaid balances separated by payment type (Escrow vs Direct/Manual)
-  const unpaidEscrow = unpaidProjects
-    .filter(p => p.useEscrow === true)
-    .reduce((sum, p) => {
-      const amt = parseFloat(p.expense || '0');
-      return sum + (p.expenseCurrency === '$' ? amt : amt / exchangeRate);
-    }, 0);
+  // Helper to convert to display currency
+  // const convert = (amount: number, fromCurrency: string) => {
+  //   if (fromCurrency === displayCurrency) return amount;
+  //   if (displayCurrency === '$') {
+  //     return amount / exchangeRate;
+  //   } else {
+  //     return amount * exchangeRate;
+  //   }
+  // };
 
-  const unpaidDirect = unpaidProjects
-    .filter(p => p.useEscrow !== true)
-    .reduce((sum, p) => {
-      const amt = parseFloat(p.expense || '0');
-      return sum + (p.expenseCurrency === '₹' ? amt : amt * exchangeRate);
-    }, 0);
+  // const unpaidBalance = unpaidProjects.reduce((sum, p) => 
+  //   sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
+
+  const unpaidINR = unpaidProjects.reduce((sum, p) => {
+    const amt = parseFloat(p.expense || '0');
+    return sum + (p.expenseCurrency === '₹' ? amt : amt * exchangeRate);
+  }, 0);
+
+  const unpaidUSD = unpaidProjects.reduce((sum, p) => {
+    const amt = parseFloat(p.expense || '0');
+    return sum + (p.expenseCurrency === '$' ? amt : amt / exchangeRate);
+  }, 0);
 
   // --- Real-time Metrics Calculation ---
   const avgTurnaround = useMemo(() => {
@@ -159,11 +168,10 @@ export default function DesignerDashboard() {
     if (completed.length === 0) return '0.0h';
     
     const totalMs = completed.reduce((sum, p) => {
-      const startStr = p.createdAt || p.created_at || p.updatedAt || p.updated_at;
-      const endStr = p.updatedAt || p.updated_at || p.createdAt || p.created_at;
-      const start = startStr ? new Date(startStr).getTime() : 0;
-      const end = endStr ? new Date(endStr).getTime() : 0;
-      const duration = (start && end && end >= start) ? (end - start) : 0;
+      const start = new Date(p.created_at).getTime();
+      const end = new Date(p.updated_at).getTime();
+      // Ensure we have a valid duration, fallback to 0 if data is messy
+      const duration = Math.max(0, end - start);
       return sum + duration;
     }, 0);
     
@@ -258,7 +266,7 @@ export default function DesignerDashboard() {
         )}
 
         {/* Header Navigation Shell */}
-        <header className={`fixed top-0 left-0 ${isCollapsed ? 'md:left-20 md:w-[calc(100%-5rem)]' : 'md:left-64 md:w-[calc(100%-16rem)]'} w-full z-50 bg-[#37393a] flex justify-between items-center px-6 h-16 max-w-full transition-all duration-300`}>
+        <header className="fixed top-0 w-full z-50 bg-[#37393a] flex justify-between items-center px-6 h-16 w-full max-w-full">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#333535] flex items-center justify-center border border-[#4b4732]/30 overflow-hidden">
               <img alt={user?.user_metadata?.fullName || 'Designer'} className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSxHNAi3lO0iv34ml7AI6y25zJ58tWsIjKITC7XFdQ1lEC-k9fFCQxesbThH3MZXowAORIriJ1tLSOt872IlxliXlIDLuxQ8Mo5f4_-CfRuyCuit4QhZ1xp0bOOnvuaz_olk1XQPGynEc9hEiszFE2e-hQXg7KmhC3XT1BAPO_3NSuOpn6Amb7KaV6h3DpBHU6x6aLL8p-Gaw_QhwFnZoUsyQutv0HzKOasMZq7nNItQcIbRtvx-DlyuZECjH-l1W7VVWEOW2Iv7Q"/>
@@ -277,7 +285,7 @@ export default function DesignerDashboard() {
               <div className="w-2 h-2 rounded-full bg-[#ffe311] pulse-dot"></div>
               <span className="text-[10px] font-bold tracking-tighter text-[#e2e2e2] uppercase">Render Node Active</span>
             </div>
-            <Link href="/portfolio" className="flex items-center gap-1 text-[#ffe30c] hover:text-white transition-colors">
+            <Link href="/designer/portfolio" className="flex items-center gap-1 text-[#ffe30c] hover:text-white transition-colors">
               <span className="material-symbols-outlined text-sm">folder_special</span>
               <span className="text-[9px] font-black uppercase tracking-widest">Portfolio</span>
             </Link>
@@ -285,11 +293,10 @@ export default function DesignerDashboard() {
           </div>
         </header>
 
-        <main className="pt-24 pb-32 px-6 w-full max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Left Column: Transactional Feed & Active Queue */}
-            <div className="lg:col-span-8 space-y-6">
+        <main className="pt-24 pb-32 px-4 md:px-8 max-w-lg md:max-w-7xl mx-auto space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            {/* Left Column: Core Workflow (Financials, Payments, Active Queue) */}
+            <div className="lg:col-span-2 space-y-6">
               {/* Dual Channel Financial Section */}
               <section className="bg-[#1e2020] rounded-xl border border-[#4b4732]/15 shadow-[0_0_50px_-12px_rgba(252,224,3,0.15)] overflow-hidden">
                 <div className="flex">
@@ -303,7 +310,7 @@ export default function DesignerDashboard() {
                       <p className="text-[#cec7ab] font-label text-[9px] tracking-[0.15em] uppercase">Escrow Secured</p>
                     </div>
                     <h2 className="text-2xl font-headline font-black text-[#ffe311] tracking-tighter">
-                      ${unpaidEscrow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${unpaidUSD.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                     </h2>
                     <p className="text-[9px] text-[#cec7ab]/50 uppercase mt-1">Held by Cadonce Platform</p>
                   </div>
@@ -317,7 +324,7 @@ export default function DesignerDashboard() {
                       <p className="text-[#cec7ab] font-label text-[9px] tracking-[0.15em] uppercase">Direct/Manual</p>
                     </div>
                     <h2 className="text-2xl font-headline font-black text-[#cfca6c] tracking-tighter">
-                      ₹{unpaidDirect.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                      ₹{unpaidINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </h2>
                     <p className="text-[9px] text-[#cec7ab]/50 uppercase mt-1">Awaiting Bank Verification</p>
                   </div>
@@ -325,14 +332,16 @@ export default function DesignerDashboard() {
                 {/* Bottom Actions */}
                 <div className="bg-[#282a2b]/40 px-5 py-4 border-t border-[#4b4732]/10 flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <button className="primary-gradient-btn text-[#726500] font-black px-5 py-2 rounded-lg text-[10px] uppercase tracking-tighter shadow-lg shadow-white/20 transition-transform active:scale-95">
+                    <button className="primary-gradient-btn text-black font-black px-5 py-2 rounded-lg text-[10px] uppercase tracking-tighter shadow-[0_4px_15px_rgba(252,224,3,0.3)] hover:shadow-[0_4px_25px_rgba(252,224,3,0.5)] transition-all active:scale-95">
                       Withdraw
                     </button>
                     <a className="text-[9px] font-bold text-[#e0c700] hover:text-[#ffe311] uppercase tracking-widest transition-colors" href="#">Manage Bank Details</a>
                   </div>
                   <div className="text-right">
                     <p className="text-[8px] text-[#cec7ab]/40 uppercase font-bold">Total Lifetime</p>
-                    <p className="text-[11px] font-mono font-bold text-[#e2e2e2]">$14,280.00</p>
+                    <p className="text-[11px] font-mono font-bold text-[#e2e2e2]">
+                      ${totalLifetimeUSD.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
                   </div>
                 </div>
               </section>
@@ -377,47 +386,61 @@ export default function DesignerDashboard() {
                   </span>
                 </div>
 
-                {activeProjects.map(project => (
-                  <div key={project.id} className="group bg-[#282a2b] rounded-xl p-4 flex gap-4 items-center border border-[#4b4732]/5 transition-all hover:bg-[#333535]">
-                    <div className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-headline font-bold text-sm text-[#e2e2e2] leading-none">{project.title}</h4>
-                            {project.status === 'High Priority' && (
-                              <span className="text-[8px] font-black bg-[#ffe311] text-[#201c00] px-1 rounded tag-pulse">[🔥 HIGH]</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5 mt-2 text-[10px] text-[#cec7ab]/70 font-semibold tracking-wider">
-                            <span className="material-symbols-outlined text-[13px] text-[#ffe311]">corporate_fare</span>
-                            <span>
-                              {(() => {
-                                const raw = availableOrganizations.find(o => o.id === activeOrganizationId)?.name || organizationName;
-                                return (!raw || raw === 'Organization Partner' || raw === 'Unnamed Organization') ? 'Minecom' : raw;
-                              })()}
-                            </span>
-                          </div>
-                          <p className="text-[9px] font-mono text-[#cec7ab]/40 mt-1 uppercase">ID: {project.orderId || project.id.slice(0, 8)}</p>
-                        </div>
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${
-                          project.status === 'High Priority' ? 'text-[#ffb4a8] bg-[#ffb4a8]/10' : 'text-[#ffe311] bg-[#ffe311]/10'
-                        }`}>
-                          {project.status}
-                        </span>
+                {activeProjects.map(project => {
+                  const imageUrl = (() => {
+                    if (!project.images) return 'https://via.placeholder.com/150';
+                    try {
+                      const parsed = JSON.parse(project.images);
+                      if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed[0].url || parsed[0];
+                      }
+                      if (typeof parsed === 'object' && parsed?.url) {
+                        return parsed.url;
+                      }
+                      return parsed;
+                    } catch {
+                      return project.images.split(',')[0] || 'https://via.placeholder.com/150';
+                    }
+                  })();
+
+                  return (
+                    <div key={project.id} className="group bg-[#282a2b] rounded-xl p-3 flex gap-4 items-center border border-[#4b4732]/5 transition-all hover:bg-[#333535]">
+                      <div className="w-20 h-20 rounded-lg overflow-hidden bg-black flex-shrink-0 relative">
+                        <img alt={project.title} className="w-full h-full object-cover opacity-80" src={imageUrl} />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                       </div>
-                      <div className="mt-3 flex justify-end gap-2">
-                        <Link href={`/projects/${project.id}`} className="bg-[#ffe311] text-[#201c00] font-black text-[9px] uppercase px-3 py-1.5 rounded-md tracking-tighter hover:scale-105 transition-transform">
-                          Manage
-                        </Link>
-                        {project.status === 'Revision Requested' && (
-                          <Link href={`/projects/${project.id}/viewport`} className="bg-white/10 text-white font-black text-[9px] uppercase px-3 py-1.5 rounded-md tracking-tighter hover:scale-105 transition-transform">
-                            View Revisions
+                      <div className="flex-grow">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-headline font-bold text-sm text-[#e2e2e2] leading-none">{project.title}</h4>
+                              {project.status === 'High Priority' && (
+                                <span className="text-[8px] font-black bg-[#ffe311] text-[#201c00] px-1 rounded tag-pulse">[🔥 HIGH]</span>
+                              )}
+                            </div>
+                            <p className="text-[10px] font-mono text-[#cec7ab]/60 mt-1 uppercase">ID: {project.orderId || project.id.slice(0, 8)}</p>
+                            <p className="text-[10px] font-bold text-[#ffe311] uppercase tracking-wider mt-1">{currentOrgName}</p>
+                          </div>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase ${
+                            project.status === 'High Priority' ? 'text-[#ffb4a8] bg-[#ffb4a8]/10' : 'text-[#ffe311] bg-[#ffe311]/10'
+                          }`}>
+                            {project.status}
+                          </span>
+                        </div>
+                        <div className="mt-3 flex justify-end gap-2">
+                          <Link href={`/projects/${project.id}`} className="bg-[#ffe311] text-[#201c00] font-black text-[9px] uppercase px-3 py-1.5 rounded-md tracking-tighter hover:scale-105 transition-transform">
+                            Manage
                           </Link>
-                        )}
+                          {project.status === 'Revision Requested' && (
+                            <Link href={`/projects/${project.id}/viewport`} className="bg-white/10 text-white font-black text-[9px] uppercase px-3 py-1.5 rounded-md tracking-tighter hover:scale-105 transition-transform">
+                              View Revisions
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {activeProjects.length === 0 && (
                   <div className="text-center p-10 bg-[#1a1c1c] rounded-xl border border-[#4b4732]/10">
@@ -427,10 +450,10 @@ export default function DesignerDashboard() {
               </section>
             </div>
 
-            {/* Right Column: Performance Stats & Tier Progress */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Performance Stats */}
-              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+            {/* Right Column: Performance and Progress metrics */}
+            <div className="space-y-6">
+              {/* Performance Grid */}
+              <section className="grid grid-cols-2 gap-4">
                 <div className="bg-[#1a1c1c] rounded-xl p-4 border border-[#4b4732]/10">
                   <div className="flex justify-between items-start mb-3">
                     <span className="material-symbols-outlined text-[#ffe311]" style={{ fontVariationSettings: "'FILL' 1" }}>local_fire_department</span>
@@ -467,11 +490,67 @@ export default function DesignerDashboard() {
                 <p className="mt-3 text-[10px] text-[#cec7ab]/60 leading-relaxed">Complete <span className="text-[#ffe311] font-bold">4 more high-fidelity renders</span> to unlock global priority routing.</p>
               </section>
             </div>
-
           </div>
         </main>
 
-
+        {/* Sticky Bottom Status & Nav Shell */}
+        <div className="fixed bottom-0 left-0 w-full md:left-64 md:w-[calc(100%-16rem)] z-50">
+          {/* System Status Bar */}
+          <div className="bg-[#0c0f0f]/90 backdrop-blur-md border-t border-[#4b4732]/10 px-6 py-2 flex justify-between items-center">
+            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-black text-[#cec7ab] uppercase tracking-tighter">CPU</span>
+                  <span className="text-[10px] font-mono font-bold text-[#ffe311]">14%</span>
+                </div>
+                <div className="w-12 h-3 bg-[#333535] mt-0.5 rounded-sm overflow-hidden sparkline-mask">
+                  <div className="w-full h-full bg-gradient-to-r from-[#ffe311] to-[#cfca6c]" style={{ clipPath: "polygon(0 80%, 20% 40%, 40% 60%, 60% 20%, 80% 90%, 100% 10%)" }}></div>
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-black text-[#cec7ab] uppercase tracking-tighter">GPU</span>
+                  <span className="text-[10px] font-mono font-bold text-[#cfca6c]">42%</span>
+                </div>
+                <div className="w-12 h-3 bg-[#333535] mt-0.5 rounded-sm overflow-hidden sparkline-mask">
+                  <div className="w-full h-full bg-gradient-to-r from-[#cfca6c] to-[#ffe311]" style={{ clipPath: "polygon(0 50%, 25% 80%, 50% 20%, 75% 40%, 100% 60%)" }}></div>
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-black text-[#cec7ab] uppercase tracking-tighter">MEM</span>
+                  <span className="text-[10px] font-mono font-bold text-[#e2e2e2]">8.2GB</span>
+                </div>
+                <div className="w-12 h-3 bg-[#333535] mt-0.5 rounded-sm overflow-hidden sparkline-mask">
+                  <div className="w-full h-full bg-[#cec7ab]" style={{ clipPath: "polygon(0 90%, 30% 85%, 60% 80%, 90% 75%, 100% 70%)" }}></div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-[#cec7ab]/40">
+              <span className="material-symbols-outlined text-[12px]">cloud_done</span>
+              <span className="text-[8px] font-mono uppercase">Sync: OK</span>
+            </div>
+          </div>
+          {/* Bottom Navigation Shell (Mobile only) */}
+          <nav className="bg-[#0c0f0f]/80 backdrop-blur-xl border-t border-[#4b4732]/15 flex md:hidden justify-around items-center px-4 py-3 pb-safe shadow-[0_-10px_25px_rgba(252,224,3,0.1)]">
+            <Link className="flex flex-col items-center justify-center text-[#ffe311] bg-white/10 rounded-xl px-3 py-1 active:scale-90 transition-transform" href="/designer">
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>dashboard</span>
+              <span className="font-label text-[10px] tracking-widest uppercase mt-1">Dashboard</span>
+            </Link>
+            <Link className="flex flex-col items-center justify-center text-[#cec7ab]/60 hover:text-[#cfca6c] transition-all active:scale-90" href="/designer?tab=queue">
+              <span className="material-symbols-outlined">pending_actions</span>
+              <span className="font-label text-[10px] tracking-widest uppercase mt-1">Queue</span>
+            </Link>
+            <Link className="flex flex-col items-center justify-center text-[#cec7ab]/60 hover:text-[#cfca6c] transition-all active:scale-90" href="/designer?tab=nodes">
+              <span className="material-symbols-outlined">dns</span>
+              <span className="font-label text-[10px] tracking-widest uppercase mt-1">Nodes</span>
+            </Link>
+            <Link className="flex flex-col items-center justify-center text-[#cec7ab]/60 hover:text-[#cfca6c] transition-all active:scale-90" href="/designer?tab=telemetry">
+              <span className="material-symbols-outlined">developer_board</span>
+              <span className="font-label text-[10px] tracking-widest uppercase mt-1">Telemetry</span>
+            </Link>
+          </nav>
+        </div>
       </div>
     </AuthGuard>
   );

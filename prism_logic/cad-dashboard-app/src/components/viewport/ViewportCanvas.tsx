@@ -50,7 +50,7 @@ interface Annotation {
   createdAt: string;
 }
 
-export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData, projectId, initialAnnotations = [], isReviewMode = false, isAutoRotate = false, sidebarFooter }: ViewportCanvasProps) {
+export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData, projectId, initialAnnotations = [], isReviewMode = false, isAutoRotate = true, sidebarFooter }: ViewportCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [env, setEnv] = React.useState<'studio' | 'apartment' | 'city' | 'dawn' | 'lobby' | 'warehouse'>('studio');
   const [annotations, setAnnotations] = React.useState<Annotation[]>(initialAnnotations);
@@ -61,7 +61,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
 
   // New states for preview features
   const [isWireframeMode, setIsWireframeMode] = React.useState(false);
-  const [gemColor, setGemColor] = React.useState<string>('Diamond');
   const [isMeasurementMode, setIsMeasurementMode] = React.useState(false);
   const [measurePoints, setMeasurePoints] = React.useState<THREE.Vector3[]>([]);
   const [overrideMetalType, setOverrideMetalType] = React.useState<MetalType | null>(null);
@@ -74,7 +73,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
       case '18k Gold': return 0.0155;
       case 'Platinum': return 0.02105;
       case '925 Silver': return 0.01036;
-      case 'Brass': return 0.0085;
       default: return 0.0155;
     }
   };
@@ -220,7 +218,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
                   onPointerDown={handleModelClick}
                   wireframe={isWireframeMode}
                   onLoadStats={setMeshVolume}
-                  gemColor={gemColor}
                 />
               ) : fileUrl ? (
                 <JewelryModel
@@ -231,7 +228,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
                   onPointerDown={handleModelClick}
                   wireframe={isWireframeMode}
                   onLoadStats={setMeshVolume}
-                  gemColor={gemColor}
                 />
               ) : null}
             </Stage>
@@ -460,7 +456,6 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
                         <option value="18k Gold">18k Gold</option>
                         <option value="Platinum">950 Platinum</option>
                         <option value="925 Silver">925 Silver</option>
-                        <option value="Brass">Brass</option>
                       </select>
                     </div>
                     <div className="text-right">
@@ -520,26 +515,9 @@ export default function ViewportCanvas({ fileUrl, metalType, fileName, fileData,
                      <div className={`w-14 h-14 rounded-full border-2 p-1 bg-[#333535] transition-all ${(overrideMetalType || metalType) === m ? (m === 'gold' ? 'border-[#ffe30c] shadow-[0_0_15px_rgba(255,227,12,0.3)]' : m === 'silver' ? 'border-white/50 shadow-[0_0_15px_rgba(255,255,255,0.3)]' : 'border-[#e5b3bb] shadow-[0_0_15px_rgba(229,179,187,0.3)]') : 'border-transparent hover:border-white/20'}`}>
                        <div className={`w-full h-full rounded-full ${m === 'gold' ? 'bg-gradient-to-tr from-[#d4af37] via-[#ffe30c] to-[#d4af37]' : m === 'silver' ? 'bg-gradient-to-tr from-gray-500 via-gray-200 to-gray-500' : 'bg-gradient-to-tr from-[#b76e79] via-[#e5b3bb] to-[#b76e79]'}`}></div>
                      </div>
-                      <span className={`text-[10px] font-black uppercase tracking-widest ${(overrideMetalType || metalType) === m ? (m === 'gold' ? 'text-[#ffe30c]' : 'text-white') : 'text-white/60'}`}>{m}</span>
-                    </button>
-                  ))}
-              </div>
-            </section>
-
-            {/* Gemstone Color Selector */}
-            <section className="space-y-4 pt-6 border-t border-white/5">
-              <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 px-1">Gemstone Settings</h2>
-              <div className="flex flex-wrap gap-2.5">
-                 {(['Diamond', 'Emerald', 'Ruby', 'Sapphire'] as const).map(gem => (
-                    <button 
-                      key={gem} 
-                      onClick={() => setGemColor(gem)} 
-                      className={`group flex items-center gap-2 px-3 py-2 rounded-xl bg-[#282a2b] border transition-all ${gemColor === gem ? 'border-[#ffe30c] text-white' : 'border-white/5 text-white/60 hover:border-white/20 hover:text-white'}`}
-                    >
-                      <span className={`w-2 h-2 rounded-full ${gem === 'Diamond' ? 'bg-cyan-100 border border-white/25' : gem === 'Emerald' ? 'bg-emerald-500' : gem === 'Ruby' ? 'bg-red-500' : 'bg-blue-600'}`} />
-                      <span className="text-[9px] font-black uppercase tracking-widest leading-none">{gem}</span>
-                    </button>
-                  ))}
+                     <span className={`text-[10px] font-black uppercase tracking-widest ${(overrideMetalType || metalType) === m ? (m === 'gold' ? 'text-[#ffe30c]' : 'text-white') : 'text-white/60'}`}>{m}</span>
+                   </button>
+                 ))}
               </div>
             </section>
 

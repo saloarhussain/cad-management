@@ -16,6 +16,37 @@ export default function InboxPage() {
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedProjectTitle, setSelectedProjectTitle] = useState<string | null>(null);
 
+  // Gmail Inbox States
+  const [gmailMessages, setGmailMessages] = useState<any[]>([]);
+  const [gmailLoading, setGmailLoading] = useState(false);
+  const [gmailConnected, setGmailConnected] = useState(false);
+  const [gmailAddress, setGmailAddress] = useState('');
+  const [noClients, setNoClients] = useState(false);
+
+  const fetchGmailMessages = useCallback(async () => {
+    setGmailLoading(true);
+    try {
+      const res = await fetch('/api/gmail/messages');
+      if (res.ok) {
+        const data = await res.json();
+        setGmailConnected(data.connected);
+        setGmailMessages(data.messages || []);
+        setGmailAddress(data.gmailUser || '');
+        setNoClients(data.noClients || false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch Gmail messages', err);
+    } finally {
+      setGmailLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mode === 'gmail') {
+      fetchGmailMessages();
+    }
+  }, [mode, fetchGmailMessages]);
+
   const fetchInternalProjects = useCallback(async (silent = false) => {
     if (!silent) setInternalLoading(true);
     try {
@@ -143,7 +174,7 @@ export default function InboxPage() {
                       }}
                       className={`block rounded-2xl p-4 border transition-all cursor-pointer group relative overflow-hidden ${
                         isSelected 
-                          ? 'bg-white/5 border-[#F59E0B]/30 shadow-[0_0_20px_rgba(252,224,3,0.05)]' 
+                          ? 'bg-white/5 border-[#fce003]/30 shadow-[0_0_20px_rgba(252,224,3,0.05)]' 
                           : 'bg-surface-container/50 border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
                       }`}
                     >
@@ -155,22 +186,92 @@ export default function InboxPage() {
                       
                       <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                          isSelected ? 'bg-[#F59E0B]/20 border border-[#F59E0B]/30' : 'bg-white/5 border border-white/10'
+                          isSelected ? 'bg-[#fce003]/20 border border-[#fce003]/30' : 'bg-white/5 border border-white/10'
                         }`}>
-                          <span className={`material-symbols-outlined text-sm ${isSelected ? 'text-[#F59E0B]' : 'text-neutral-500 group-hover:text-white'}`}>deployed_code</span>
+                          <span className={`material-symbols-outlined text-sm ${isSelected ? 'text-[#fce003]' : 'text-neutral-500 group-hover:text-white'}`}>deployed_code</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2 mb-1">
-                            <h3 className={`text-[11px] font-black uppercase truncate ${isSelected ? 'text-[#F59E0B]' : 'text-white/80'}`}>{project.title}</h3>
+                            <h3 className={`text-[11px] font-black uppercase truncate ${isSelected ? 'text-[#fce003]' : 'text-white/80'}`}>{project.title}</h3>
                             <span className="text-[7px] font-bold text-neutral-500 uppercase shrink-0">#{project.orderId?.slice(-6)}</span>
                           </div>
                           <p className="text-[9px] text-neutral-500 line-clamp-1 font-medium italic">Project Workspace Chat</p>
                         </div>
-                        <span className={`material-symbols-outlined text-sm transition-transform ${isSelected ? 'text-[#F59E0B] translate-x-1' : 'text-white/10 group-hover:text-white/30'}`}>chevron_right</span>
+                        <span className={`material-symbols-outlined text-sm transition-transform ${isSelected ? 'text-[#fce003] translate-x-1' : 'text-white/10 group-hover:text-white/30'}`}>chevron_right</span>
                       </div>
                     </div>
                   );
                 })}
+              </>
+            ) : mode === 'gmail' ? (
+              <>
+                {gmailLoading && gmailMessages.length === 0 && (
+                  <div className="flex items-center justify-center py-20">
+                    <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+
+                {!gmailLoading && !gmailConnected && (
+                  <div className="py-20 text-center px-4 space-y-4">
+                    <span className="material-symbols-outlined text-4xl mb-2 opacity-30 text-yellow-400">cloud_off</span>
+                    <p className="text-xs font-black uppercase tracking-widest text-white/60">Gmail API Not Connected</p>
+                    <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-wide leading-normal">
+                      Link your Google credentials in settings to sync your client threads.
+                    </p>
+                    <Link href="/settings?tab=email" className="inline-block px-4 py-2 bg-yellow-400 text-black text-[9px] font-black uppercase tracking-widest rounded-lg hover:brightness-110 active:scale-95 transition-all">
+                      Configure Settings
+                    </Link>
+                  </div>
+                )}
+
+                {!gmailLoading && gmailConnected && noClients && (
+                  <div className="py-20 text-center px-4">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-yellow-400">group_off</span>
+                    <p className="text-xs font-black uppercase tracking-widest text-white/60">No Clients Registered</p>
+                    <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-wide mt-2 leading-relaxed">
+                      Please register client emails in your dashboard first. The Gmail API scans threads belonging specifically to your clients.
+                    </p>
+                  </div>
+                )}
+
+                {!gmailLoading && gmailConnected && !noClients && gmailMessages.length === 0 && (
+                  <div className="py-20 text-center px-4">
+                    <span className="material-symbols-outlined text-4xl mb-2 text-yellow-400">mail</span>
+                    <p className="text-xs font-black uppercase tracking-widest text-white/60">No Client Threads</p>
+                    <p className="text-[9px] font-bold text-neutral-500 uppercase tracking-wide mt-2 leading-relaxed">
+                      No matching unread or recent emails found from your registered clients in {gmailAddress || 'inbox'}.
+                    </p>
+                  </div>
+                )}
+
+                {!gmailLoading && gmailConnected && gmailMessages.map((msg) => (
+                  <a
+                    key={msg.id}
+                    href={`https://mail.google.com/mail/u/0/#inbox/${msg.threadId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block rounded-2xl p-4 border bg-surface-container/50 border-white/5 hover:border-white/10 hover:bg-white/[0.02] transition-all cursor-pointer group relative"
+                  >
+                    {msg.unread && (
+                      <div className="absolute top-0 right-0 w-8 h-8 flex items-center justify-center bg-red-500 rounded-bl-xl z-10 shadow-lg">
+                        <span className="text-[10px] font-black text-white">New</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center flex-shrink-0 text-zinc-500 group-hover:text-yellow-400">
+                        <span className="material-symbols-outlined text-sm">mail</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <h3 className="text-[11px] font-black uppercase truncate text-white/80">{msg.sender}</h3>
+                          <span className="text-[7px] font-bold text-neutral-500 uppercase shrink-0">{msg.date}</span>
+                        </div>
+                        <p className="text-[10px] font-black text-[#fce003] uppercase tracking-wide truncate">{msg.subject}</p>
+                        <p className="text-[9px] text-neutral-500 line-clamp-1 font-medium italic mt-0.5">{msg.snippet}</p>
+                      </div>
+                    </div>
+                  </a>
+                ))}
               </>
             ) : (
               <div className="py-20 text-center opacity-30">
@@ -203,4 +304,3 @@ export default function InboxPage() {
     </AuthGuard>
   );
 }
-

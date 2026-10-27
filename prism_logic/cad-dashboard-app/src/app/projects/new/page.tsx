@@ -1,27 +1,23 @@
 "use client";
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { saveProject, getDb } from '@/app/actions';
+import CadFileUpload from '@/components/viewport/CadFileUpload';
+
 import AuthGuard from '@/components/AuthGuard';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
+import SearchableDropdown from '@/components/SearchableDropdown';
 
-const PRESET_SKILLS = [
-  'High-Poly',
-  'Ray-Tracing',
-  'Pavé Setting',
-  'Matrix Gold',
-  'Rhino 3D',
-  'SubD Modeling',
-  'Enameling',
-  'Bezel Setting',
-  'Micro-Prong'
-];
-
-const DatePickerFacade = ({ label, isDeadline, name }: { label: string; isDeadline?: boolean; name?: string }) => {
-  const [date, setDate] = useState("");
+const DatePickerFacade = ({ label, isDeadline, name, defaultValue = "" }: { label: string, isDeadline?: boolean, name?: string, defaultValue?: string }) => {
+  const [date, setDate] = useState(defaultValue);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (defaultValue) {
+      setDate(defaultValue);
+    }
+  }, [defaultValue]);
 
   const handleClick = () => {
     if (inputRef.current) {
@@ -38,34 +34,17 @@ const DatePickerFacade = ({ label, isDeadline, name }: { label: string; isDeadli
 
   return (
     <div className="space-y-2 relative">
-      <div className="flex items-center justify-between">
-        <label className={`font-label text-[10px] font-bold uppercase tracking-wider ${isDeadline ? 'text-[#F59E0B]' : 'text-stone-400'}`}>
-          {label}
-        </label>
-        {isDeadline && (
-          <span className="text-[9px] font-bold text-amber-500/80 uppercase tracking-widest flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-            Critical Target
-          </span>
-        )}
-      </div>
+      <label className={`font-label text-[10px] font-bold uppercase tracking-wider ${isDeadline ? 'text-[#fce003]' : 'text-stone-400'}`}>
+        {label}
+      </label>
       <div 
         onClick={handleClick}
-        className={`w-full bg-black/40 border ${
-          isDeadline 
-            ? 'border-amber-500/30 hover:border-amber-500/50 focus-within:border-amber-500' 
-            : 'border-white/10 hover:border-white/20 focus-within:border-[#F59E0B]/50'
-        } rounded-xl p-3.5 focus-within:ring-1 focus-within:ring-[#F59E0B]/30 transition-all flex justify-between items-center cursor-pointer relative overflow-hidden group shadow-inner`}
+        className={`w-full bg-surface-container-lowest border ${isDeadline ? 'border-[#fce003]/20' : 'border-transparent'} rounded p-3 focus-within:ring-2 focus-within:ring-[#fce003] transition-all flex justify-between items-center cursor-pointer relative overflow-hidden group`}
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDeadline ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-stone-400'}`}>
-            <span className="material-symbols-outlined text-base">calendar_month</span>
-          </div>
-          <span className={`text-sm font-semibold tracking-wide ${date ? "text-white" : "text-stone-500"}`}>
-            {displayDate}
-          </span>
-        </div>
-        <span className="material-symbols-outlined text-stone-500 text-sm group-hover:text-amber-400 transition-colors">edit_calendar</span>
+        <span className={date ? "text-white" : "text-stone-700"}>
+          {displayDate}
+        </span>
+        <span className="material-symbols-outlined text-white pointer-events-none group-focus-within:text-[#fce003] transition-colors">calendar_month</span>
         <input 
           ref={inputRef}
           type="date"
@@ -73,1127 +52,496 @@ const DatePickerFacade = ({ label, isDeadline, name }: { label: string; isDeadli
           required
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="absolute right-0 top-0 w-full h-full opacity-0 cursor-pointer" 
+          className="absolute right-0 top-0 w-12 h-full opacity-0 cursor-pointer" 
         />
       </div>
     </div>
   );
 };
 
-const ClientSearchSelect = ({
-  clients,
-  selectedClient,
-  onSelect
-}: {
-  clients: any[];
-  selectedClient: string;
-  onSelect: (val: string) => void;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    } else {
-      setSearch("");
-    }
-  }, [isOpen]);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return clients;
-    return clients.filter((c) => {
-      const name = (c.name || '').toLowerCase();
-      const comp = (c.companyName || '').toLowerCase();
-      const email = (c.email || '').toLowerCase();
-      return name.includes(q) || comp.includes(q) || email.includes(q);
-    });
-  }, [clients, search]);
-
-  const activeObj = clients.find(c => (c.companyName || c.name) === selectedClient);
-
-  return (
-    <div className="space-y-2 relative" ref={dropdownRef}>
-      <input type="hidden" name="client" value={selectedClient} required />
-      <div className="flex items-center justify-between">
-        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-          Assigned Client <span className="text-amber-400">*</span>
-        </label>
-        <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
-          <span className="material-symbols-outlined text-[11px]">search</span>
-          Searchable ({clients.length})
-        </span>
-      </div>
-
-      <div
-        onClick={() => setIsOpen(prev => !prev)}
-        className={`w-full bg-black/40 border ${
-          isOpen 
-            ? 'border-[#F59E0B] ring-1 ring-[#F59E0B]/30' 
-            : 'border-white/10 hover:border-white/25 focus-within:border-[#F59E0B]'
-        } rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition-all shadow-inner select-none`}
-      >
-        <div className="flex items-center gap-3 truncate">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedClient ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' : 'bg-white/5 text-stone-500'}`}>
-            <span className="material-symbols-outlined text-base">corporate_fare</span>
-          </div>
-          {selectedClient ? (
-            <div className="text-left truncate">
-              <p className="text-white text-sm font-bold truncate leading-tight">{selectedClient}</p>
-              {activeObj?.name && activeObj.name !== activeObj.companyName && (
-                <p className="text-[10px] text-zinc-400 truncate leading-none mt-0.5">Contact: {activeObj.name}</p>
-              )}
-            </div>
-          ) : (
-            <span className="text-stone-500 text-sm font-medium">Search &amp; select client account...</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0 text-stone-400">
-          {selectedClient && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect('');
-              }}
-              className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-xs text-stone-400 hover:text-white transition-colors mr-1"
-              title="Clear selection"
-            >
-              ✕
-            </button>
-          )}
-          <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-400' : ''}`}>
-            expand_more
-          </span>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-[250] bg-[#12100a] border border-amber-400/30 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
-              search
-            </span>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Type to search company, client or email..."
-              className="w-full bg-black/60 border border-white/10 rounded-xl pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between px-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/5">
-            <span>All Available Clients ({filtered.length})</span>
-            {search && <span className="text-amber-400 text-[9px]">Filtered</span>}
-          </div>
-
-          <div className="max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar [scrollbar-width:thin] [scrollbar-color:#F59E0B_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-amber-400/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-black/40">
-            {filtered.length === 0 ? (
-              <div className="py-6 text-center text-stone-500 text-xs font-medium">
-                No clients found matching &quot;{search}&quot;
-              </div>
-            ) : (
-              filtered.map((c, idx) => {
-                const label = c.companyName || c.name;
-                const isSelected = selectedClient === label;
-                return (
-                  <div
-                    key={c.id || idx}
-                    onClick={() => {
-                      onSelect(label);
-                      setIsOpen(false);
-                    }}
-                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'bg-amber-400/15 border border-amber-400/30 text-amber-300' 
-                        : 'hover:bg-white/5 text-stone-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
-                        {(label || '??').slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="truncate text-left">
-                        <p className="text-xs font-bold text-white truncate leading-tight">{label}</p>
-                        {c.name && c.companyName && c.name !== c.companyName && (
-                          <p className="text-[10px] text-stone-400 truncate leading-tight">Attn: {c.name}</p>
-                        )}
-                        {c.email && (
-                          <p className="text-[9px] text-stone-500 font-mono truncate leading-tight">{c.email}</p>
-                        )}
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <span className="material-symbols-outlined text-amber-400 text-sm shrink-0">check_circle</span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-const DesignerSearchSelect = ({
-  designers,
-  selectedDesigner,
-  onSelect
-}: {
-  designers: any[];
-  selectedDesigner: string;
-  onSelect: (val: string) => void;
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setIsOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    } else {
-      setSearch("");
-    }
-  }, [isOpen]);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    if (!q) return designers;
-    return designers.filter((d) => {
-      const name = (d.fullName || d.name || '').toLowerCase();
-      const spec = (d.specialty || '').toLowerCase();
-      const emp = (d.employmentType || '').toLowerCase();
-      return name.includes(q) || spec.includes(q) || emp.includes(q);
-    });
-  }, [designers, search]);
-
-  const activeObj = designers.find(d => (d.fullName || d.name) === selectedDesigner);
-
-  return (
-    <div className="space-y-2 relative" ref={dropdownRef}>
-      <input type="hidden" name="designer" value={selectedDesigner} required />
-      <div className="flex items-center justify-between">
-        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-          Assigned CAD Designer <span className="text-amber-400">*</span>
-        </label>
-        <span className="text-[9px] text-amber-400/80 font-bold uppercase tracking-wider flex items-center gap-1">
-          <span className="material-symbols-outlined text-[11px]">search</span>
-          Searchable ({designers.length})
-        </span>
-      </div>
-
-      <div
-        onClick={() => setIsOpen(prev => !prev)}
-        className={`w-full bg-black/40 border ${
-          isOpen 
-            ? 'border-[#F59E0B] ring-1 ring-[#F59E0B]/30' 
-            : 'border-white/10 hover:border-white/25 focus-within:border-[#F59E0B]'
-        } rounded-xl p-3.5 flex items-center justify-between cursor-pointer transition-all shadow-inner select-none`}
-      >
-        <div className="flex items-center gap-3 truncate">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${selectedDesigner ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20' : 'bg-white/5 text-stone-500'}`}>
-            <span className="material-symbols-outlined text-base">badge</span>
-          </div>
-          {selectedDesigner ? (
-            <div className="text-left truncate">
-              <div className="flex items-center gap-2">
-                <p className="text-white text-sm font-bold truncate leading-tight">{selectedDesigner}</p>
-                {activeObj?.employmentType && (
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase ${
-                    activeObj.employmentType === 'Freelancer' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'
-                  }`}>
-                    {activeObj.employmentType}
-                  </span>
-                )}
-              </div>
-              {activeObj?.specialty && (
-                <p className="text-[10px] text-zinc-400 truncate leading-none mt-0.5">{activeObj.specialty}</p>
-              )}
-            </div>
-          ) : (
-            <span className="text-stone-500 text-sm font-medium">Search &amp; select CAD specialist...</span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0 text-stone-400">
-          {selectedDesigner && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect('');
-              }}
-              className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-xs text-stone-400 hover:text-white transition-colors mr-1"
-              title="Clear selection"
-            >
-              ✕
-            </button>
-          )}
-          <span className={`material-symbols-outlined text-sm transition-transform duration-200 ${isOpen ? 'rotate-180 text-amber-400' : ''}`}>
-            expand_more
-          </span>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-[250] bg-[#12100a] border border-amber-400/30 rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95)] p-3 space-y-2 backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="relative">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 text-sm pointer-events-none">
-              search
-            </span>
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Type to search designer name or CAD software..."
-              className="w-full bg-black/60 border border-white/10 rounded-xl pl-9 pr-8 py-2.5 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400/30 transition-all"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-white text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between px-1 text-[10px] font-bold text-zinc-400 uppercase tracking-wider pb-1 border-b border-white/5">
-            <span>All Available Designers ({filtered.length})</span>
-            {search && <span className="text-amber-400 text-[9px]">Filtered</span>}
-          </div>
-
-          <div className="max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar [scrollbar-width:thin] [scrollbar-color:#F59E0B_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-amber-400/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-black/40">
-            {filtered.length === 0 ? (
-              <div className="py-6 text-center text-stone-500 text-xs font-medium">
-                No designers found matching &quot;{search}&quot;
-              </div>
-            ) : (
-              filtered.map((d, idx) => {
-                const label = d.fullName || d.name || 'CAD Designer';
-                const isSelected = selectedDesigner === label;
-                return (
-                  <div
-                    key={d.id || idx}
-                    onClick={() => {
-                      onSelect(label);
-                      setIsOpen(false);
-                    }}
-                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'bg-amber-400/15 border border-amber-400/30 text-amber-300' 
-                        : 'hover:bg-white/5 text-stone-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 truncate">
-                      <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-black text-amber-400 shrink-0">
-                        {label.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div className="truncate text-left">
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-bold text-white truncate leading-tight">{label}</p>
-                          {d.employmentType && (
-                            <span className="text-[8px] font-bold px-1.5 py-0.2 rounded bg-white/5 text-stone-400 uppercase">
-                              {d.employmentType}
-                            </span>
-                          )}
-                        </div>
-                        {d.specialty && (
-                          <p className="text-[10px] text-amber-400/80 truncate leading-tight mt-0.5">{d.specialty}</p>
-                        )}
-                      </div>
-                    </div>
-                    {isSelected && (
-                      <span className="material-symbols-outlined text-amber-400 text-sm shrink-0">check_circle</span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
 export default function NewProjectPage() {
   const { isAuthenticated } = useAuth();
-  const router = useRouter();
   const [designers, setDesigners] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
-  const [selectedClient, setSelectedClient] = useState("");
   const [mounted, setMounted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [gallery, setGallery] = useState<any[]>([]);
   const [selectedDesignerName, setSelectedDesignerName] = useState("");
-  const [skills, setSkills] = useState<string[]>([]);
-  const [skillInput, setSkillInput] = useState("");
+  const [selectedClientName, setSelectedClientName] = useState("");
+  const [projectId] = useState(() => `new-${Date.now()}`);
 
-  const [revenueInput, setRevenueInput] = useState("");
-  const [expenseInput, setExpenseInput] = useState("");
-  const [revCurr, setRevCurr] = useState("USD");
-  const [expCurr, setExpCurr] = useState("INR");
-
-  const formRef = useRef<HTMLFormElement>(null);
+  const [draftOrderDate, setDraftOrderDate] = useState("");
+  const [draftDeadlineDate, setDraftDeadlineDate] = useState("");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [customSkill, setCustomSkill] = useState("");
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [hasMountedDraft, setHasMountedDraft] = useState(false);
 
   useEffect(() => {
-    router.prefetch('/projects');
     const fetchData = async () => {
-      try {
-        const db = await getDb();
-        const dbClients: any[] = [...(db.clients || [])];
-        const dbDesigners: any[] = [...(db.designers || [])];
-        const dbProjects: any[] = db.projects || [];
-
-        // Merge any clients from projects that might not be in clients table
-        const existingClientNames = new Set(
-          dbClients.map((c: any) => (c.companyName || c.name || '').toLowerCase().trim())
-        );
-        dbProjects.forEach((p: any) => {
-          const pClient = (p.client || p.clientCompany || '').trim();
-          if (pClient && !existingClientNames.has(pClient.toLowerCase())) {
-            existingClientNames.add(pClient.toLowerCase());
-            dbClients.push({
-              id: `proj-client-${pClient}`,
-              name: pClient,
-              companyName: pClient
-            });
-          }
-        });
-
-        // Merge any designers from projects that might not be in designers table
-        const existingDesignerNames = new Set(
-          dbDesigners.map((d: any) => (d.fullName || d.name || '').toLowerCase().trim())
-        );
-        dbProjects.forEach((p: any) => {
-          const pDesigner = (p.designer || '').trim();
-          if (pDesigner && !existingDesignerNames.has(pDesigner.toLowerCase())) {
-            existingDesignerNames.add(pDesigner.toLowerCase());
-            dbDesigners.push({
-              id: `proj-designer-${pDesigner}`,
-              fullName: pDesigner,
-              name: pDesigner,
-              specialty: 'CAD Designer',
-              employmentType: 'In-House'
-            });
-          }
-        });
-
-        setDesigners(dbDesigners);
-        setClients(dbClients);
-      } catch (err) {
-        console.error('Error fetching clients and designers:', err);
-      }
+      const db = await getDb();
+      setDesigners(db.designers || []);
+      setClients(db.clients || []);
     };
     fetchData();
     setMounted(true);
-  }, [router]);
+  }, []);
 
-  const selectedDesigner = useMemo(() => {
-    return designers.find(d => d.fullName === selectedDesignerName);
-  }, [designers, selectedDesignerName]);
+  // Load draft when form mounts in DOM (callback ref prevents AuthGuard delay race condition)
+  const formRefCallback = React.useCallback((node: HTMLFormElement | null) => {
+    formRef.current = node;
+    if (node) {
+      try {
+        const saved = localStorage.getItem('cad_project_draft');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.images) {
+            try {
+              setGallery(JSON.parse(data.images));
+            } catch (e) {}
+          }
+          if (data.orderDate) {
+            setDraftOrderDate(data.orderDate);
+          }
+          if (data.deadlineDate) {
+            setDraftDeadlineDate(data.deadlineDate);
+          }
+          if (data.client) {
+            setSelectedClientName(data.client);
+          }
+          if (data.designer) {
+            setSelectedDesignerName(data.designer);
+          }
+          if (data.skills) {
+            try {
+              setSelectedSkills(JSON.parse(data.skills));
+            } catch (e) {
+              setSelectedSkills([data.skills]);
+            }
+          }
+          Object.keys(data).forEach((key) => {
+            if (key !== 'images' && key !== 'orderDate' && key !== 'deadlineDate' && key !== 'skills') {
+              const element = node.querySelector(`[name="${key}"]`) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null;
+              if (element) {
+                if (element.type === 'checkbox') {
+                  (element as HTMLInputElement).checked = data[key] === 'true';
+                } else {
+                  element.value = data[key];
+                }
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.error('Error restoring draft:', e);
+      }
+      setHasMountedDraft(true);
+    }
+  }, []);
 
-  const handleQuickAddSkill = (skill: string) => {
-    if (!skills.includes(skill)) {
-      setSkills(prev => [...prev, skill]);
+  // Save draft on any input change (safeguarded against storage blockages)
+  const handleFormChange = () => {
+    if (formRef.current) {
+      try {
+        const formData = new FormData(formRef.current);
+        formData.set('images', JSON.stringify(gallery));
+        formData.set('skills', JSON.stringify(selectedSkills));
+        const data: Record<string, string> = {};
+        formData.forEach((value, key) => {
+          if (typeof value === 'string') {
+            data[key] = value;
+          }
+        });
+        // Explicitly handle unchecked checkboxes
+        const checkboxes = formRef.current.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((cb: any) => {
+          if (cb.name) {
+            data[cb.name] = cb.checked ? 'true' : 'false';
+          }
+        });
+        localStorage.setItem('cad_project_draft', JSON.stringify(data));
+      } catch (e) {
+        console.warn('Draft auto-save blocked:', e);
+      }
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!isAuthenticated || saving) return;
-
-    const formData = new FormData(e.currentTarget);
-    const clientVal = (formData.get('client') as string) || selectedClient || '';
-    const designerVal = (formData.get('designer') as string) || selectedDesignerName || '';
-    const titleVal = (formData.get('title') as string) || '';
-
-    if (!clientVal.trim()) {
-      alert('Please select an assigned client account.');
-      return;
+  // Trigger save whenever gallery, selectedSkills, client, or designer updates
+  useEffect(() => {
+    if (hasMountedDraft) {
+      handleFormChange();
     }
-    if (!designerVal.trim()) {
-      alert('Please select an assigned CAD designer.');
-      return;
-    }
+  }, [gallery, selectedSkills, selectedClientName, selectedDesignerName, hasMountedDraft]);
 
+  const handleSubmit = async (formData: FormData) => {
+    if (!isAuthenticated) return;
     setSaving(true);
-    formData.set('client', clientVal);
-    formData.set('designer', designerVal);
-    formData.append('tags', JSON.stringify(skills));
-
-    const tempProject = {
-      id: Date.now().toString(),
-      title: titleVal,
-      orderId: (formData.get('orderId') as string) || 'Generating...',
-      client: clientVal,
-      clientCompany: clientVal,
-      clientShortName: clientVal.slice(0, 2).toUpperCase(),
-      designer: designerVal,
-      revenue: (formData.get('revenue') as string) || '0',
-      revenueCurrency: (formData.get('revenueCurrency') as string) || '$',
-      expense: (formData.get('expense') as string) || '0',
-      expenseCurrency: (formData.get('expenseCurrency') as string) || '₹',
-      orderDate: (formData.get('orderDate') as string) || new Date().toISOString().split('T')[0],
-      deadlineDate: (formData.get('deadlineDate') as string) || '',
-      description: (formData.get('brief') as string) || '',
-      images: (() => {
-        const val = formData.get('images');
-        if (!val) return [];
-        try { return JSON.parse(val as string); } catch { return []; }
-      })(),
-      status: 'High Priority',
-      paymentStatus: (formData.get('paymentStatus') as string) || 'Unpaid',
-      paidAmount: (formData.get('paidAmount') as string) || '0',
-      createdAt: new Date().toISOString(),
-      tags: skills.length > 0 ? skills : ['High-Poly', 'Ray-Tracing', 'Nodes']
-    };
-
     try {
-      sessionStorage.setItem('optimistic_new_project', JSON.stringify(tempProject));
-    } catch (err) {}
-
-    // INSTANT 0ms NAVIGATION TO PROJECTS:
-    router.push('/projects');
-
-    // Run database write in parallel in background
-    saveProject(formData).catch((err: any) => {
-      console.error('Background save error:', err);
-    });
+      const result = await saveProject(formData);
+      if (result.success) {
+        try {
+          localStorage.removeItem('cad_project_draft');
+        } catch (e) {}
+        window.location.href = '/projects';
+      } else {
+        alert(result.error || 'Failed to save project. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Save error:', err);
+      alert(err.message || 'An unexpected error occurred. Please ensure you are logged in.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <AuthGuard>
-      <div className="bg-background text-on-surface font-body min-h-screen relative overflow-hidden pb-32 text-left selection:bg-[#F59E0B] selection:text-black">
-        {/* Subtle ambient lighting glows */}
-        <div className="fixed top-[15%] left-[5%] w-[45vw] h-[45vw] bg-amber-500/[0.03] blur-[140px] rounded-full pointer-events-none -z-10"></div>
-        <div className="fixed bottom-[10%] right-[5%] w-[35vw] h-[35vw] bg-yellow-500/[0.03] blur-[140px] rounded-full pointer-events-none -z-10"></div>
+      <div className="bg-background text-on-surface font-body min-h-screen relative overflow-hidden pb-32 text-left">
+        {/* Visual Element: Background Glow */}
+        <div className="fixed top-[20%] left-[-10%] w-[40vw] h-[40vw] bg-[#fce003]/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+        <div className="fixed bottom-[10%] right-[-10%] w-[30vw] h-[30vw] bg-[#FEA500]/5 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
-        {/* Fluid Container matching CADONCE Project Studio standard */}
-        <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8 animate-in fade-in duration-500">
-          
-          {/* Top Command Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-6 border-b border-white/5">
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400 shadow-lg shadow-amber-400/5 shrink-0">
-                  <span className="material-symbols-outlined text-2xl">rocket_launch</span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.25em] text-amber-400">Pipeline Initiation</span>
-                    <span className="text-white/20 text-xs">•</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">New CAD Entry</span>
-                  </div>
-                  <h1 className="font-headline text-2xl sm:text-3xl font-black tracking-tight text-white uppercase italic leading-none mt-1">
-                    Initialize <span className="text-[#F59E0B]">Project</span>
-                  </h1>
-                </div>
-              </div>
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-2">
-                Configure project specifications, client assignments, CAD assets & financial billing logic
-              </p>
+        {/* TopAppBar */}
+        <header className="fixed top-0 w-full z-50 bg-[#7b7767]/80 backdrop-blur-xl dark:bg-stone-900/80 shadow-[0_0_20px_rgba(252,224,3,0.12)] flex justify-between items-center px-6 py-4">
+          <Link href="/projects" className="material-symbols-outlined text-[#fce003] hover:opacity-80 transition-opacity" style={{ fontVariationSettings: "'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24" }}>
+            arrow_back
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-[#fce003]/20">
+              <img className="w-full h-full object-cover" alt="professional portrait of a jewelry designer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0u8M2vSRdnjPNptfjInHTEY5TvkihgUF6SKjJ87EvcwfpbMSr_W5LvRDBdPFG-DgM_oTOxLkPAbIa5nvfGQIY55GbGySSmpBXcIdTR87BgFcBudRfHn_VIHpz5uKc2MuH0KDF3TTALBR_1qbPPXzyzRwAlLqEJ8DaMzjXeMYcWoUXx1Gw2x224dJRZ9aafiAtvylny_16Qz0R_wSTJkDAXrlWeemFmEuq6Q9eUJRfZbrmOM2YDhJLvkm-9dWqk89MIS2fG8MMYwg" />
             </div>
+          </div>
+        </header>
 
-            {/* Top Quick Actions */}
-            <div className="flex items-center gap-3 self-stretch sm:self-auto justify-end">
-              <button 
-                type="button" 
-                onClick={() => router.push('/projects')} 
-                className="px-5 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white text-xs font-bold uppercase tracking-wider transition-all"
-              >
-                Discard
-              </button>
-              <button
-                type="button"
-                onClick={() => formRef.current?.requestSubmit()}
-                disabled={saving}
-                className="px-6 py-2.5 rounded-xl bg-[#F59E0B] text-black font-black uppercase italic tracking-wider text-xs shadow-lg shadow-amber-400/10 hover:brightness-110 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-              >
-                {saving ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span>
-                    <span>Initializing...</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="material-symbols-outlined text-base font-bold">bolt</span>
-                    <span>Initialize Project</span>
-                  </>
-                )}
-              </button>
+        <main className="pt-24 px-6 max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <span className="font-label text-[10px] font-bold uppercase tracking-widest text-[#fce003] mb-1 block">New Entry</span>
+              <h2 className="font-headline text-4xl font-extrabold tracking-tight text-white">Initialize Project</h2>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => window.history.back()} className="px-4 py-2 text-sm font-bold text-stone-400 hover:bg-white/5 rounded transition-all">DISCARD</button>
             </div>
           </div>
 
-          {/* Form Layout: 12-Column Responsive Enterprise Bento Architecture */}
-          <form ref={formRef} onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
-            
-            {/* Primary Column (8 Cols) - Core Details, Media Hub, Brief */}
-            <div className="lg:col-span-8 space-y-8">
-              
-              {/* Project Identity & Assignment Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-xl relative z-30 group">
-                <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                      <span className="material-symbols-outlined text-xl">assignment</span>
-                    </div>
-                    <div>
-                      <h3 className="font-headline text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                        Core Assignment & Identity
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        Project naming, client partnership and lead designer assignment
-                      </p>
-                    </div>
-                  </div>
-                  <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-amber-400/10 text-amber-400 border border-amber-400/20">
-                    Mandatory
-                  </span>
-                </div>
-
-                <div className="space-y-6">
-                  {/* Project Title Input */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Project Title / Model Name <span className="text-amber-400">*</span>
-                      </label>
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">Headline Descriptor</span>
-                    </div>
-                    <div className="relative">
-                      <input 
-                        name="title" 
-                        required 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white text-base font-bold placeholder:text-stone-600 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner" 
-                        placeholder="e.g., Art Deco Emerald Diamond Engagement Ring" 
-                        type="text" 
+          {/* Form Layout: Bento Style */}
+          <form 
+            ref={formRefCallback}
+            onChange={handleFormChange}
+            action={handleSubmit} 
+            className="grid grid-cols-1 md:grid-cols-12 gap-6"
+          >
+            {/* Main Content Area */}
+            <div className="md:col-span-8 space-y-6">
+              {/* Basic Info Card */}
+              <div className="bg-surface-container p-6 rounded-lg shadow-sm hover:shadow-[0_0_20px_rgba(252,224,3,0.25)] focus-within:shadow-[0_0_20px_rgba(252,224,3,0.25)] transition-all">
+                <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#fce003]">info</span> Core Details
+                </h3>
+                <div className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Assigned Client</label>
+                      <SearchableDropdown
+                        name="client"
+                        placeholder="Select Client..."
+                        options={clients.map((c) => ({
+                          value: c.companyName || c.name,
+                          label: c.companyName || c.name
+                        }))}
+                        value={selectedClientName}
+                        onChange={(val) => setSelectedClientName(val)}
+                        required
                       />
-                      <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-stone-600 text-lg pointer-events-none">diamond</span>
                     </div>
-                  </div>
-
-                  {/* Client & Designer Searchable Selectors */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ClientSearchSelect
-                      clients={clients}
-                      selectedClient={selectedClient}
-                      onSelect={(val) => setSelectedClient(val)}
-                    />
-
-                    <DesignerSearchSelect
-                      designers={designers}
-                      selectedDesigner={selectedDesignerName}
-                      onSelect={(val) => setSelectedDesignerName(val)}
-                    />
-                  </div>
-
-                  {/* Order ID & Tag */}
-                  <div className="space-y-2">
-                    <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                      Tracking / Order ID
-                    </label>
-                    <div className="relative">
-                      <input 
-                        name="orderId" 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner" 
-                        placeholder="e.g. #ORD-2026-9042 (Leave empty for auto-generation)" 
-                        type="text" 
+                    <div className="space-y-2">
+                      <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Assigned Designer</label>
+                      <SearchableDropdown
+                        name="designer"
+                        placeholder="Select Designer..."
+                        options={designers.map((d) => ({
+                          value: d.fullName,
+                          label: `${d.fullName} (${d.specialty})`
+                        }))}
+                        value={selectedDesignerName}
+                        onChange={(val) => setSelectedDesignerName(val)}
+                        required
                       />
-                      <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 text-sm pointer-events-none">tag</span>
                     </div>
                   </div>
-                </div>
-              </div>
-
-              {/* Reference Gallery & CAD Media Hub Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
-                <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                      <span className="material-symbols-outlined text-xl">perm_media</span>
+                  <div className="space-y-2 mt-5">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Order ID</label>
+                    <input name="orderId" required className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-700 text-sm text-white" placeholder="e.g. #ORD-1234" type="text" />
+                  </div>
+                  <div className="space-y-4">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Reference Gallery</label>
+                    
+                    {/* Cloudinary Media Hub */}
+                    <div className="bg-stone-950/40 rounded-2xl p-6 border border-white/[0.03] shadow-inner">
+                      <CloudinaryUpload 
+                        onUpload={(url, type) => {
+                          setGallery(prev => [...prev, { url, type, uploadedAt: new Date().toISOString() }]);
+                        }} 
+                      />
                     </div>
-                    <div>
-                      <h3 className="font-headline text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                        Reference Media & 3D Assets Hub
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        CAD 3DM files, STL meshes, inspiration photos and render walkthroughs
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
-                      {gallery.length} {gallery.length === 1 ? 'Asset' : 'Assets'} Staged
-                    </span>
-                  </div>
-                </div>
 
-                <div className="space-y-4">
-                  {/* Cloudinary Media Hub Dropzone */}
-                  <div className="bg-black/40 rounded-2xl p-6 sm:p-8 border border-white/5 shadow-inner hover:border-amber-400/20 transition-all">
-                    <CloudinaryUpload 
-                      onUpload={(url, type) => {
-                        setGallery(prev => [...prev, { url, type, uploadedAt: new Date().toISOString() }]);
-                      }} 
-                    />
-                  </div>
-
-                  {/* Asset Format Tags Bar */}
-                  <div className="flex items-center justify-between flex-wrap gap-2 pt-2 px-1">
-                    <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-wider text-zinc-500">
-                      <span>Supported Formats:</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">.3DM</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">.STL</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">.OBJ</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">JPG / PNG</span>
-                      <span className="px-2 py-0.5 rounded bg-white/5 text-zinc-400 border border-white/5">MP4 (100MB)</span>
-                    </div>
-                    <p className="text-[9px] text-amber-400/70 font-bold uppercase tracking-widest">Encrypted Cloud Storage</p>
-                  </div>
-
-                  {/* Live Asset Preview Grid */}
-                  {gallery.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4 pt-4 border-t border-white/5">
-                      {gallery.map((item: any, idx: number) => {
-                        const isVideo = item.type === 'video' || item.url?.endsWith('.mp4') || item.url?.includes('/video/upload/');
-                        return (
-                          <div key={idx} className="group relative aspect-square rounded-xl bg-black/60 border border-white/10 overflow-hidden shadow-xl hover:border-amber-400/40 transition-all">
-                            {isVideo ? (
-                              <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-950">
-                                <span className="material-symbols-outlined text-amber-400 text-2xl">play_circle</span>
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">Video</span>
-                              </div>
-                            ) : (
-                              <img src={item.url} alt="Staged Asset" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                            )}
-                            <button 
-                              type="button"
-                              onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))}
-                              className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/80 hover:bg-red-500 text-white rounded-full flex items-center justify-center transition-colors shadow-lg"
-                              title="Remove Asset"
-                            >
-                              <span className="material-symbols-outlined text-xs">close</span>
-                            </button>
-                            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-center">
-                              <span className="text-[8px] font-mono text-zinc-300 truncate block">Asset #{idx + 1}</span>
+                    {/* Live Asset Preview */}
+                    {gallery.length > 0 && (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4">
+                        {gallery.map((item: any, idx: number) => {
+                          const isVideo = item.type === 'video' || item.url?.endsWith('.mp4') || item.url?.includes('/video/upload/');
+                          return (
+                            <div key={idx} className="group relative aspect-square rounded-xl bg-stone-900 border border-white/5 overflow-hidden shadow-xl">
+                              {isVideo ? (
+                                <div className="w-full h-full flex flex-col items-center justify-center">
+                                  <span className="material-symbols-outlined text-primary text-xl">play_circle</span>
+                                  <span className="text-[6px] font-black text-outline uppercase tracking-widest mt-1">Video</span>
+                                </div>
+                              ) : (
+                                <img src={item.url} alt="Asset" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                              )}
+                              <button 
+                                type="button"
+                                onClick={() => setGallery(prev => prev.filter((_, i) => i !== idx))}
+                                className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+                              >
+                                <span className="material-symbols-outlined text-[10px] text-white">close</span>
+                              </button>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  
-                  {/* Hidden Input for form submission */}
-                  <input 
-                    type="hidden" 
-                    name="images" 
-                    value={JSON.stringify(gallery)} 
+                          );
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Hidden Input for form submission */}
+                    <input 
+                      type="hidden" 
+                      name="images" 
+                      value={JSON.stringify(gallery)} 
+                    />
+                    <p className="text-[8px] text-outline font-bold uppercase tracking-widest text-center mt-2 opacity-50">Assets are staged for project initialization</p>
+                  </div>
+                  <CadFileUpload 
+                    projectId={projectId} 
+                    onUploadSuccess={(path) => console.log('File uploaded to:', path)}
                   />
                 </div>
               </div>
 
-              {/* CAD Specifications & Design Brief Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden group">
-                <div className="flex items-center justify-between pb-6 mb-6 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                      <span className="material-symbols-outlined text-xl">precision_manufacturing</span>
+              {/* Financials Card */}
+              <div className="bg-surface-container p-6 rounded-lg shadow-sm hover:shadow-[0_0_20px_rgba(252,224,3,0.25)] focus-within:shadow-[0_0_20px_rgba(252,224,3,0.25)] transition-all">
+                <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#fce003]">payments</span> Financial Logic
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Revenue</label>
+                    <div className="relative flex items-center bg-surface-container-lowest rounded overflow-hidden">
+                      <div className="relative">
+                        <select 
+                          name="revenueCurrency" 
+                          defaultValue="$"
+                          className="bg-transparent border-none py-3 pl-3 pr-8 text-[#fce003] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
+                        >
+                          <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
+                          <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
+                          <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
+                          <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
+                          <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#fce003] scale-75">expand_more</span>
+                      </div>
+                      <input name="revenue" required className="w-full bg-transparent border-none p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-700 text-white" placeholder="0.00" type="number" />
                     </div>
-                    <div>
-                      <h3 className="font-headline text-base sm:text-lg font-black text-white uppercase tracking-tight">
-                        CAD Specifications & Technical Brief
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        Required design proficiencies, stone setting parameters and client instructions
-                      </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Expense</label>
+                    <div className="relative flex items-center bg-surface-container-lowest rounded overflow-hidden">
+                      <div className="relative">
+                        <select 
+                          name="expenseCurrency" 
+                          defaultValue="₹"
+                          className="bg-transparent border-none py-3 pl-3 pr-8 text-error font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
+                        >
+                          <option value="$" className="text-stone-900 bg-white">$ (USD)</option>
+                          <option value="€" className="text-stone-900 bg-white">€ (EUR)</option>
+                          <option value="£" className="text-stone-900 bg-white">£ (GBP)</option>
+                          <option value="¥" className="text-stone-900 bg-white">¥ (JPY)</option>
+                          <option value="₹" className="text-stone-900 bg-white">₹ (INR)</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-error scale-75">expand_more</span>
+                      </div>
+                      <input name="expense" required className="w-full bg-transparent border-none p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-700 text-white" placeholder="0.00" type="number" />
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  {/* Skills & Tags Area */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Technical Skills & CAD Disciplines
-                      </label>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase">Search / Add</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 pt-5 border-t border-white/5">
+                  <div className="space-y-2">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Payment Status</label>
+                    <div className="relative group">
+                      <select name="paymentStatus" className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white">
+                        <option value="Unpaid">Unpaid</option>
+                        <option value="50% Advance">50% Advance</option>
+                        <option value="Partial Payment">Partial Payment</option>
+                        <option value="Paid">Fully Paid</option>
+                      </select>
+                      <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">account_balance_wallet</span>
                     </div>
-                    
-                    {/* Active Selected Tags Display */}
-                    <div className="flex flex-wrap gap-2 min-h-[44px] p-2.5 bg-black/40 rounded-xl border border-white/10 shadow-inner items-center">
-                      {skills.length === 0 ? (
-                        <span className="text-[11px] text-stone-500 italic ml-2">No technical tags added. Click presets below or type custom skills.</span>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Amount Paid</label>
+                    <input name="paidAmount" className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-700 text-sm text-white" placeholder="0.00" type="number" defaultValue="0" />
+                  </div>
+                </div>
+
+                {/* Conditional Escrow Option for Freelancers */}
+                {designers.find(d => d.fullName === selectedDesignerName)?.employmentType === 'Freelancer' && (
+                  <div className="mt-6 p-4 rounded-xl bg-orange-500/5 border border-orange-500/10 animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                          <span className="material-symbols-outlined text-orange-500 text-lg">verified_user</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest">Secure Escrow Protocol</p>
+                          <p className="text-[9px] text-stone-500 font-medium max-w-[200px]">Optional: Hold funds until project delivery for external talent.</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" name="useEscrow" className="sr-only peer" />
+                        <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sidebar Content */}
+            <div className="md:col-span-4 space-y-6">
+              {/* Timeline Card */}
+              <div className="bg-surface-container-high p-6 rounded-lg shadow-[0_0_15px_rgba(252,224,3,0.05)] border border-white/5">
+                <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm text-[#fce003]">calendar_today</span> Timeline
+                </h3>
+                <div className="space-y-5">
+                  <DatePickerFacade name="orderDate" label="Order Date" defaultValue={draftOrderDate} />
+                  <DatePickerFacade name="deadlineDate" label="Deadline Date" isDeadline={true} defaultValue={draftDeadlineDate} />
+                </div>
+              </div>
+
+              {/* Project Details Card */}
+              <div className="bg-surface-container p-6 rounded-lg shadow-sm border border-white/5 hover:shadow-[0_0_20px_rgba(252,224,3,0.25)] focus-within:shadow-[0_0_20px_rgba(252,224,3,0.25)] transition-all">
+                <h3 className="font-headline text-lg font-bold text-white mb-6 flex items-center gap-2 uppercase tracking-tight">
+                  <span className="material-symbols-outlined text-sm text-[#fce003]">precision_manufacturing</span> Project Specifications
+                </h3>
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Project Title</label>
+                    <input name="title" required className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-600 text-white" placeholder="e.g., Art Deco Diamond Ring" type="text" />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Skills Required</label>
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-2 bg-stone-900/40 border border-white/5 rounded-lg">
+                      {selectedSkills.length === 0 ? (
+                        <span className="text-[9px] font-bold text-stone-600 uppercase tracking-widest p-1">No skills selected</span>
                       ) : (
-                        skills.map((skill) => (
-                          <span key={skill} className="flex items-center gap-2 px-3 py-1 bg-amber-400/10 border border-amber-400/30 rounded-lg text-xs font-bold text-amber-400 uppercase tracking-wider shadow-sm">
+                        selectedSkills.map((skill) => (
+                          <span key={skill} className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#fce003]/10 border border-[#fce003]/20 text-[9px] font-black text-[#fce003] uppercase rounded">
                             {skill}
                             <button
                               type="button"
-                              onClick={() => setSkills(skills.filter(s => s !== skill))}
-                              className="w-4 h-4 rounded-full bg-amber-400/20 hover:bg-amber-400 hover:text-black flex items-center justify-center text-[9px] text-amber-300 font-bold transition-colors"
+                              onClick={() => setSelectedSkills(prev => prev.filter(s => s !== skill))}
+                              className="opacity-60 hover:opacity-100 hover:text-red-400 transition-colors"
                             >
-                              ✕
+                              <span className="material-symbols-outlined text-[10px]">close</span>
                             </button>
                           </span>
                         ))
                       )}
                     </div>
-
-                    {/* Skill Input Row */}
-                    <div className="flex gap-2">
-                      <div className="relative flex-grow">
+                    <div className="space-y-3">
+                      <div className="relative">
+                        <select 
+                          value=""
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val && !selectedSkills.includes(val)) {
+                              setSelectedSkills(prev => [...prev, val]);
+                            }
+                          }}
+                          className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm"
+                        >
+                          <option value="">Add from presets...</option>
+                          <option>3D CAD Jewellery</option>
+                          <option>Rendering</option>
+                          <option>Sketch</option>
+                          <option>Zbrush Modeller</option>
+                        </select>
+                        <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 my-1">
+                        <div className="h-px bg-white/5 flex-grow"></div>
+                        <span className="text-[8px] font-black text-stone-600 uppercase tracking-widest leading-none">or add custom</span>
+                        <div className="h-px bg-white/5 flex-grow"></div>
+                      </div>
+                      
+                      <div className="flex gap-2">
                         <input
                           type="text"
-                          value={skillInput}
-                          onChange={(e) => setSkillInput(e.target.value)}
+                          placeholder="Type custom skill..."
+                          value={customSkill}
+                          onChange={(e) => setCustomSkill(e.target.value)}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              const val = skillInput.trim();
-                              if (val && !skills.includes(val)) {
-                                setSkills([...skills, val]);
-                                setSkillInput('');
+                              if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+                                setSelectedSkills(prev => [...prev, customSkill.trim()]);
+                                setCustomSkill('');
                               }
                             }
                           }}
-                          placeholder="Type custom skill tag and press Enter..."
-                          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder:text-stone-600 focus:outline-none focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all shadow-inner"
+                          className="flex-grow bg-surface-container-lowest border-none rounded-lg p-3 text-sm focus:ring-2 focus:ring-[#fce003] outline-none text-white placeholder:text-stone-700"
                         />
-                        <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-600 text-base pointer-events-none">keyboard</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const val = skillInput.trim();
-                          if (val && !skills.includes(val)) {
-                            setSkills([...skills, val]);
-                            setSkillInput('');
-                          }
-                        }}
-                        className="px-5 py-3 bg-white/10 border border-white/10 hover:bg-[#F59E0B] hover:text-black rounded-xl text-xs font-black uppercase tracking-wider text-white transition-all shrink-0 active:scale-95"
-                      >
-                        Add Tag
-                      </button>
-                    </div>
-
-                    {/* Quick Presets */}
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mr-1">Quick Add:</span>
-                      {PRESET_SKILLS.map((preset) => (
                         <button
-                          key={preset}
                           type="button"
-                          onClick={() => handleQuickAddSkill(preset)}
-                          disabled={skills.includes(preset)}
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
-                            skills.includes(preset)
-                              ? 'bg-white/5 border-white/5 text-stone-600 cursor-not-allowed'
-                              : 'bg-white/5 border-white/10 text-stone-300 hover:border-amber-400/40 hover:text-amber-400 hover:bg-amber-400/5'
-                          }`}
+                          onClick={() => {
+                            if (customSkill.trim() && !selectedSkills.includes(customSkill.trim())) {
+                              setSelectedSkills(prev => [...prev, customSkill.trim()]);
+                              setCustomSkill('');
+                            }
+                          }}
+                          className="px-4 bg-white/5 border border-white/10 hover:bg-[#fce003] hover:text-black rounded-lg transition-all text-[#fce003] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1"
                         >
-                          + {preset}
+                          <span className="material-symbols-outlined text-sm leading-none">add</span>
+                          Add
                         </button>
-                      ))}
+                      </div>
                     </div>
+                    <input type="hidden" name="skills" value={JSON.stringify(selectedSkills)} />
                   </div>
-
-                  {/* Design Brief Textarea */}
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Design Brief &amp; Technical Notes <span className="text-amber-400">*</span>
-                      </label>
-                      <span className="text-[9px] text-zinc-500 font-bold uppercase">Manufacturing Specs</span>
-                    </div>
-                    <textarea 
-                      name="brief" 
-                      required 
-                      className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-white placeholder:text-stone-600 text-sm leading-relaxed resize-none focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner" 
-                      placeholder="Specify finger sizes, metal alloy target (e.g. 18K Yellow Gold / 950 Platinum), stone measurements, prong setting thickness, hollow interior tolerances, and CNC/wax casting requirements..." 
-                      rows={5}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Secondary Column (4 Cols) - Timeline, Financials, Launch Dock */}
-            <div className="lg:col-span-4 space-y-8">
-              
-              {/* Timeline & Delivery Schedule Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-7 shadow-xl relative overflow-hidden group">
-                <div className="flex items-center justify-between pb-5 mb-5 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                      <span className="material-symbols-outlined text-xl">schedule</span>
-                    </div>
-                    <div>
-                      <h3 className="font-headline text-base font-black text-white uppercase tracking-tight">
-                        Delivery Timeline
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        Queue scheduling & milestones
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  <DatePickerFacade name="orderDate" label="Order Date" />
-                  <DatePickerFacade name="deadlineDate" label="Target Delivery Deadline" isDeadline={true} />
-                  
-                  <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
-                    <span className="material-symbols-outlined text-amber-400 text-lg">alarm_on</span>
-                    <p className="text-[10px] text-zinc-400 leading-relaxed font-medium">
-                      Automated milestone alerts are dispatched to the assigned designer 24h prior to deadline.
-                    </p>
+                    <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400 ml-1">Design Brief &amp; Notes</label>
+                    <textarea name="brief" required className="w-full bg-surface-container-lowest border-none rounded-lg p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all placeholder:text-stone-600 text-sm resize-none text-white" placeholder="Specify stone sizes, setting styles, and intricate CAD requirements..." rows={4}></textarea>
                   </div>
                 </div>
               </div>
 
-              {/* Financial Logic & Billing Protocol Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-7 shadow-xl relative overflow-hidden group">
-                <div className="flex items-center justify-between pb-5 mb-5 border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
-                      <span className="material-symbols-outlined text-xl">payments</span>
-                    </div>
-                    <div>
-                      <h3 className="font-headline text-base font-black text-white uppercase tracking-tight">
-                        Financial Logic
-                      </h3>
-                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
-                        Revenue, expense & settlement
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-5">
-                  {/* Revenue Input */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Client Revenue <span className="text-amber-400">*</span>
-                      </label>
-                      <span className="text-[9px] font-bold text-amber-400 uppercase">Receivable</span>
-                    </div>
-                    <div className="relative flex items-center bg-black/40 border border-white/10 rounded-xl focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 transition-all overflow-hidden shadow-inner">
-                      <div className="relative border-r border-white/10 bg-white/5">
-                        <select 
-                          name="revenueCurrency" 
-                          value={revCurr}
-                          onChange={(e) => setRevCurr(e.target.value)}
-                          className="bg-transparent border-none py-3.5 pl-3 pr-8 text-amber-400 font-black text-xs focus:ring-0 appearance-none cursor-pointer outline-none"
-                        >
-                          <option value="USD" className="bg-[#14120c] text-white">$ (USD)</option>
-                          <option value="EUR" className="bg-[#14120c] text-white">€ (EUR)</option>
-                          <option value="GBP" className="bg-[#14120c] text-white">£ (GBP)</option>
-                          <option value="JPY" className="bg-[#14120c] text-white">¥ (JPY)</option>
-                          <option value="INR" className="bg-[#14120c] text-white">₹ (INR)</option>
-                        </select>
-                        <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs">expand_more</span>
-                      </div>
-                      <input 
-                        name="revenue" 
-                        required 
-                        value={revenueInput}
-                        onChange={(e) => setRevenueInput(e.target.value)}
-                        className="w-full bg-transparent border-none p-3.5 text-white font-mono font-bold text-sm focus:outline-none focus:ring-0 placeholder:text-stone-700" 
-                        placeholder="0.00" 
-                        type="number" 
-                        step="any"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Expense Input */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Production Expense <span className="text-amber-400">*</span>
-                      </label>
-                      <span className="text-[9px] font-bold text-red-400 uppercase">Cost / Payout</span>
-                    </div>
-                    <div className="relative flex items-center bg-black/40 border border-white/10 rounded-xl focus-within:border-amber-400 focus-within:ring-1 focus-within:ring-amber-400 transition-all overflow-hidden shadow-inner">
-                      <div className="relative border-r border-white/10 bg-white/5">
-                        <select 
-                          name="expenseCurrency" 
-                          value={expCurr}
-                          onChange={(e) => setExpCurr(e.target.value)}
-                          className="bg-transparent border-none py-3.5 pl-3 pr-8 text-red-400 font-black text-xs focus:ring-0 appearance-none cursor-pointer outline-none"
-                        >
-                          <option value="INR" className="bg-[#14120c] text-white">₹ (INR)</option>
-                          <option value="USD" className="bg-[#14120c] text-white">$ (USD)</option>
-                          <option value="EUR" className="bg-[#14120c] text-white">€ (EUR)</option>
-                          <option value="GBP" className="bg-[#14120c] text-white">£ (GBP)</option>
-                          <option value="JPY" className="bg-[#14120c] text-white">¥ (JPY)</option>
-                        </select>
-                        <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-red-400 text-xs">expand_more</span>
-                      </div>
-                      <input 
-                        name="expense" 
-                        required 
-                        value={expenseInput}
-                        onChange={(e) => setExpenseInput(e.target.value)}
-                        className="w-full bg-transparent border-none p-3.5 text-white font-mono font-bold text-sm focus:outline-none focus:ring-0 placeholder:text-stone-700" 
-                        placeholder="0.00" 
-                        type="number" 
-                        step="any"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Payment Status & Amount Paid */}
-                  <div className="space-y-4 pt-3 border-t border-white/5">
-                    <div className="space-y-2">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Initial Payment Status
-                      </label>
-                      <div className="relative group">
-                        <select 
-                          name="paymentStatus" 
-                          className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 pr-10 text-white font-semibold text-xs focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all appearance-none cursor-pointer shadow-inner"
-                        >
-                          <option value="Unpaid" className="bg-[#14120c]">Unpaid</option>
-                          <option value="50% Advance" className="bg-[#14120c]">50% Advance</option>
-                          <option value="Partial Payment" className="bg-[#14120c]">Partial Payment</option>
-                          <option value="Paid" className="bg-[#14120c]">Fully Paid</option>
-                        </select>
-                        <span className="material-symbols-outlined absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-stone-500 group-hover:text-amber-400 transition-colors text-sm">
-                          account_balance_wallet
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                        Amount Paid Upfront
-                      </label>
-                      <input 
-                        name="paidAmount" 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 text-white font-mono text-xs focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition-all placeholder:text-stone-700 shadow-inner" 
-                        placeholder="0.00" 
-                        type="number" 
-                        defaultValue="0" 
-                        step="any"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Conditional Escrow Option for Freelancers */}
-                  {selectedDesigner?.employmentType === 'Freelancer' && (
-                    <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-                            <span className="material-symbols-outlined text-lg">verified_user</span>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-amber-400 uppercase tracking-wider">Freelancer Escrow Hold</p>
-                            <p className="text-[9px] text-zinc-400 font-medium">Safeguard designer payout until final 3D file delivery</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                          <input type="checkbox" name="useEscrow" className="sr-only peer" />
-                          <div className="w-10 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                        </label>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Pipeline Launch & Action Card */}
-              <div className="bg-zinc-900/40 border border-zinc-800/60 backdrop-blur-xl rounded-2xl p-6 sm:p-7 shadow-2xl relative overflow-hidden group space-y-4">
-                <button 
-                  disabled={saving} 
-                  type="submit"
-                  className="w-full electric-gradient text-[#383100] font-black py-4 px-6 rounded-xl shadow-[0_0_30px_rgba(252,224,3,0.25)] active:scale-[0.98] transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer hover:brightness-105 active:brightness-95 select-none" 
-                >
-                  {saving ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-[#383100] border-t-transparent rounded-full animate-spin"></span>
-                      <span>Saving &amp; Initializing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Initialize Project</span>
-                      <span className="material-symbols-outlined font-black text-lg">bolt</span>
-                    </>
-                  )}
+              {/* Actions */}
+              <div className="pt-4">
+                <button disabled={saving} className="w-full electric-gradient text-[#383100] font-black py-4 rounded-lg shadow-[0_0_20px_rgba(252,224,3,0.3)] active:scale-95 transition-all uppercase tracking-widest text-sm flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed" type="submit">
+                  <span>{saving ? 'Saving...' : 'Save Project'}</span>
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{saving ? 'hourglass_top' : 'bolt'}</span>
                 </button>
-
-                <div className="flex items-center justify-between text-[9px] text-zinc-500 uppercase font-bold tracking-wider px-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    Instant 0ms Pipeline Sync
-                  </span>
-                  <span>CADONCE v2.4</span>
-                </div>
+                <p className="text-center text-[10px] text-stone-500 mt-4 font-label uppercase tracking-tighter">Automatic sync enabled</p>
               </div>
             </div>
           </form>
-        </div>
+        </main>
       </div>
     </AuthGuard>
   );
 }
-

@@ -14,7 +14,7 @@ function SignupForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [selectedRole, setSelectedRole] = useState<'organization' | 'designer'>('organization');
+  const [selectedRole, setSelectedRole] = useState<'organization' | 'designer'>(isDesigner ? 'designer' : 'organization');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -130,7 +130,7 @@ function SignupForm() {
       <div>
         <div className="flex justify-between items-start mb-1">
           <h2 className="text-3xl font-headline font-black text-white tracking-[0.1em] uppercase italic">
-            Join the <span className="text-[#F59E0B]">Studio</span>
+            Join the <span className="text-[#fce003]">Studio</span>
           </h2>
           <span className="text-yellow-400 font-bold text-xs bg-yellow-400/10 px-2 py-1 rounded-md whitespace-nowrap">
             Step {step} / 3
@@ -166,7 +166,29 @@ function SignupForm() {
           <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
             <div>
               <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
-                Organization Name
+                Choose Your Role
+              </label>
+              <div className="flex bg-white/5 p-1 rounded-xl border border-white/5 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('organization')}
+                  className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedRole === 'organization' ? 'electric-gradient text-black shadow-lg' : 'text-neutral-500 hover:text-white'}`}
+                >
+                  Organization
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('designer')}
+                  className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${selectedRole === 'designer' ? 'electric-gradient text-black shadow-lg' : 'text-neutral-500 hover:text-white'}`}
+                >
+                  CAD Designer
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                {selectedRole === 'organization' ? 'Organization' : 'Designer Name'}
               </label>
               <input
                 required={step === 1}
@@ -174,7 +196,7 @@ function SignupForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-surface-container border border-white/5 rounded-xl py-3 px-4 text-white placeholder:text-neutral-700 focus:border-yellow-400 focus:bg-white/5 transition-all outline-none"
-                placeholder="e.g. Apex Design Studio"
+                placeholder={selectedRole === 'organization' ? "e.g. Apex Design Studio" : "e.g. John Doe"}
               />
             </div>
           </div>
@@ -298,4 +320,3 @@ export default function SignupPage() {
     </Suspense>
   );
 }
-

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/lib/supabaseServer';
 
 /** Returns a valid access token, refreshing if expired */
-async function getValidAccessToken(settings: any, userId: string): Promise<string | null> {
+async function getValidAccessToken(supabaseServer: any, settings: any, userId: string): Promise<string | null> {
   const { gmailAccessToken, gmailRefreshToken, gmailTokenExpiry, gmailClientId, gmailClientSecret } = settings;
   if (!gmailAccessToken) return null;
 
@@ -23,11 +23,10 @@ async function getValidAccessToken(settings: any, userId: string): Promise<strin
   const tokens = await res.json();
   if (!tokens.access_token) return null;
 
-  await supabase.from('settings').upsert({
-    user_id: userId,
+  await supabaseServer.from('settings').update({
     gmailAccessToken: tokens.access_token,
     gmailTokenExpiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-  }, { onConflict: 'user_id' });
+  }).eq('user_id', userId);
   
   return tokens.access_token;
 }
@@ -63,12 +62,13 @@ function extractBody(payload: any): { html: string | null; text: string | null }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { data: { user } } = await supabase.auth.getUser();
+  const supabaseServer = await createClient();
+  const { data: { user } } = await supabaseServer.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data } = await supabase.from('settings').select('*').eq('user_id', user.id).limit(1);
+  const { data } = await supabaseServer.from('settings').select('*').eq('user_id', user.id).limit(1);
   const settings = data?.[0] || {};
-  const accessToken = await getValidAccessToken(settings, user.id);
+  const accessToken = await getValidAccessToken(supabaseServer, settings, user.id);
 
   if (!accessToken) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });

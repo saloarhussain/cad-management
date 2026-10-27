@@ -62,7 +62,7 @@ export default function PricingContent() {
           email: "",
         },
         theme: {
-          color: "#F59E0B",
+          color: "#fce003",
         },
       };
 
@@ -201,4 +201,3 @@ export default function PricingContent() {
     </div>
   );
 }
-
