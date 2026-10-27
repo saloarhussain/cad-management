@@ -8,6 +8,7 @@ import { PLATFORM_CONFIG, getCurrencySymbol } from '@/lib/config';
 
 interface DashboardContentProps {
   loading?: boolean;
+  dataReady?: boolean;
   stats: any;
   recentProjects: any[];
   upcomingDeadlines: any[];
@@ -27,6 +28,7 @@ interface DashboardContentProps {
 
 export default function DashboardContent({
   loading = false,
+  dataReady,
   stats,
   recentProjects,
   filteredProjects,
@@ -43,6 +45,7 @@ export default function DashboardContent({
   endDate,
   setEndDate
 }: DashboardContentProps) {
+  const isFiguresLoading = loading || (dataReady !== undefined && !dataReady);
   const { user } = useAuth();
   const isFounder = user?.email === PLATFORM_CONFIG.FOUNDER_EMAIL;
 
@@ -323,20 +326,20 @@ export default function DashboardContent({
             <div className="hidden md:flex items-center gap-3">
               <div className="bg-surface-container rounded-full px-4 py-2 flex items-center justify-center gap-1.5 border border-white/5 min-w-0">
                 <span className="material-symbols-outlined text-[#F59E0B] text-[16px] sm:text-[18px] shrink-0">person</span>
-                {loading ? (
+                {isFiguresLoading ? (
                   <span className="inline-block w-24 h-2.5 rounded bg-white/10 skeleton-shimmer align-middle" />
                 ) : (
-                  <span className="text-[11px] font-bold text-on-surface tracking-wide truncate">
+                  <span className="text-[11px] font-bold text-on-surface tracking-wide truncate animate-in fade-in duration-300">
                     {stats.totalClients} Clients <span className="text-[#F59E0B]">({activeClientsCount} Active)</span>
                   </span>
                 )}
               </div>
               <div className="bg-surface-container rounded-full px-4 py-2 flex items-center justify-center gap-1.5 border border-white/5 min-w-0">
                 <span className="material-symbols-outlined text-[#2DD4BF] text-[16px] sm:text-[18px] shrink-0">groups</span>
-                {loading ? (
+                {isFiguresLoading ? (
                   <span className="inline-block w-24 h-2.5 rounded bg-white/10 skeleton-shimmer align-middle" />
                 ) : (
-                  <span className="text-[11px] font-bold text-on-surface tracking-wide truncate">
+                  <span className="text-[11px] font-bold text-on-surface tracking-wide truncate animate-in fade-in duration-300">
                     {stats.totalDesigners} Team <span className="text-[#2DD4BF]">({activeDesignersCount} Active)</span>
                   </span>
                 )}
@@ -348,20 +351,20 @@ export default function DashboardContent({
           <div className="grid grid-cols-2 gap-2 w-full md:hidden">
             <div className="bg-surface-container rounded-full px-3 py-2 flex items-center justify-center gap-1.5 border border-white/5 w-full min-w-0">
               <span className="material-symbols-outlined text-[#F59E0B] text-[16px] sm:text-[18px] shrink-0">person</span>
-              {loading ? (
+              {isFiguresLoading ? (
                 <span className="inline-block w-20 h-2.5 rounded bg-white/10 skeleton-shimmer align-middle" />
               ) : (
-                <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-on-surface tracking-wide truncate">
+                <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-on-surface tracking-wide truncate animate-in fade-in duration-300">
                   {stats.totalClients} Clients <span className="text-[#F59E0B]">({activeClientsCount} Active)</span>
                 </span>
               )}
             </div>
             <div className="bg-surface-container rounded-full px-3 py-2 flex items-center justify-center gap-1.5 border border-white/5 w-full min-w-0">
               <span className="material-symbols-outlined text-[#2DD4BF] text-[16px] sm:text-[18px] shrink-0">groups</span>
-              {loading ? (
+              {isFiguresLoading ? (
                 <span className="inline-block w-20 h-2.5 rounded bg-white/10 skeleton-shimmer align-middle" />
               ) : (
-                <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-on-surface tracking-wide truncate">
+                <span className="text-[9px] xs:text-[10px] sm:text-[11px] font-bold text-on-surface tracking-wide truncate animate-in fade-in duration-300">
                   {stats.totalDesigners} Team <span className="text-[#2DD4BF]">({activeDesignersCount} Active)</span>
                 </span>
               )}
@@ -659,8 +662,8 @@ export default function DashboardContent({
         {/* Bento Grid: Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
           {/* Revenue Card */}
-          <div onClick={() => !loading && handleCardClick('Total Revenue')} className="col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-[#F59E0B]/20 to-transparent shadow-2xl group active:scale-[0.98] transition-all cursor-pointer">
-            {loading ? (
+          <div onClick={() => !isFiguresLoading && handleCardClick('Total Revenue')} className="col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-[#F59E0B]/20 to-transparent shadow-2xl group active:scale-[0.98] transition-all cursor-pointer">
+            {isFiguresLoading ? (
               <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 lg:p-6 border border-white/5 relative overflow-hidden skeleton-card">
                 <div className="flex justify-between items-start mb-2">
                   <div className="h-2.5 w-24 bg-white/10 rounded-md skeleton-shimmer"></div>
@@ -676,7 +679,7 @@ export default function DashboardContent({
                 </div>
               </div>
             ) : (
-              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 lg:p-6 border border-white/5 relative overflow-hidden">
+              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 lg:p-6 border border-white/5 relative overflow-hidden animate-in fade-in duration-300">
                 {/* Info Tooltip */}
                 <div 
                   className="absolute top-3 right-3 z-30 group/tooltip"
@@ -711,8 +714,8 @@ export default function DashboardContent({
           </div>
 
           {/* Pending Card */}
-          <div onClick={() => !loading && handleCardClick('Pending')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-orange-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
-            {loading ? (
+          <div onClick={() => !isFiguresLoading && handleCardClick('Pending')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-orange-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
+            {isFiguresLoading ? (
               <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden skeleton-card">
                 <div className="flex justify-between items-start mb-2">
                   <div className="h-2.5 w-16 bg-white/10 rounded-md skeleton-shimmer"></div>
@@ -722,7 +725,7 @@ export default function DashboardContent({
                 <div className="h-2 w-14 bg-white/10 rounded skeleton-shimmer"></div>
               </div>
             ) : (
-              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
+              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden animate-in fade-in duration-300">
                 {/* Info Tooltip */}
                 <div 
                   className="absolute top-3 right-3 z-30 group/tooltip"
@@ -750,8 +753,8 @@ export default function DashboardContent({
           </div>
 
           {/* Costs Card */}
-          <div onClick={() => !loading && handleCardClick('Expenses')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-zinc-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
-            {loading ? (
+          <div onClick={() => !isFiguresLoading && handleCardClick('Expenses')} className="col-span-1 p-0.5 rounded-2xl bg-gradient-to-br from-zinc-500/20 to-transparent shadow-xl group active:scale-[0.98] transition-all cursor-pointer">
+            {isFiguresLoading ? (
               <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden skeleton-card">
                 <div className="flex justify-between items-start mb-2">
                   <div className="h-2.5 w-16 bg-white/10 rounded-md skeleton-shimmer"></div>
@@ -761,7 +764,7 @@ export default function DashboardContent({
                 <div className="h-2 w-20 bg-white/10 rounded skeleton-shimmer"></div>
               </div>
             ) : (
-              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
+              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden animate-in fade-in duration-300">
                 {/* Info Tooltip */}
                 <div 
                   className="absolute top-3 right-3 z-30 group/tooltip"
@@ -786,8 +789,8 @@ export default function DashboardContent({
           </div>
 
           {/* Payouts Due Card */}
-          <div onClick={() => !loading && handleCardClick('Payouts Due')} className={`col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br ${stats.payoutsDue > 0 ? 'from-red-500/30 to-transparent' : 'from-zinc-700/20 to-transparent'} shadow-2xl group active:scale-[0.98] transition-all cursor-pointer`}>
-            {loading ? (
+          <div onClick={() => !isFiguresLoading && handleCardClick('Payouts Due')} className={`col-span-2 lg:col-span-1 p-0.5 rounded-2xl bg-gradient-to-br ${stats.payoutsDue > 0 ? 'from-red-500/30 to-transparent' : 'from-zinc-700/20 to-transparent'} shadow-2xl group active:scale-[0.98] transition-all cursor-pointer`}>
+            {isFiguresLoading ? (
               <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden skeleton-card">
                 <div className="flex justify-between items-start mb-2">
                   <div className="h-2.5 w-20 bg-white/10 rounded-md skeleton-shimmer"></div>
@@ -800,7 +803,7 @@ export default function DashboardContent({
                 <div className="h-2 w-24 bg-white/10 rounded skeleton-shimmer mt-3"></div>
               </div>
             ) : (
-              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden">
+              <div className="h-full bg-surface-container-low rounded-[0.9rem] p-5 border border-white/5 relative overflow-hidden animate-in fade-in duration-300">
                 {/* Info Tooltip */}
                 <div 
                   className="absolute top-3 right-3 z-30 group/tooltip"
@@ -845,7 +848,7 @@ export default function DashboardContent({
             </div>
             
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
-              {loading ? (
+              {isFiguresLoading ? (
                 <div className="p-6 flex items-center justify-between w-full skeleton-card">
                   <div className="space-y-2">
                     <div className="h-7 w-20 bg-white/10 rounded-lg skeleton-shimmer"></div>
@@ -854,7 +857,7 @@ export default function DashboardContent({
                   <div className="h-8 w-28 bg-white/10 rounded-lg skeleton-shimmer"></div>
                 </div>
               ) : (
-                <div className="p-6 flex items-center justify-between w-full">
+                <div className="p-6 flex items-center justify-between w-full animate-in fade-in duration-300">
                   <div>
                     <h3 className="text-xl font-headline font-black text-[#F59E0B] tracking-tight leading-none">
                       {stats.activeProjects} {stats.activeProjects === 1 ? 'Job' : 'Jobs'}
@@ -873,7 +876,7 @@ export default function DashboardContent({
               )}
 
               {/* Collapsible Panel */}
-              {!loading && isPendingJobsExpanded && (
+              {!isFiguresLoading && isPendingJobsExpanded && (
                 <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {(() => {
                     const pendingProjects = (allProjects || []).filter((p: any) => {
@@ -936,7 +939,7 @@ export default function DashboardContent({
           <section className="space-y-4">
             <h3 className="font-headline font-bold text-lg tracking-tight px-2 shrink-0">Deadlines</h3>
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
-              {loading ? (
+              {isFiguresLoading ? (
                 <div className="p-6 flex items-center justify-between w-full skeleton-card">
                   <div className="space-y-2">
                     <div className="h-7 w-24 bg-white/10 rounded-lg skeleton-shimmer"></div>
@@ -945,7 +948,7 @@ export default function DashboardContent({
                   <div className="h-8 w-28 bg-white/10 rounded-lg skeleton-shimmer"></div>
                 </div>
               ) : (
-                <div className="p-6 flex items-center justify-between w-full">
+                <div className="p-6 flex items-center justify-between w-full animate-in fade-in duration-300">
                   <div>
                     <h3 className="text-xl font-headline font-black text-[#F59E0B] tracking-tight leading-none">
                       {upcomingDeadlines.length} {upcomingDeadlines.length === 1 ? 'Deadline' : 'Deadlines'}
@@ -964,7 +967,7 @@ export default function DashboardContent({
               )}
 
               {/* Collapsible Panel */}
-              {!loading && isDeadlinesExpanded && (
+              {!isFiguresLoading && isDeadlinesExpanded && (
                 <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {upcomingDeadlines.length === 0 ? (
                     <div className="text-center py-4 text-[11px] font-bold text-white/20 tracking-wider w-full">

@@ -1,15 +1,16 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { getDb, getDesignerStatus } from '@/app/actions';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { GLOBAL_CURRENCIES } from '@/lib/config';
 
 import HomePage from '@/components/HomePage';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
 
-const DashboardContent = dynamic(() => import('./DashboardContent'), { 
+const DashboardContent = nextDynamic(() => import('./DashboardContent'), { 
   ssr: false,
   loading: () => <DashboardSkeleton /> 
 });
@@ -90,19 +91,22 @@ export default function DashboardPage() {
     const fetchData = async () => {
       setLoading(true);
       
-      // Safety timeout to prevent permanent loading state
-      const safetyTimeout = setTimeout(() => {
-        if (isInitialLoad && isSubscribed) {
-          console.warn('Dashboard data fetch exceeded 6s safety limit');
-          setLoading(false);
-          setIsInitialLoad(false);
-          setDataReady(true);
-        }
-      }, 6000);
-
       try {
-        const db = await getDb(user?.id);
+        let db = await getDb(user?.id);
         if (!isSubscribed) return;
+
+        // Fallback: If server returned no projects or clients, try reading with browser Supabase client
+        if ((!db || !db.projects || db.projects.length === 0) && user?.id) {
+          try {
+            const { readDb } = await import('@/lib/db');
+            const clientDb = await readDb(user.id);
+            if (clientDb && clientDb.projects && clientDb.projects.length > 0) {
+              db = clientDb;
+            }
+          } catch (fallbackErr) {
+            console.warn('[Dashboard] Fallback to client-side DB failed:', fallbackErr);
+          }
+        }
 
         const projects = db.projects || [];
         const clients = db.clients || [];
@@ -200,7 +204,6 @@ export default function DashboardPage() {
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {
-        clearTimeout(safetyTimeout);
         if (isSubscribed) {
           setLoading(false);
           setIsInitialLoad(false);
@@ -238,6 +241,7 @@ export default function DashboardPage() {
   return (
     <DashboardContent 
       loading={!dataReady || loading || isInitialLoad}
+      dataReady={dataReady}
       stats={stats}
       recentProjects={recentProjects}
       filteredProjects={filteredProjects}
