@@ -1,131 +1,56 @@
 "use client";
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { getDb } from '@/app/actions';
+import { getDb, saveFavoriteClients } from '@/app/actions';
 import Avatar from '@/components/Avatar';
 import AuthGuard from '@/components/AuthGuard';
 import { utils, writeFile } from 'xlsx';
-import { useAuth } from '@/components/AuthProvider';
-import { countries } from '@/components/CountrySearch';
 
 const countryMap: Record<string, { flag: string; code: string }> = {
   'United States': { flag: '🇺🇸', code: 'USA' },
   'United States of America': { flag: '🇺🇸', code: 'USA' },
+  'US': { flag: '🇺🇸', code: 'USA' },
+  'USA': { flag: '🇺🇸', code: 'USA' },
   'United Kingdom': { flag: '🇬🇧', code: 'GBR' },
+  'UK': { flag: '🇬🇧', code: 'GBR' },
+  'Great Britain': { flag: '🇬🇧', code: 'GBR' },
   'United Arab Emirates': { flag: '🇦🇪', code: 'UAE' },
+  'UAE': { flag: '🇦🇪', code: 'UAE' },
   'India': { flag: '🇮🇳', code: 'IND' },
+  'IN': { flag: '🇮🇳', code: 'IND' },
   'Belgium': { flag: '🇧🇪', code: 'BEL' },
   'France': { flag: '🇫🇷', code: 'FRA' },
+  'Canada': { flag: '🇨🇦', code: 'CAN' },
+  'Australia': { flag: '🇦🇺', code: 'AUS' },
+  'Bangladesh': { flag: '🇧🇩', code: 'BGD' },
+  'BD': { flag: '🇧🇩', code: 'BGD' },
+  'Pakistan': { flag: '🇵🇰', code: 'PAK' },
+  'PK': { flag: '🇵🇰', code: 'PAK' },
+  'China': { flag: '🇨🇳', code: 'CHN' },
+  'CN': { flag: '🇨🇳', code: 'CHN' },
+  'Turkey': { flag: '🇹🇷', code: 'TUR' },
+  'TR': { flag: '🇹🇷', code: 'TUR' },
+  'Vietnam': { flag: '🇻🇳', code: 'VNM' },
+  'VN': { flag: '🇻🇳', code: 'VNM' },
+  'Europe': { flag: '🇪🇺', code: 'EUR' },
+  'EU': { flag: '🇪🇺', code: 'EUR' },
+  'Germany': { flag: '🇩🇪', code: 'DEU' },
+  'DE': { flag: '🇩🇪', code: 'DEU' },
+  'Spain': { flag: '🇪🇸', code: 'ESP' },
+  'Italy': { flag: '🇮🇹', code: 'ITA' },
+  'Japan': { flag: '🇯🇵', code: 'JPN' },
+  'South Korea': { flag: '🇰🇷', code: 'KOR' },
+  'Brazil': { flag: '🇧🇷', code: 'BRA' },
+  'Mexico': { flag: '🇲🇽', code: 'MEX' },
+  'Singapore': { flag: '🇸🇬', code: 'SGP' },
+  'Monaco': { flag: '🇲🇨', code: 'MCO' },
+  'MC': { flag: '🇲🇨', code: 'MCO' },
   'GLOBAL': { flag: '🌐', code: 'GLB' }
 };
 
-function resolveCountry(countryKey: string) {
-  if (!countryKey) return countryMap['GLOBAL'];
-  if (countryMap[countryKey]) return countryMap[countryKey];
-  const found = countries.find(c => c.name.toLowerCase() === countryKey.toLowerCase());
-  if (found) return { flag: found.emoji, code: found.code };
-  return countryMap['GLOBAL'];
-}
-
-const mailSvg = (
-  <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-    <path d="M0 3v18h24v-18h-24zm21.518 2l-9.518 7.713-9.518-7.713h19.036zm-19.518 14v-11.817l10 8.104 10-8.104v11.817h-20z"/>
-  </svg>
-);
-
-const whatsappSvg = (
-  <svg className="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24">
-    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.057 5.284 5.343 0 11.83 0c3.146.001 6.102 1.227 8.324 3.452 2.222 2.224 3.447 5.18 3.445 8.328-.002 6.545-5.286 11.829-11.777 11.829-2.006-.001-3.978-.515-5.722-1.498L0 24zm6.49-3.726c1.652.98 3.275 1.497 4.887 1.499 5.342 0 9.692-4.348 9.694-9.691.001-2.587-1.004-5.019-2.83-6.848-1.825-1.827-4.256-2.832-6.845-2.833-5.348 0-9.697 4.349-9.699 9.693-.001 1.706.447 3.372 1.298 4.869l-.993 3.626 3.714-.974zm10.741-6.882c-.27-.135-1.597-.788-1.849-.881-.252-.093-.437-.139-.62.136-.183.276-.71.882-.871 1.065-.16.183-.321.206-.59.071-.27-.135-1.143-.421-2.177-1.343-.804-.717-1.347-1.604-1.505-1.875-.158-.271-.017-.417.118-.551.121-.12.27-.315.405-.473.135-.158.18-.27.27-.45.09-.18.045-.338-.022-.473-.068-.135-.62-1.492-.849-2.046-.223-.538-.448-.465-.62-.473-.16-.007-.343-.008-.528-.008-.185 0-.486.07-.74.345-.254.276-.97.947-.97 2.308 0 1.361.99 2.678 1.129 2.868.138.19 1.947 2.973 4.717 4.17 1.3.563 2.19.78 2.96.96.77.18 1.47.149 2.02.067.615-.091 1.597-.652 1.823-1.282.226-.629.226-1.17.158-1.282-.068-.112-.252-.18-.522-.315z"/>
-  </svg>
-);
-
 const initialMockClients: any[] = [];
 
-function resolveClientPersonAndCompany(c: any, fallbackName?: string) {
-  if (!c) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
-
-  const val1 = (c.name || '').trim();
-  const val2 = (c.companyName || '').trim();
-
-  if (!val1 && !val2) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val1) {
-    return {
-      personName: val2,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val2) {
-    const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-    if (companyKeywords.test(val1)) {
-      return {
-        personName: fallbackName || 'Unknown Client',
-        companyName: val1
-      };
-    }
-    return {
-      personName: val1,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (val1 === val2) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-  const isVal1Company = companyKeywords.test(val1);
-  const isVal2Company = companyKeywords.test(val2);
-
-  if (isVal1Company && !isVal2Company) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-
-  if (isVal2Company && !isVal1Company) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  if (/Romain|Brun/i.test(val2)) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-  if (/Romain|Brun/i.test(val1)) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  return {
-    personName: val1,
-    companyName: val2
-  };
-}
-
 export default function ClientsPage() {
-  const { isDesigner } = useAuth();
   const [realClients, setRealClients] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,94 +58,135 @@ export default function ClientsPage() {
   const [selectedCountry, setSelectedCountry] = useState('All');
   const [earningBracket, setEarningBracket] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  useEffect(() => {
+    const savedFavs = localStorage.getItem('cadonce_favorite_clients');
+    if (savedFavs) {
+      try {
+        setFavorites(JSON.parse(savedFavs));
+      } catch (e) {}
+    }
+  }, []);
+
+  const toggleFavorite = (e: React.MouseEvent, clientId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const newFavs = favorites.includes(clientId) 
+      ? favorites.filter(id => id !== clientId)
+      : [...favorites, clientId];
+      
+    setFavorites(newFavs);
+    localStorage.setItem('cadonce_favorite_clients', JSON.stringify(newFavs));
+    
+    saveFavoriteClients(newFavs).catch(err => {
+      console.error('Failed to sync favorites to DB:', err);
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
-      if (isDesigner) {
-        const { getDesignerOrganizations } = await import('@/app/actions');
-        const res = await getDesignerOrganizations();
-        if (res.success && res.organizations) {
-          const formatted = res.organizations.map((org: any) => {
-            let countryKey = org.country;
-            if (!countryKey && org.mobile?.startsWith('+91')) {
-              countryKey = 'India';
-            }
-            if (!countryKey) {
-              countryKey = 'GLOBAL';
-            }
-
-            const cInfo = resolveCountry(countryKey);
-
-            return {
-              id: org.id,
-              name: org.name, // Organization Name
-              contact: org.ownerName, // Organization Owner's Name
-              email: org.email,
-              mobile: org.mobile,
-              location: cInfo.code,
-              flag: cInfo.flag,
-              earningsValue: org.earningsValue,
-              earnings: `${org.currency || '₹'}${org.earningsValue.toLocaleString()}`,
-              done: org.done,
-              live: org.live,
-              icon: 'corporate_fare',
-              color: 'text-primary-fixed',
-              borderColor: 'border-white/5'
-            };
-          });
-          setRealClients(formatted);
+      
+      let liveRates: Record<string, number> = {};
+      try {
+        const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.rates) liveRates = data.rates;
         }
-      } else {
-        const db = await getDb();
-        if (db.clients) {
-          const projects = db.projects || [];
-          const formatted = db.clients.map((c: any) => {
-            let countryKey = c.country;
-            if (!countryKey && c.mobile?.startsWith('+91')) {
-              countryKey = 'India';
-            }
-            if (!countryKey) {
-              countryKey = 'GLOBAL';
-            }
-
-            const cInfo = resolveCountry(countryKey);
-            
-            const { personName, companyName: companyLabel } = resolveClientPersonAndCompany(c);
-
-            // Calculate Real Project Stats
-            const clientProjects = projects.filter((p: any) => 
-              p.client === c.name || 
-              p.client === c.companyName || 
-              p.client === personName
-            );
-
-            const doneCount = clientProjects.filter((p: any) => p.status === 'Approved').length;
-            const liveCount = clientProjects.length - doneCount;
-            const totalEarnings = clientProjects.reduce((sum: number, p: any) => sum + (parseFloat(p.revenue) || 0), 0);
-
-            return {
-              ...c,
-              name: personName,
-              contact: companyLabel,
-              location: cInfo.code,
-              flag: cInfo.flag,
-              earningsValue: totalEarnings,
-              earnings: `$${totalEarnings.toLocaleString()}`,
-              done: doneCount,
-              live: liveCount,
-              icon: 'person',
-              color: 'text-primary-fixed',
-              borderColor: 'border-white/5'
-            };
-          });
-          setRealClients(formatted);
-        }
+      } catch (err) {
+        console.error('Failed to fetch live exchange rates', err);
       }
+
+      const db = await getDb();
+      if (db.clients) {
+        const projects = db.projects || [];
+        const formatted = db.clients.map((c: any) => {
+          let rawCountry = c.country;
+          if (!rawCountry && c.mobile?.startsWith('+91')) {
+            rawCountry = 'India';
+          }
+          const countryKey = (rawCountry || 'GLOBAL').trim().toLowerCase();
+          const matchedKey = Object.keys(countryMap).find(k => k.toLowerCase() === countryKey);
+          const cInfo = matchedKey ? countryMap[matchedKey] : countryMap['GLOBAL'];
+          
+          // Data Correction: In the current database, it appears 'name' stores the company 
+          // and 'companyName' stores the person's name for some entries.
+          const personName = c.companyName || c.name;
+          const companyLabel = c.companyName ? c.name : 'Independent Partner';
+
+          // Calculate Real Project Stats
+          const clientProjects = projects.filter((p: any) => 
+            p.client === c.name || 
+            p.client === c.companyName || 
+            p.client === personName
+          );
+
+          const doneCount = clientProjects.filter((p: any) => ['Approved', 'Completed', 'Complete'].includes(p.status)).length;
+          const liveCount = clientProjects.length - doneCount;
+          const totalEarnings = clientProjects.reduce((sum: number, p: any) => {
+            let amount = parseFloat(p.revenue) || 0;
+            let code = 'USD';
+            
+            if (p.revenueCurrency === '£' || p.revenueCurrency === 'GBP') code = 'GBP';
+            else if (p.revenueCurrency === '€' || p.revenueCurrency === 'EUR') code = 'EUR';
+            else if (p.revenueCurrency === '₹' || p.revenueCurrency === 'INR') code = 'INR';
+            else if (p.revenueCurrency === 'A$' || p.revenueCurrency === 'AUD') code = 'AUD';
+            else if (p.revenueCurrency === 'C$' || p.revenueCurrency === 'CAD') code = 'CAD';
+            else if (p.revenueCurrency && p.revenueCurrency.length === 3 && p.revenueCurrency !== 'USD') {
+              code = p.revenueCurrency.toUpperCase();
+            } else if (!p.revenueCurrency || p.revenueCurrency === '$') {
+              // Infer currency based on client country if not explicitly set to USD
+              if (cInfo.code === 'GBR') code = 'GBP';
+              else if (['FRA', 'DEU', 'ITA', 'ESP', 'BEL'].includes(cInfo.code)) code = 'EUR';
+              else if (cInfo.code === 'IND') code = 'INR';
+              else if (cInfo.code === 'AUS') code = 'AUD';
+              else if (cInfo.code === 'CAN') code = 'CAD';
+            }
+            
+            if (code !== 'USD') {
+              if (liveRates[code]) {
+                amount = amount / liveRates[code]; // Rates are relative to USD (e.g., 1 USD = 0.79 GBP)
+              } else {
+                // Fallbacks if API fails
+                if (code === 'GBP') amount *= 1.27;
+                else if (code === 'EUR') amount *= 1.08;
+                else if (code === 'INR') amount *= 0.012;
+              }
+            }
+            return sum + amount;
+          }, 0);
+
+          return {
+            ...c,
+            name: personName,
+            contact: companyLabel,
+            location: cInfo.code,
+            flag: cInfo.flag,
+            earningsValue: totalEarnings,
+            earnings: `$${totalEarnings.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+            done: doneCount,
+            live: liveCount,
+            icon: 'person',
+            color: 'text-primary-fixed',
+            borderColor: 'border-white/5'
+          };
+        });
+        setRealClients(formatted);
+      }
+      
+      if (db.settings?.favorite_clients) {
+        setFavorites(db.settings.favorite_clients);
+        localStorage.setItem('cadonce_favorite_clients', JSON.stringify(db.settings.favorite_clients));
+      }
+
       setIsLoading(false);
     };
     fetchData();
-  }, [isDesigner]);
+  }, []);
 
   const allClients = useMemo(() => [...initialMockClients, ...realClients], [realClients]);
 
@@ -234,18 +200,25 @@ export default function ClientsPage() {
       const matchesCountry = selectedCountry === 'All' || client.location === selectedCountry;
       const matchesEarnings = earningBracket === 'All' || 
                             (earningBracket === '>$100k' ? client.earningsValue >= 100000 : client.earningsValue < 100000);
+      const matchesFavorites = showFavoritesOnly ? favorites.includes(client.id) : true;
       
-      return matchesSearch && matchesCountry && matchesEarnings;
+      return matchesSearch && matchesCountry && matchesEarnings && matchesFavorites;
     });
 
-    if (sortOrder === 'earnings') {
+    if (sortOrder === 'favorites') {
+      result.sort((a, b) => {
+        const aFav = favorites.includes(a.id) ? 1 : 0;
+        const bFav = favorites.includes(b.id) ? 1 : 0;
+        return bFav - aFav;
+      });
+    } else if (sortOrder === 'earnings') {
       result.sort((a, b) => b.earningsValue - a.earningsValue);
     } else if (sortOrder === 'projects') {
       result.sort((a, b) => (b.done + b.live) - (a.done + a.live));
     }
 
     return result;
-  }, [allClients, searchQuery, sortOrder, selectedCountry, earningBracket]);
+  }, [allClients, searchQuery, sortOrder, selectedCountry, earningBracket, favorites, showFavoritesOnly]);
 
   const handleExport = () => {
     const dataToExport = filteredClients.map(client => ({
@@ -289,39 +262,31 @@ export default function ClientsPage() {
         {isLoading ? (
           <div className="min-h-screen bg-[#161308] flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+              <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
             </div>
           </div>
         ) : (
           <>
-            <main className="pb-32 px-6 max-w-7xl mx-auto pt-20">
+            <main className="pb-32 px-4 sm:px-8 xl:px-12 w-full pt-20">
           {/* Enhanced Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-6">
             <div>
               <h2 className="font-headline text-2xl font-black tracking-tight text-white uppercase italic">
-                {isDesigner ? 'Hired' : 'Client'} <span className="text-[#fce003]">{isDesigner ? 'Organizations' : 'Intelligence'}</span>
+                Client <span className="text-[#F59E0B]">Intelligence</span>
               </h2>
-              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">
-                {isDesigner ? 'Strategic partnership and client directory' : 'High-value partner relationship management'}
-              </p>
+              <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">High-value partner relationship management</p>
             </div>
             
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full md:w-auto">
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
-                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">
-                  {isDesigner ? 'Total Organizations' : 'Total Partners'}
-                </p>
-                <p className="text-sm font-black text-white">{allClients.length}</p>
+                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Total Partners</p>
+                <p className="text-sm font-black text-white">{filteredClients.length}</p>
               </div>
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
-                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">
-                  {isDesigner ? 'Total Earnings' : 'Active Value'}
-                </p>
-                <p className="text-sm font-black text-[#fce003]">
-                  {isDesigner ? '₹' : '$'}{allClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}
-                </p>
+                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Active Value</p>
+                <p className="text-sm font-black text-[#F59E0B]">${filteredClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
               </div>
               <div className="hidden sm:block px-4 py-2 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
                 <p className="text-[7px] font-black text-yellow-400 uppercase tracking-widest mb-0.5">Status</p>
@@ -336,157 +301,145 @@ export default function ClientsPage() {
           {/* Advanced Filters & Search Bar */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="flex-1 relative group">
-              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#fce003] transition-colors">search</span>
+              <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#F59E0B] transition-colors">search</span>
               <input 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#fce003]/50 outline-none transition-all" 
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-xs font-bold text-white placeholder:text-neutral-600 focus:bg-white/10 focus:border-[#F59E0B]/50 outline-none transition-all" 
                 placeholder="Search by company, name, or location..." 
                 type="text"
               />
             </div>
-            <div className="grid grid-cols-2 md:flex md:flex-row gap-2">
+            <div className="grid grid-cols-3 md:flex md:flex-row gap-2">
+              <button 
+                onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${showFavoritesOnly ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400 shadow-lg shadow-yellow-400/10' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                title="Show Favorites Only"
+              >
+                <span className={`material-symbols-outlined text-sm ${showFavoritesOnly ? 'fill-1' : ''}`} style={showFavoritesOnly ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
+                <span className="text-[10px] font-black uppercase tracking-widest hidden md:inline">Favs</span>
+              </button>
               <button 
                 onClick={() => setShowFilters(true)}
-                className={`w-full px-2 md:px-6 py-4 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#fce003] border-[#fce003] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
               >
                 <span className="material-symbols-outlined text-sm">tune</span>
                 <span className="text-[10px] font-black uppercase tracking-widest">Filters</span>
               </button>
               <button 
                 onClick={handleExport}
-                className="w-full px-2 md:px-6 py-4 rounded-2xl border border-white/10 bg-white/5 text-white/60 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="w-full px-2 md:px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-white/60 hover:text-white transition-all flex items-center justify-center gap-2 active:scale-95"
                 title="Export to Excel"
               >
                 <span className="material-symbols-outlined text-sm">download</span>
                 <span className="text-[10px] font-black uppercase tracking-widest">Export</span>
               </button>
-              {!isDesigner && (
-                <Link href="/clients/new" className="col-span-2 md:col-span-1 w-full electric-gradient text-black px-4 md:px-6 py-4 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-xl uppercase tracking-widest shadow-yellow-400/20 hover:brightness-110">
-                  <span className="material-symbols-outlined text-sm">person_add</span>
-                  ADD CLIENT
-                </Link>
-              )}
+              <Link href="/clients/new" className="col-span-3 md:col-span-1 w-full electric-gradient text-black px-4 md:px-6 py-3 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-xl uppercase tracking-widest shadow-yellow-400/20 hover:brightness-110 whitespace-nowrap">
+                <span className="material-symbols-outlined text-sm">person_add</span>
+                ADD CLIENT
+              </Link>
             </div>
           </div>
 
           {/* Strategic Client Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredClients.map((client, idx) => {
-              const cardContent = (
-                <>
-                  {/* Visual Accent */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#fce003]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#fce003]/10 transition-colors" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+            {filteredClients.map((client, idx) => (
+              <Link 
+                key={client.id || idx} 
+                href={`/clients/${client.id}`}
+                className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-[#F59E0B]/30 transition-all duration-500 overflow-hidden shadow-2xl block"
+              >
+                {/* Visual Accent */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#F59E0B]/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-[#F59E0B]/10 transition-colors" />
 
-                  <div className="flex justify-between items-start mb-6 relative z-20">
-                    <div className="flex gap-4 items-center">
-                      <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#fce003]/50 transition-all">
-                        <Avatar
-                          email={client.email}
-                          name={client.name}
-                          website={client.website}
-                          size={56}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="text-left">
-                        <h3 className="font-headline font-black text-white text-lg leading-tight group-hover:text-[#fce003] transition-colors">{client.name}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{client.contact}</span>
-                          <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                            <span className="text-[10px] leading-none">{client.flag}</span>
-                            <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{client.location}</span>
-                          </div>
-                          
-                          {/* Quick Actions Separator */}
-                          {(client.email || client.mobile) && <span className="text-white/10 text-[9px]">•</span>}
-
-                          {/* Email Action */}
-                          {client.email && (
-                            <a
-                              href={`mailto:${client.email}`}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-5 h-5 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-[#fce003] hover:border-[#fce003]/30 hover:bg-[#fce003]/10 transition-all flex items-center justify-center"
-                              title={`Email ${client.name}`}
-                            >
-                              {mailSvg}
-                            </a>
-                          )}
-
-                          {/* WhatsApp Action */}
-                          {client.mobile && (
-                            <a
-                              href={`https://wa.me/${client.mobile.replace(/[^0-9]/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-5 h-5 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-green-400 hover:border-green-400/30 hover:bg-green-400/10 transition-all flex items-center justify-center"
-                              title={`WhatsApp ${client.name}`}
-                            >
-                              {whatsappSvg}
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                <div className="flex justify-between items-start mb-6 relative z-20">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-14 h-14 rounded-full overflow-hidden ring-1 ring-white/10 group-hover:ring-[#F59E0B]/50 transition-all">
+                      <Avatar
+                        email={client.email}
+                        name={client.name}
+                        website={client.website}
+                        size={56}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    {!isDesigner && (
-                      <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#fce003] group-hover:bg-[#fce003]/10 transition-all">
-                        <span className="material-symbols-outlined text-sm">arrow_outward</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* KPI Section */}
-                  <div className="grid grid-cols-2 gap-3 mb-6 relative z-20">
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#fce003]/10 transition-colors">
-                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">{isDesigner ? 'Your Earnings' : 'Total Revenue'}</p>
-                      <p className="font-headline font-black text-white text-xl tracking-tight leading-none">{client.earnings}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#fce003]/10 transition-colors flex justify-between items-center">
-                      <div>
-                        <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Queue</p>
-                        <div className="flex items-center gap-3">
-                          <div className="text-center">
-                            <p className="text-xs font-black text-white leading-none">{client.done}</p>
-                            <p className="text-[6px] font-bold text-neutral-600 uppercase">Done</p>
-                          </div>
-                          <div className="w-px h-6 bg-white/10" />
-                          <div className="text-center">
-                            <p className="text-xs font-black text-[#fce003] leading-none">{client.live}</p>
-                            <p className="text-[6px] font-bold text-neutral-600 uppercase">Live</p>
-                          </div>
+                    <div className="text-left">
+                      <h3 className="font-headline font-black text-white text-lg leading-tight group-hover:text-[#F59E0B] transition-colors">{client.name}</h3>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">{client.contact}</span>
+                        <div className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                          <span className="text-[10px] leading-none">{client.flag}</span>
+                          <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">{client.location}</span>
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-20">
-                     <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${client.live > 0 ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-neutral-600'}`} />
-                        <span className="text-[8px] font-black text-white/40 uppercase tracking-widest">{client.live > 0 ? 'Active Workflow' : 'Idle Queue'}</span>
-                     </div>
-                     <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-tighter">ID: {client.id?.slice(-8).toUpperCase()}</span>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={(e) => toggleFavorite(e, client.id)}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${favorites.includes(client.id) ? 'bg-yellow-400/20 text-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.2)]' : 'bg-white/5 text-white/20 hover:text-yellow-400 hover:bg-yellow-400/10'}`}
+                    >
+                      <span className="material-symbols-outlined text-sm" style={favorites.includes(client.id) ? { fontVariationSettings: "'FILL' 1" } : {}}>star</span>
+                    </button>
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:text-[#F59E0B] group-hover:bg-[#F59E0B]/10 transition-all">
+                      <span className="material-symbols-outlined text-sm">arrow_outward</span>
+                    </div>
                   </div>
-                </>
-              );
-
-              return isDesigner ? (
-                <div 
-                  key={client.id || idx}
-                  className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] transition-all duration-500 overflow-hidden shadow-2xl block text-left"
-                >
-                  {cardContent}
                 </div>
-              ) : (
-                <Link 
-                  key={client.id || idx} 
-                  href={`/clients/${client.id}`}
-                  className="group relative bg-white/[0.02] border border-white/5 rounded-[2rem] p-6 hover:bg-white/[0.05] hover:border-[#fce003]/30 transition-all duration-500 overflow-hidden shadow-2xl block text-left"
-                >
-                  {cardContent}
-                </Link>
-              );
-            })}
+
+                {/* KPI Section */}
+                <div className="grid grid-cols-2 gap-3 mb-6 relative z-20">
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors">
+                    <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Total Revenue</p>
+                    <p className="font-headline font-black text-white text-xl tracking-tight leading-none">{client.earnings}</p>
+                  </div>
+                  <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors flex justify-between items-center">
+                    <div>
+                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Task</p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-center">
+                          <p className="text-xs font-black text-white leading-none">{client.done}</p>
+                          <p className="text-[6px] font-bold text-neutral-600 uppercase">Done</p>
+                        </div>
+                        <div className="w-px h-6 bg-white/10" />
+                        <div className="text-center">
+                          <p className="text-xs font-black text-[#F59E0B] leading-none">{client.live}</p>
+                          <p className="text-[6px] font-bold text-neutral-600 uppercase">Live</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-20">
+                   <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${client.live > 0 ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-neutral-600'}`} />
+                        <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">{client.live > 0 ? 'Active Workflow' : 'Dormant'}</span>
+                      </div>
+                      
+                      {/* Mini Contact Icons */}
+                      {(client.mobile || client.email) && (
+                        <div className="flex items-center gap-3 border-l border-white/10 pl-3 h-4">
+                          {client.mobile && (
+                            <a href={`https://wa.me/${client.mobile.replace(/[^a-zA-Z0-9+]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-[#25D366] hover:scale-125 hover:brightness-110 transition-all flex items-center" onClick={(e) => e.stopPropagation()} title="WhatsApp">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[16px] h-[16px]">
+                                <path d="M12.031 0C5.385 0 0 5.385 0 12.031c0 2.146.561 4.237 1.626 6.079L.135 23.518l5.545-1.455c1.78.966 3.784 1.474 5.845 1.474v-.001h.005c6.645 0 12.031-5.385 12.031-12.031S18.675 0 12.031 0zm0 21.579c-1.815 0-3.593-.487-5.147-1.409l-.369-.219-3.826 1.004 1.025-3.73-.24-.382A9.957 9.957 0 0 1 1.954 12.03C1.954 6.471 6.471 1.954 12.03 1.954c2.688 0 5.215 1.047 7.115 2.948A9.969 9.969 0 0 1 22.093 12.03c0 5.559-4.517 10.076-10.062 10.076zm5.513-7.531c-.302-.151-1.789-.882-2.066-.983-.277-.101-.479-.151-.681.151-.202.302-.781.983-.958 1.184-.176.202-.353.227-.655.076-.302-.151-1.275-.47-2.431-1.5-.9-.798-1.506-1.784-1.683-2.086-.176-.302-.019-.465.132-.616.136-.136.302-.353.453-.529.151-.176.202-.302.302-.504.101-.202.05-.378-.025-.529-.076-.151-.681-1.644-.932-2.253-.245-.592-.494-.512-.681-.521l-.58-.009c-.202 0-.529.076-.806.378-.277.302-1.058 1.033-1.058 2.52s1.083 2.923 1.234 3.125c.151.202 2.129 3.25 5.158 4.557.72.311 1.281.496 1.718.636.724.23 1.383.197 1.902.12.583-.086 1.789-.731 2.041-1.436.252-.705.252-1.31.176-1.436-.076-.126-.277-.202-.579-.353z"/>
+                              </svg>
+                            </a>
+                          )}
+                          {client.email && (
+                            <a href={`mailto:${client.email}`} className="text-white/60 hover:text-white hover:scale-125 transition-all flex items-center" onClick={(e) => e.stopPropagation()} title="Email">
+                              <span className="material-symbols-outlined text-[16px] leading-none">mail</span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                   </div>
+                   <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest">ID: {client.id?.slice(-8).toUpperCase()}</span>
+                </div>
+              </Link>
+            ))}
             
             {filteredClients.length === 0 && (
               <div className="col-span-full py-32 text-center">
@@ -504,7 +457,7 @@ export default function ClientsPage() {
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowFilters(false)} />
             <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#fce003]/5 to-transparent">
+              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#F59E0B]/5 to-transparent">
                 <div>
                   <h3 className="text-white font-headline font-black text-xl italic uppercase tracking-tighter">Segment Data</h3>
                   <p className="text-neutral-500 text-[8px] uppercase tracking-[0.3em] font-bold">Partner Optimization Protocol</p>
@@ -518,12 +471,12 @@ export default function ClientsPage() {
                 {/* Sort Order */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block text-left">Hierarchy</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['none', 'earnings', 'projects'].map(opt => (
+                  <div className="grid grid-cols-4 gap-2">
+                    {['none', 'favorites', 'earnings', 'projects'].map(opt => (
                       <button 
                         key={opt}
                         onClick={() => setSortOrder(opt)}
-                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#fce003] border-[#fce003] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
                       >
                         {opt}
                       </button>
@@ -562,3 +515,4 @@ export default function ClientsPage() {
     </div>
   );
 }
+

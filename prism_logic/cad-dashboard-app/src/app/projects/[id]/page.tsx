@@ -4,125 +4,104 @@ import Link from 'next/link';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getDb } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
-import { PLATFORM_CONFIG } from '@/lib/config';
+import { useSidebar } from '@/components/SidebarContext';
+import { PLATFORM_CONFIG, GLOBAL_CURRENCIES, getCurrencySymbol } from '@/lib/config';
 import { ProjectChat } from '@/components/ProjectChat';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
+import dynamic from 'next/dynamic';
+
+const ViewportCanvas = dynamic(() => import('@/components/viewport/ViewportCanvas'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[600px] flex items-center justify-center bg-[#0c0a04] text-[#fce003]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
+        <div className="text-[#fce003] font-headline font-black text-xs tracking-widest uppercase animate-pulse">
+          Initializing 3D Render Engine...
+        </div>
+      </div>
+    </div>
+  )
+});
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '--/--/----';
-  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [_, year, month, day] = match;
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const monthIndex = parseInt(month, 10) - 1;
-    if (monthIndex >= 0 && monthIndex < 12) {
-      return `${parseInt(day, 10)} ${monthNames[monthIndex]} ${year}`;
-    }
-  }
-  
+  if (dateStr.includes('/')) return dateStr;
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
-  
-  const day = date.getDate();
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  const month = monthNames[date.getMonth()];
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
+  return `${day}/${month}/${year}`;
 };
 
-function resolveClientPersonAndCompany(c: any, fallbackName?: string) {
-  if (!c) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
+const FormattedDescription = ({ text }: { text: string }) => {
+  const lines = text.split('\n');
+  return (
+    <div className="space-y-2.5 text-[13px] leading-relaxed text-on-surface">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        
+        // Bold headers
+        if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
+          return <strong key={i} className="block text-white text-[15px] mt-5 mb-2 tracking-wide">{trimmed.slice(2, -2)}</strong>;
+        }
+        
+        // Bullet points
+        if (trimmed.startsWith('* ')) {
+          return (
+            <div key={i} className="flex gap-2 items-start ml-2">
+              <span className="text-yellow-400 mt-0.5">•</span>
+              <span>{trimmed.slice(2)}</span>
+            </div>
+          );
+        }
+        
+        // Checkmarks
+        if (trimmed.startsWith('✅')) {
+          return (
+            <div key={i} className="flex gap-2 items-start ml-2">
+              <span className="text-green-400">✅</span>
+              <span>{trimmed.slice(1).trim()}</span>
+            </div>
+          );
+        }
+        
+        // URLs
+        if (trimmed.includes('http://') || trimmed.includes('https://')) {
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          const parts = line.split(urlRegex);
+          return (
+            <p key={i} className="break-words mt-2">
+              {parts.map((part, j) => 
+                urlRegex.test(part) ? (
+                  <a key={j} href={part} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:text-cyan-300 underline break-all">
+                    {part}
+                  </a>
+                ) : (
+                  <span key={j}>{part}</span>
+                )
+              )}
+            </p>
+          );
+        }
+        
+        // Empty lines
+        if (!trimmed) {
+          return <div key={i} className="h-2"></div>;
+        }
 
-  const val1 = (c.name || '').trim();
-  const val2 = (c.companyName || '').trim();
-
-  if (!val1 && !val2) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val1) {
-    return {
-      personName: val2,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val2) {
-    const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-    if (companyKeywords.test(val1)) {
-      return {
-        personName: fallbackName || 'Unknown Client',
-        companyName: val1
-      };
-    }
-    return {
-      personName: val1,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (val1 === val2) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-  const isVal1Company = companyKeywords.test(val1);
-  const isVal2Company = companyKeywords.test(val2);
-
-  if (isVal1Company && !isVal2Company) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-
-  if (isVal2Company && !isVal1Company) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  if (/Romain|Brun/i.test(val2)) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-  if (/Romain|Brun/i.test(val1)) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  return {
-    personName: val1,
-    companyName: val2
-  };
-}
-
+        // Regular text
+        return <p key={i}>{line}</p>;
+      })}
+    </div>
+  );
+};
 export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated, user, isDesigner } = useAuth();
+  const { isCollapsed } = useSidebar();
   const [project, setProject] = useState<any>(null);
   const [client, setClient] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -133,55 +112,49 @@ export default function ProjectDetailsPage() {
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
   const [escrow, setEscrow] = useState<any>(null);
   const [exchangeRate, setExchangeRate] = useState<number>(83.5);
+  const [allRates, setAllRates] = useState<Record<string, number>>({ USD: 1, INR: 83.5 });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showManualPaymentModal, setShowManualPaymentModal] = useState(false);
-  const [showUnpaidAlertModal, setShowUnpaidAlertModal] = useState(false);
-  const [expandedMethod, setExpandedMethod] = useState<string | null>(null);
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanResult, setScanResult] = useState<any>(null);
-  const [isSubmittingManualPayment, setIsSubmittingManualPayment] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [isParsingReceipt, setIsParsingReceipt] = useState(false);
+  const [isReceiptParsed, setIsReceiptParsed] = useState(false);
+  const [manualPaymentForm, setManualPaymentForm] = useState({
+    platform: '',
+    transactionId: '',
+    recipientName: '',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().split(' ')[0].substring(0, 5),
+    amountPaid: ''
+  });
   const [walletBalance, setWalletBalance] = useState(0);
   const [razorpayKey, setRazorpayKey] = useState("");
-  const [designerCountry, setDesignerCountry] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<any>(null);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [timeLogs, setTimeLogs] = useState<any[]>([]);
   const [screenshots, setScreenshots] = useState<string[]>([]);
-  const [designerPaymentMethods, setDesignerPaymentMethods] = useState<any[]>([]);
   const searchParams = useSearchParams();
-  const isIndianDesigner = (() => {
-    if (!designerCountry) return false;
-    const c = designerCountry.toLowerCase().trim();
-    return c === 'in' || c === 'india' || c === 'ind';
-  })();
-  const getManualPaymentDetails = () => {
-    if (!project || !project.description) return null;
-    const match = project.description.match(/\[MANUAL_PAYMENT\]([\s\S]*)/);
-    if (!match) return null;
-    
-    const lines = match[1].split('\n');
-    const details: any = {};
-    lines.forEach((line: string) => {
-      const parts = line.split(':');
-      if (parts.length >= 2) {
-        const key = parts[0].trim().toLowerCase().replace(' ', '');
-        const val = parts.slice(1).join(':').trim();
-        details[key] = val;
-      }
-    });
-    return details;
-  };
+
+  // 3D Render Tab States
+  const [cadFileUrl, setCadFileUrl] = useState<string | null>(null);
+  const [cadFileLoading, setCadFileLoading] = useState(false);
+  const [cadFileError, setCadFileError] = useState<string | null>(null);
+
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionForm, setCompletionForm] = useState({ clientPaid: 'PAID', designerPaid: 'PAID' });
+  const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
     const fetchRate = async () => {
       try {
         const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
         const data = await res.json();
-        if (data.rates && data.rates.INR) {
-          setExchangeRate(data.rates.INR);
-          console.log("Real-time INR Rate:", data.rates.INR);
+        if (data.rates) {
+          setAllRates(data.rates);
+          if (data.rates.INR) {
+            setExchangeRate(data.rates.INR);
+            console.log("Real-time INR Rate:", data.rates.INR);
+          }
         }
       } catch (err) {
         console.error("Failed to fetch exchange rate", err);
@@ -206,6 +179,32 @@ export default function ProjectDetailsPage() {
     };
   }, [activeTab]);
 
+  // Load CAD File Url when Render Tab is clicked
+  useEffect(() => {
+    async function loadCadUrl() {
+      if (!params.id) return;
+      setCadFileLoading(true);
+      setCadFileError(null);
+      try {
+        const { getCadFileUrl } = await import('@/app/actions');
+        const res = await getCadFileUrl(params.id as string);
+        if (res.success && res.signedUrl) {
+          setCadFileUrl(res.signedUrl);
+        } else {
+          setCadFileError(res.error || 'Could not fetch CAD file signed URL.');
+        }
+      } catch (err: any) {
+        setCadFileError(err.message);
+      } finally {
+        setCadFileLoading(false);
+      }
+    }
+    
+    if (activeTab === 'render' && !cadFileUrl && !cadFileLoading) {
+      loadCadUrl();
+    }
+  }, [activeTab, params.id, cadFileUrl, cadFileLoading]);
+
   useEffect(() => {
     const fetchData = async () => {
       const { getDesignerProjectDetail, getDb } = await import('@/app/actions');
@@ -225,11 +224,6 @@ export default function ProjectDetailsPage() {
           if (db.clients) {
             const foundClient = db.clients.find((c: any) => c.name === foundProject.client || c.companyName === foundProject.client);
             setClient(foundClient || null);
-          }
-          if (db.designers && foundProject.designer) {
-            const foundDesigner = db.designers.find((d: any) => d.fullName?.toLowerCase() === foundProject.designer?.toLowerCase());
-            setDesignerCountry(foundDesigner?.country || null);
-            console.log(`[Project Page] Found designer country: ${foundDesigner?.country} for designer: ${foundProject.designer}`);
           }
           
           // Fetch Escrow (Note: Table might be missing, so we primarily rely on project.paymentStatus)
@@ -261,17 +255,6 @@ export default function ProjectDetailsPage() {
       const feedbackRes = await getProjectFeedback(params.id as string);
       if (feedbackRes.success) {
         setFeedback(feedbackRes.feedback);
-      }
-
-      // Fetch Designer Payment Methods
-      try {
-        const { getDesignerPaymentMethodsAction } = await import('@/app/actions');
-        const designerMethodsRes = await getDesignerPaymentMethodsAction(params.id as string);
-        if (designerMethodsRes.success && designerMethodsRes.paymentMethods) {
-          setDesignerPaymentMethods(designerMethodsRes.paymentMethods);
-        }
-      } catch (err) {
-        console.error('Failed to load designer payment methods:', err);
       }
 
       setLoading(false);
@@ -327,6 +310,47 @@ export default function ProjectDetailsPage() {
       setNotification({ message: 'An unexpected error occurred.', type: 'error' });
     } finally {
       setTimeout(() => setNotification(null), 3000);
+    }
+  };
+
+  const handleReceiptUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsParsingReceipt(true);
+    setNotification({ message: 'Analyzing receipt with AI...', type: 'success' });
+
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch('/api/parse-receipt', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        setManualPaymentForm(prev => ({
+          ...prev,
+          platform: data.data.platform || prev.platform,
+          transactionId: data.data.transactionId || prev.transactionId,
+          recipientName: data.data.recipientName || prev.recipientName,
+          date: data.data.date || prev.date,
+          time: data.data.time || prev.time,
+          amountPaid: data.data.amountPaid || prev.amountPaid,
+        }));
+        setIsReceiptParsed(true);
+        setNotification({ message: 'Receipt parsed successfully!', type: 'success' });
+      } else {
+        setNotification({ message: data.error || 'Could not parse receipt.', type: 'error' });
+      }
+    } catch (err) {
+      console.error(err);
+      setNotification({ message: 'Failed to upload receipt.', type: 'error' });
+    } finally {
+      setIsParsingReceipt(false);
     }
   };
 
@@ -459,11 +483,51 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const rawDescription = project?.description || '';
+  const descLines = rawDescription.split('\n');
+  
+  let escrowInfo: string | null = null;
+  let feedbackInfo: { rating: string; comment: string } | null = null;
+  let manualPaymentInfo: Record<string, string> | null = null;
+  const descriptionLines: string[] = [];
+  let inManualPaymentBlock = false;
+  
+  for (const line of descLines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('[ESCROW]')) {
+      escrowInfo = trimmed.replace('[ESCROW]', '').trim();
+      inManualPaymentBlock = false;
+    } else if (trimmed.startsWith('[FEEDBACK]')) {
+      const ratingMatch = trimmed.match(/Rating:\s*(\d+\/\d+|\d+)/);
+      feedbackInfo = {
+        rating: ratingMatch ? ratingMatch[1] : '5/5',
+        comment: ''
+      };
+      inManualPaymentBlock = false;
+    } else if (trimmed.startsWith('Comment:') && feedbackInfo) {
+      feedbackInfo.comment = trimmed.replace('Comment:', '').trim();
+      inManualPaymentBlock = false;
+    } else if (trimmed === '[MANUAL_PAYMENT]') {
+      manualPaymentInfo = {};
+      inManualPaymentBlock = true;
+    } else if (inManualPaymentBlock && trimmed.includes(':')) {
+      const [key, ...valueParts] = trimmed.split(':');
+      if (manualPaymentInfo) {
+        manualPaymentInfo[key.trim()] = valueParts.join(':').trim();
+      }
+    } else if (trimmed) {
+      descriptionLines.push(line);
+      inManualPaymentBlock = false;
+    }
+  }
+  
+  const cleanDescription = descriptionLines.join('\n').trim() || 'No detailed description provided for this project.';
+
   return (
     <div className="bg-background text-on-surface font-body min-h-screen">
       {/* Notifications */}
       {notification && (
-        <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success'
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 z-[1000] px-6 py-3 rounded-xl shadow-2xl backdrop-blur-xl border flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300 ${notification.type === 'success'
             ? 'bg-success/20 border-success/30 text-success'
             : 'bg-error/20 border-error/30 text-error'
           }`}>
@@ -478,8 +542,8 @@ export default function ProjectDetailsPage() {
       )}
 
       {/* TopAppBar */}
-      <header className="bg-[#1a1a17]/95 backdrop-blur-xl fixed top-0 left-0 md:left-64 right-0 z-[200] border-b border-white/5 shadow-2xl transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className={`bg-[#1a1a17]/95 backdrop-blur-xl fixed top-0 left-0 ${isCollapsed ? 'md:left-20' : 'md:left-64'} right-0 z-[200] border-b border-white/5 shadow-2xl transition-all duration-300`}>
+        <div className="w-full px-4 sm:px-8 xl:px-12 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-3">
             <button onClick={() => router.back()} className="p-2 -ml-2 rounded-full hover:bg-white/5 text-[#fce003] active:scale-95 transition-all">
               <span className="material-symbols-outlined text-lg sm:text-xl">arrow_back</span>
@@ -504,7 +568,7 @@ export default function ProjectDetailsPage() {
         </div>
       </header>
 
-      <main className="pt-20 sm:pt-24 pb-28 md:pb-12 px-4 sm:px-6 max-w-7xl mx-auto text-left">
+      <main className="pt-20 sm:pt-24 pb-28 md:pb-12 px-4 sm:px-8 xl:px-12 w-full text-left">
         {loading ? (
           <div className="space-y-4">
             {/* Skeleton Primary Actions */}
@@ -529,10 +593,10 @@ export default function ProjectDetailsPage() {
           <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             {/* Main Content Area (Left) */}
-            <div className="lg:col-span-8 order-2 lg:order-1 space-y-6">
+            <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 order-2 lg:order-1 space-y-6">
               {/* Tab Navigation - Solid Sticky */}
               <nav className="flex p-1 bg-[#0c0a04] rounded-xl sticky top-[72px] sm:top-20 z-40 border border-white/5 shadow-2xl overflow-x-auto no-scrollbar whitespace-nowrap">
-                {['overview', 'financials', 'tracking', 'revisions', 'gallery', 'chat', 'feedback'].filter(t => {
+                {['overview', 'render', 'financials', 'tracking', 'revisions', 'gallery', 'chat', 'feedback'].filter(t => {
                   if (isDesigner && t === 'financials') return false;
                   if (t === 'feedback') {
                     return project.status === 'Completed' || project.status === 'Approved' || project.status === 'Complete' || !!feedback;
@@ -555,114 +619,666 @@ export default function ProjectDetailsPage() {
                 ))}
               </nav>
 
+              {/* Tab Content: 3D Render Viewport */}
+              {activeTab === 'render' && (
+                <div className="bg-surface-container rounded-3xl overflow-hidden border border-white/5 shadow-2xl p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-tight">Interactive 3D Render Studio</h3>
+                      <p className="text-[9px] font-bold text-outline uppercase tracking-widest mt-0.5">Real-time photorealistic model analysis and material preview</p>
+                    </div>
+                    {cadFileUrl && (
+                      <a 
+                        href={cadFileUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-[#fce003]/10 border border-[#fce003]/20 rounded-xl text-[#fce003] text-[9px] font-black uppercase tracking-wider hover:bg-[#fce003]/20 transition-all"
+                      >
+                        <span className="material-symbols-outlined text-xs">download</span>
+                        Download Model
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="w-full h-[600px] bg-black/40 rounded-2xl overflow-hidden border border-white/5 relative">
+                    {cadFileLoading ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#0c0a04]">
+                        <div className="flex flex-col items-center gap-4">
+                          <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
+                          <div className="text-[#fce003] font-headline font-black text-xs tracking-widest uppercase">
+                            Connecting to Render Core...
+                          </div>
+                        </div>
+                      </div>
+                    ) : cadFileError ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#0c0a04] p-6 text-center">
+                        <div className="max-w-xs space-y-4">
+                          <span className="material-symbols-outlined text-red-500 text-4xl">error</span>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-white">Renderer Load Failed</h4>
+                          <p className="text-[10px] text-neutral-500 font-bold uppercase leading-relaxed">{cadFileError}</p>
+                        </div>
+                      </div>
+                    ) : cadFileUrl ? (
+                      <ViewportCanvas 
+                        fileUrl={cadFileUrl} 
+                        metalType="gold" 
+                        fileName={project.cadFileName || 'model.stl'}
+                        projectId={params.id as string}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-[#0c0a04] p-6 text-center">
+                        <div className="max-w-xs space-y-4">
+                          <span className="material-symbols-outlined text-neutral-500 text-4xl">3d_rotation</span>
+                          <h4 className="text-xs font-black uppercase tracking-wider text-white">No 3D Model Attached</h4>
+                          <p className="text-[10px] text-neutral-500 font-bold uppercase leading-relaxed">This project does not have an active 3D model uploaded yet.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Tab Content: Overview */}
               {activeTab === 'overview' && (() => {
-                const description = project.description || '';
-                const lines = description.split('\n');
-                
-                let escrowInfo: string | null = null;
-                let feedbackInfo: { rating: string; comment: string } | null = null;
-                const descriptionLines: string[] = [];
-                
-                for (const line of lines) {
-                  const trimmed = line.trim();
-                  if (trimmed.startsWith('[ESCROW]')) {
-                    escrowInfo = trimmed.replace('[ESCROW]', '').trim();
-                  } else if (trimmed.startsWith('[FEEDBACK]')) {
-                    const ratingMatch = trimmed.match(/Rating:\s*(\d+\/\d+|\d+)/);
-                    feedbackInfo = {
-                      rating: ratingMatch ? ratingMatch[1] : '5/5',
-                      comment: ''
-                    };
-                  } else if (trimmed.startsWith('Comment:') && feedbackInfo) {
-                    feedbackInfo.comment = trimmed.replace('Comment:', '').trim();
-                  } else if (trimmed) {
-                    descriptionLines.push(line);
+                // Parse Gallery / Delivered Assets
+                let galleryItems: any[] = [];
+                const rawImages = project.images;
+                if (Array.isArray(rawImages)) {
+                  galleryItems = rawImages;
+                } else if (typeof rawImages === 'string' && rawImages) {
+                  if (rawImages.trim().startsWith('[') || rawImages.trim().startsWith('{')) {
+                    try {
+                      const parsed = JSON.parse(rawImages);
+                      galleryItems = Array.isArray(parsed) ? parsed : [parsed];
+                    } catch (e) {
+                      galleryItems = rawImages.split(/[\n,]+/).map(url => ({ url: url.trim(), type: 'image' }));
+                    }
+                  } else {
+                    galleryItems = rawImages.split(/[\n,]+/).map(url => ({ url: url.trim(), type: 'image' }));
                   }
                 }
-                
-                const cleanDescription = descriptionLines.join('\n').trim() || 'No detailed description provided for this project.';
-                
-                return (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    {/* Description Card (Takes 2 columns if on large screen) */}
-                    <div className="lg:col-span-2 space-y-4">
-                      <section className="bg-surface-container rounded-xl p-6 border border-white/5 shadow-sm h-full">
-                        <h3 className="text-xs font-bold uppercase tracking-tighter text-outline mb-4 flex items-center gap-2">
-                          <span className="material-symbols-outlined text-sm">description</span>
-                          Project Description
-                        </h3>
-                        <div className="prose prose-invert max-w-none">
-                          <p className="text-on-surface leading-relaxed text-[11px] whitespace-pre-wrap">
-                            {cleanDescription}
-                          </p>
-                        </div>
-                        
-                        <div className="mt-6 pt-6 border-t border-white/5 flex flex-wrap gap-2">
-                          {project.tags?.map((tag: string) => (
-                            <span key={tag} className="px-3 py-1 rounded-full bg-surface-container-high text-[10px] font-bold text-outline uppercase tracking-wider border border-white/10">
-                              {tag}
-                            </span>
-                          )) || (
-                              <span className="px-3 py-1 rounded-full bg-surface-container-high text-[10px] font-bold text-outline uppercase tracking-wider border border-white/10">Standard 3D CAD</span>
-                            )}
-                        </div>
-                      </section>
-                    </div>
+                const validAssets = galleryItems.filter((i: any) => i && i.url);
 
-                    {/* Status & Meta Cards (Takes 1 column) */}
-                    <div className="space-y-6">
-                      {/* Escrow Card */}
-                      {escrowInfo && (
-                        <div className="bg-surface-container rounded-xl p-6 border border-green-500/20 relative overflow-hidden group shadow-lg">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-green-400">
-                            <span className="material-symbols-outlined text-5xl">shield</span>
+                // Revisions counts
+                const revisionsList = project.revisions || [];
+                const pendingRevs = revisionsList.filter((r: any) => r.status !== 'Fixed').length;
+                const fixedRevs = revisionsList.filter((r: any) => r.status === 'Fixed').length;
+                const latestRev = revisionsList.length > 0 ? revisionsList[revisionsList.length - 1] : null;
+
+                // Time tracking totals
+                const totalActiveSecs = timeLogs.reduce((acc, log) => acc + (log.active_seconds || 0), 0);
+                const trackedHours = Math.floor(totalActiveSecs / 3600);
+                const trackedMins = Math.floor((totalActiveSecs % 3600) / 60);
+                const timeString = totalActiveSecs > 0 ? `${trackedHours > 0 ? `${trackedHours}h ` : ''}${trackedMins}m` : '0m';
+
+                // Financial calculations
+                const revNum = parseFloat(project.revenue || '0');
+                const paidNum = parseFloat(project.paidAmount || '0');
+                const balanceDue = Math.max(0, revNum - paidNum);
+                const payPercent = revNum > 0 ? Math.min(100, Math.round((paidNum / revNum) * 100)) : 0;
+                const revCurrSymbol = getCurrencySymbol(project.revenueCurrency || 'USD');
+
+                // Deadline calculation
+                const getDeadlineInfo = (deadlineStr?: string) => {
+                  if (!deadlineStr) return null;
+                  const deadline = new Date(deadlineStr);
+                  if (isNaN(deadline.getTime())) return null;
+                  const now = new Date();
+                  const diffMs = deadline.getTime() - now.getTime();
+                  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                  if (diffDays < 0) {
+                    return { text: `${Math.abs(diffDays)}d Overdue`, isOverdue: true, color: 'text-error bg-error/10 border-error/20' };
+                  } else if (diffDays === 0) {
+                    return { text: 'Due Today', isOverdue: false, color: 'text-[#fce003] bg-[#fce003]/10 border-[#fce003]/20 animate-pulse' };
+                  } else {
+                    return { text: `${diffDays}d Remaining`, isOverdue: false, color: 'text-cyan-400 bg-cyan-400/10 border-cyan-400/20' };
+                  }
+                };
+                const deadlineInfo = getDeadlineInfo(project.deadlineDate);
+
+                // Smart Specifications extraction from description text
+                const extractedSpecs: { icon: string; label: string; value: string }[] = [];
+                const fullText = `${project.title || ''} ${cleanDescription}`;
+                
+                // Ring Size
+                const sizeMatch = fullText.match(/size\s*[:\-]?\s*([0-9]+(\.[0-9]+)?)/i);
+                if (sizeMatch) extractedSpecs.push({ icon: 'straighten', label: 'Ring Size', value: `US ${sizeMatch[1]}` });
+                
+                // Metal
+                const metalMatch = fullText.match(/(10k|14k|18k|22k|24k|platinum|silver)\s*(white gold|yellow gold|rose gold|gold|pt)?/i);
+                if (metalMatch) extractedSpecs.push({ icon: 'diamond', label: 'Metal', value: metalMatch[0].toUpperCase() });
+                
+                // Band width
+                const bandMatch = fullText.match(/([0-9]+(\.[0-9]+)?\s*mm)\s*band/i);
+                if (bandMatch) extractedSpecs.push({ icon: 'panorama_horizontal', label: 'Band Width', value: bandMatch[1] });
+                
+                // Pave
+                const paveMatch = fullText.match(/([0-9]+(\.[0-9]+)?\s*mm)\s*(pave|pavé)/i);
+                if (paveMatch) extractedSpecs.push({ icon: 'auto_awesome', label: 'Pave Setting', value: paveMatch[0] });
+
+                // Stone Shape
+                const stoneMatch = fullText.match(/(oval|round|cushion|emerald|pear|marquise|radiant|princess)\s*(cut|stone|diamond|engagement)?/i);
+                if (stoneMatch) extractedSpecs.push({ icon: 'token', label: 'Center Stone', value: stoneMatch[1].toUpperCase() });
+
+                // Fit
+                if (/comfort fit/i.test(fullText)) {
+                  extractedSpecs.push({ icon: 'verified', label: 'Shank Fit', value: 'Comfort Fit' });
+                }
+
+                return (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {/* Top KPI Metrics Strip */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                      {/* Metric 1: Status & Order ID */}
+                      <div className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/20 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Order & Status</span>
+                          <span className={`w-2 h-2 rounded-full ${project.status === 'Completed' ? 'bg-success' : 'bg-[#fce003] animate-pulse'}`}></span>
+                        </div>
+                        <p className="text-xs font-mono font-bold text-primary truncate">{project.orderId || 'N/A'}</p>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${project.status === 'Completed' ? 'text-success' : 'text-[#fce003]'}`}>
+                            {project.status || 'Active'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Metric 2: Timeline / Deadline */}
+                      <div className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-cyan-400/20 transition-all">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Timeline</span>
+                          <span className="material-symbols-outlined text-xs text-outline">schedule</span>
+                        </div>
+                        <p className="text-xs font-bold text-white truncate">
+                          {project.deadlineDate ? formatDate(project.deadlineDate) : (project.orderDate ? `Ordered ${formatDate(project.orderDate)}` : 'In Progress')}
+                        </p>
+                        <div className="mt-1">
+                          {deadlineInfo ? (
+                            <span className={`inline-block px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider border ${deadlineInfo.color}`}>
+                              {deadlineInfo.text}
+                            </span>
+                          ) : (
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">On Schedule</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Metric 3: Financial or Revisions (Role-based) */}
+                      {!isDesigner ? (
+                        <div 
+                          onClick={() => setActiveTab('financials')}
+                          className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/30 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Settlement</span>
+                            <span className="material-symbols-outlined text-xs text-[#fce003] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
                           </div>
-                          <div className="relative z-20">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="material-symbols-outlined text-green-400 text-sm">verified_user</span>
-                              <h4 className="text-[10px] font-black uppercase tracking-widest text-green-400">Escrow Secured</h4>
-                            </div>
-                            <p className="text-[11px] text-on-surface leading-relaxed">
-                              {escrowInfo}
-                            </p>
+                          <p className="text-xs font-headline font-black text-white">
+                            {revCurrSymbol}{revNum.toLocaleString()}
+                          </p>
+                          <div className="mt-1 flex items-center justify-between">
+                            <span className={`text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                              project.paymentStatus === 'Paid' ? 'bg-success/10 text-success' :
+                              project.paymentStatus === '50% Advance' ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error'
+                            }`}>
+                              {project.paymentStatus || 'Unpaid'}
+                            </span>
+                            {revNum > 0 && (
+                              <span className="text-[8px] font-bold text-outline">{payPercent}%</span>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div 
+                          onClick={() => setActiveTab('revisions')}
+                          className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/30 transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Revisions</span>
+                            <span className="material-symbols-outlined text-xs text-[#fce003] group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+                          </div>
+                          <p className="text-xs font-bold text-white">{revisionsList.length} Total</p>
+                          <div className="mt-1">
+                            <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                              pendingRevs > 0 ? 'bg-yellow-400/10 text-yellow-400' : 'bg-success/10 text-success'
+                            }`}>
+                              {pendingRevs > 0 ? `${pendingRevs} Pending` : 'All Clear'}
+                            </span>
                           </div>
                         </div>
                       )}
 
-                      {/* Feedback Card */}
-                      {feedbackInfo && (
-                        <div className="bg-surface-container rounded-xl p-6 border border-yellow-500/20 relative overflow-hidden group shadow-lg">
-                          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400">
-                            <span className="material-symbols-outlined text-5xl">star</span>
+                      {/* Metric 4: 3D CAD & Deliverables */}
+                      <div 
+                        onClick={() => setActiveTab(project.cadFile ? 'render' : 'gallery')}
+                        className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-cyan-400/30 transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">3D / Media</span>
+                          <span className="material-symbols-outlined text-xs text-cyan-400 group-hover:scale-110 transition-transform">3d_rotation</span>
+                        </div>
+                        <p className="text-xs font-bold text-white truncate">
+                          {project.cadFile ? 'Model Attached' : `${validAssets.length} Assets`}
+                        </p>
+                        <div className="mt-1">
+                          <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
+                            project.cadFile ? 'bg-cyan-400/10 text-cyan-400 border border-cyan-400/20' : 'bg-white/5 text-neutral-400'
+                          }`}>
+                            {project.cadFile ? 'Engine Ready' : `${validAssets.length} Renders`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Overview Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                      {/* Left Column (Primary) */}
+                      <div className="lg:col-span-7 space-y-6">
+                        {/* Project Description & Specifications Card */}
+                        <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-xs font-black uppercase tracking-wider text-outline flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm text-[#fce003]">description</span>
+                              Project Description & Specs
+                            </h3>
+                            {!isDesigner && (
+                              <Link 
+                                href={`/projects/${params.id}/edit`}
+                                className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-[9px] font-bold text-outline hover:text-[#fce003] hover:border-[#fce003]/30 transition-all flex items-center gap-1"
+                              >
+                                <span className="material-symbols-outlined text-[11px]">edit</span>
+                                Edit
+                              </Link>
+                            )}
                           </div>
-                          <div className="relative z-20">
-                            <div className="flex items-center justify-between mb-3">
-                              <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-yellow-400 text-sm">reviews</span>
-                                <h4 className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Client Feedback</h4>
+
+                          {/* Extracted Specifications Chips */}
+                          {extractedSpecs.length > 0 && (
+                            <div className="mb-5 p-3.5 rounded-xl bg-black/40 border border-white/5">
+                              <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest block mb-2">Detected Specifications</span>
+                              <div className="flex flex-wrap gap-2">
+                                {extractedSpecs.map((spec, sidx) => (
+                                  <div key={sidx} className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-container-high rounded-lg border border-white/10 shadow-sm">
+                                    <span className="material-symbols-outlined text-xs text-[#fce003]">{spec.icon}</span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[7px] text-neutral-500 font-bold uppercase">{spec.label}</span>
+                                      <span className="text-[10px] font-black text-white tracking-tight">{spec.value}</span>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-yellow-400 text-[10px] font-black">
-                                  {parseFloat(feedbackInfo.rating.split('/')[0] || '5').toFixed(1)}
+                            </div>
+                          )}
+
+                          {/* Full Formatted Description */}
+                          <div className="max-w-none">
+                            <FormattedDescription text={cleanDescription} />
+                          </div>
+
+                          {/* Tags Section */}
+                          <div className="mt-6 pt-5 border-t border-white/5 flex flex-wrap items-center gap-2">
+                            <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest mr-1">Tags:</span>
+                            {project.tags && project.tags.length > 0 ? (
+                              project.tags.map((tag: string) => (
+                                <span key={tag} className="px-2.5 py-1 rounded-md bg-surface-container-high text-[9px] font-bold text-outline uppercase tracking-wider border border-white/10">
+                                  {tag}
                                 </span>
-                                <div className="flex items-center gap-0.5">
-                                  {[...Array(5)].map((_, i) => (
-                                    <span key={i} className="material-symbols-outlined text-yellow-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-                                  ))}
+                              ))
+                            ) : (
+                              <span className="px-2.5 py-1 rounded-md bg-surface-container-high text-[9px] font-bold text-outline uppercase tracking-wider border border-white/10">Standard 3D CAD</span>
+                            )}
+                          </div>
+                        </section>
+                      </div>
+
+                      {/* Right Column (Secondary) */}
+                      <div className="lg:col-span-5 space-y-6">
+                        {/* Financial Summary Card (Organization only) */}
+                        {!isDesigner && (
+                          <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-sm text-[#fce003]">account_balance_wallet</span>
+                                <h3 className="text-xs font-black text-white uppercase tracking-tight">Financial Progress</h3>
+                              </div>
+                              <button
+                                onClick={() => setActiveTab('financials')}
+                                className="text-[9px] font-black text-[#fce003] hover:underline uppercase tracking-widest flex items-center gap-0.5"
+                              >
+                                Full Breakdown
+                                <span className="material-symbols-outlined text-xs">chevron_right</span>
+                              </button>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div>
+                              <div className="flex justify-between text-[9px] font-bold text-outline uppercase mb-1.5">
+                                <span>Paid: {revCurrSymbol}{paidNum.toLocaleString()}</span>
+                                <span>Total: {revCurrSymbol}{revNum.toLocaleString()}</span>
+                              </div>
+                              <div className="h-2 bg-stone-800 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-yellow-400 to-green-400 transition-all duration-500" 
+                                  style={{ width: `${payPercent}%` }}
+                                ></div>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                              <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Balance Due</span>
+                                <p className={`text-sm font-black mt-0.5 ${balanceDue > 0 ? 'text-[#fce003]' : 'text-success'}`}>
+                                  {revCurrSymbol}{balanceDue.toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="p-3 rounded-xl bg-black/40 border border-white/5">
+                                <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Status</span>
+                                <p className="text-sm font-black text-white mt-0.5 truncate">
+                                  {project.paymentStatus || 'Unpaid'}
+                                </p>
+                              </div>
+                            </div>
+                          </section>
+                        )}
+
+                        {/* Production & Revisions Snapshot Card */}
+                        <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="material-symbols-outlined text-sm text-[#fce003]">engineering</span>
+                              <h3 className="text-xs font-black text-white uppercase tracking-tight">Production & Quality</h3>
+                            </div>
+                            <button
+                              onClick={() => setActiveTab('revisions')}
+                              className="text-[9px] font-black text-[#fce003] hover:underline uppercase tracking-widest flex items-center gap-0.5"
+                            >
+                              Revisions Tab
+                              <span className="material-symbols-outlined text-xs">chevron_right</span>
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div 
+                              onClick={() => setActiveTab('revisions')}
+                              className="p-3 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:border-white/10 transition-colors"
+                            >
+                              <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Active Revisions</span>
+                              <p className="text-sm font-black text-white mt-0.5">
+                                {pendingRevs} <span className="text-[9px] font-normal text-outline">({fixedRevs} fixed)</span>
+                              </p>
+                            </div>
+                            <div 
+                              onClick={() => setActiveTab('tracking')}
+                              className="p-3 rounded-xl bg-black/40 border border-white/5 cursor-pointer hover:border-white/10 transition-colors"
+                            >
+                              <span className="text-[7.5px] font-bold text-neutral-500 uppercase tracking-widest block">Tracked Time</span>
+                              <p className="text-sm font-black text-[#fce003] mt-0.5">{timeString}</p>
+                            </div>
+                          </div>
+
+                          {latestRev && (
+                            <div className="p-3 rounded-xl bg-surface-container-high/60 border border-white/5">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[8px] font-bold text-neutral-400 uppercase">Latest Request</span>
+                                <span className={`text-[7px] font-black uppercase px-1.5 py-0.2 rounded ${latestRev.status === 'Fixed' ? 'bg-success/20 text-success' : 'bg-[#fce003]/20 text-[#fce003]'}`}>
+                                  {latestRev.status || 'Pending'}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-on-surface line-clamp-2 italic">
+                                "{cleanNote(latestRev.note)}"
+                              </p>
+                            </div>
+                          )}
+                        </section>
+
+                        {/* Team & Partner Quick Access Card */}
+                        <section className="bg-surface-container rounded-2xl p-5 border border-white/5 shadow-lg space-y-4">
+                          <h3 className="text-xs font-black text-white uppercase tracking-tight flex items-center gap-2">
+                            <span className="material-symbols-outlined text-sm text-[#fce003]">group</span>
+                            Assigned Team & Partner
+                          </h3>
+
+                          <div className="space-y-3">
+                            {/* Assigned Designer */}
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full overflow-hidden border border-yellow-400/30 flex-shrink-0">
+                                  <img 
+                                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${project.designer || 'designer'}`} 
+                                    alt={project.designer} 
+                                    className="w-full h-full object-cover" 
+                                  />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-white">{project.designer || 'Unassigned'}</p>
+                                  <p className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">Lead CAD Designer</p>
                                 </div>
                               </div>
+                              <button
+                                onClick={() => setActiveTab('chat')}
+                                className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[9px] font-black text-[#fce003] uppercase tracking-wider flex items-center gap-1 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                Message
+                              </button>
                             </div>
-                            <p className="text-[11px] text-on-surface leading-relaxed italic">
-                              "{feedbackInfo.comment || 'Amazing Experience'}"
-                            </p>
-                            <p className="text-[9px] text-outline font-black uppercase tracking-widest mt-2">
-                              Rating: {feedbackInfo.rating}
+
+                            {/* Client Profile */}
+                            {!isDesigner && (
+                              <div className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-xl bg-surface-container-high flex items-center justify-center border border-white/10 flex-shrink-0">
+                                    <span className="material-symbols-outlined text-sm text-outline">business</span>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-bold text-white truncate max-w-[130px] sm:max-w-[160px]">
+                                      {client?.companyName || client?.name || project.client || 'Authorized Client'}
+                                    </p>
+                                    <p className="text-[8px] font-bold text-neutral-500 uppercase tracking-wider">
+                                      {client?.country || 'Partner Client'}
+                                    </p>
+                                  </div>
+                                </div>
+                                {client?.mobile && (
+                                  <a
+                                    href={`https://wa.me/${client.mobile.replace(/[^0-9]/g, '')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-[9px] font-black text-green-400 uppercase tracking-wider flex items-center gap-1 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-xs">send</span>
+                                    WhatsApp
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </section>
+
+                        {/* Escrow Card (if metadata present) */}
+                        {escrowInfo && (
+                          <div className="bg-surface-container rounded-2xl p-5 border border-green-500/20 relative overflow-hidden group shadow-lg">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-green-400">
+                              <span className="material-symbols-outlined text-5xl">shield</span>
+                            </div>
+                            <div className="relative z-20">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="material-symbols-outlined text-green-400 text-sm">verified_user</span>
+                                <h4 className="text-[10px] font-black uppercase tracking-widest text-green-400">Escrow Secured</h4>
+                              </div>
+                              <p className="text-[11px] text-on-surface leading-relaxed">
+                                {escrowInfo}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Feedback Card (if metadata present) */}
+                        {feedbackInfo && (
+                          <div className="bg-surface-container rounded-2xl p-5 border border-yellow-500/20 relative overflow-hidden group shadow-lg">
+                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity z-10 text-yellow-400">
+                              <span className="material-symbols-outlined text-5xl">star</span>
+                            </div>
+                            <div className="relative z-20">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="material-symbols-outlined text-yellow-400 text-sm">reviews</span>
+                                  <h4 className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Client Feedback</h4>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className="text-yellow-400 text-[10px] font-black">
+                                    {parseFloat(feedbackInfo.rating.split('/')[0] || '5').toFixed(1)}
+                                  </span>
+                                  <span className="material-symbols-outlined text-yellow-400 text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                                </div>
+                              </div>
+                              <p className="text-[11px] text-on-surface leading-relaxed italic">
+                                "{feedbackInfo.comment || 'Amazing Experience'}"
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Visual Assets & 3D Studio Showcase (Full-Width) */}
+                    <section className="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-xl space-y-5">
+                      {/* Section Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-cyan-400/10 flex items-center justify-center border border-cyan-400/20">
+                            <span className="material-symbols-outlined text-cyan-400 text-xl">collections</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-black text-white uppercase tracking-tight">Delivered Renders & 3D Model</h3>
+                              <span className="px-2 py-0.5 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-[8px] font-black text-cyan-400 uppercase tracking-wider">
+                                {validAssets.length} Visual Assets
+                              </span>
+                            </div>
+                            <p className="text-[9px] text-outline font-bold uppercase tracking-widest mt-0.5">High-resolution presentation renders and 3D geometry engine</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setActiveTab('gallery')}
+                            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[9px] font-black text-white uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-xs text-[#fce003]">photo_library</span>
+                            Open Gallery Tab
+                          </button>
+                          <button
+                            onClick={() => setActiveTab('render')}
+                            className="px-3.5 py-2 rounded-xl bg-cyan-400/10 hover:bg-cyan-400/20 border border-cyan-400/30 text-[9px] font-black text-cyan-400 uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                          >
+                            <span className="material-symbols-outlined text-xs">3d_rotation</span>
+                            Render Studio Tab
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 3D CAD Geometry Bar */}
+                      <div className="p-4 rounded-xl bg-black/40 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${project.cadFile ? 'bg-cyan-400/10 border-cyan-400/30 text-cyan-400' : 'bg-neutral-800/60 border-white/10 text-neutral-500'}`}>
+                            <span className="material-symbols-outlined text-xl">view_in_ar</span>
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white">
+                                {project.cadFileName || (project.cadFile ? project.cadFile.split('/').pop() : 'No 3D Model Attached Yet')}
+                              </span>
+                              <span className={`w-2 h-2 rounded-full ${project.cadFile ? 'bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]' : 'bg-neutral-600'}`}></span>
+                            </div>
+                            <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">
+                              {project.cadFile 
+                                ? 'STL / OBJ 3D Model Ready for Interactive Inspection & Annotations' 
+                                : 'Upload .stl or .obj 3D geometry files in project edit mode'}
                             </p>
                           </div>
                         </div>
-                      )}
-                    </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          {project.cadFile ? (
+                            <Link
+                              href={`/projects/${params.id}/viewport`}
+                              className="px-4 py-2 rounded-xl bg-[#fce003] hover:bg-[#fce003]/90 text-stone-900 text-[10px] font-black uppercase tracking-widest transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                            >
+                              <span className="material-symbols-outlined text-sm">3d_rotation</span>
+                              Launch 3D Viewport
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/projects/${params.id}/edit`}
+                              className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white hover:text-[#fce003] text-[9px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 active:scale-95"
+                            >
+                              <span className="material-symbols-outlined text-xs">upload_file</span>
+                              Attach 3D Model
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Delivered Renders Showcase Grid */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[9px] font-black text-outline uppercase tracking-widest">Delivered Renders Preview</span>
+                          <span className="text-[8px] font-bold text-neutral-500 uppercase">Click image to inspect in full resolution</span>
+                        </div>
+
+                        {validAssets.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-3.5">
+                            {validAssets.map((asset: any, aidx: number) => {
+                              const isVideo = asset.type === 'video' || asset.url?.endsWith('.mp4') || asset.url?.includes('/video/upload/');
+                              return (
+                                <div
+                                  key={aidx}
+                                  onClick={() => setSelectedImage(asset.url)}
+                                  className="group relative aspect-square rounded-xl bg-stone-950 border border-white/10 overflow-hidden cursor-pointer shadow-md hover:border-[#fce003]/50 hover:shadow-yellow-400/10 transition-all duration-300"
+                                >
+                                  {isVideo ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-stone-900">
+                                      <span className="material-symbols-outlined text-[#fce003] text-2xl group-hover:scale-110 transition-transform">play_circle</span>
+                                      <span className="text-[7px] font-bold text-outline uppercase tracking-widest mt-1">Video Asset</span>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={asset.url}
+                                      alt={`Asset ${aidx + 1}`}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                  )}
+
+                                  {/* Hover Overlay */}
+                                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                                    <span className="material-symbols-outlined text-white text-base">zoom_in</span>
+                                    <span className="text-[8px] font-black text-white uppercase tracking-wider">Inspect</span>
+                                  </div>
+
+                                  {/* Badges */}
+                                  {project.thumbnailUrl === asset.url ? (
+                                    <div className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded bg-[#fce003] text-stone-900 text-[7px] font-black uppercase tracking-tighter shadow-md">
+                                      Main Render
+                                    </div>
+                                  ) : (
+                                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-md text-white/80 text-[7px] font-bold uppercase tracking-tighter border border-white/10">
+                                      #{aidx + 1}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="p-8 rounded-xl border border-dashed border-white/10 text-center space-y-2">
+                            <span className="material-symbols-outlined text-3xl text-neutral-600">collections</span>
+                            <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">No visual assets delivered yet</p>
+                            <p className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest">Delivered render images and animations uploaded in the Gallery tab will appear here</p>
+                          </div>
+                        )}
+                      </div>
+                    </section>
                   </div>
                 );
               })()}
@@ -685,17 +1301,17 @@ export default function ProjectDetailsPage() {
               <div className="grid grid-cols-1 gap-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Total Revenue */}
-                  <div className={`relative overflow-hidden p-3.5 rounded-xl bg-surface-container-high/50 backdrop-blur-md border ${project.revenueCurrency === '$' ? 'border-red-500/30' : 'border-[#fce003]/30'} shadow-xl`}>
+                  <div className={`relative overflow-hidden p-3.5 rounded-xl bg-surface-container-high/50 backdrop-blur-md border ${getCurrencySymbol(project.revenueCurrency || 'USD') === '$' ? 'border-red-500/30' : 'border-[#fce003]/30'} shadow-xl`}>
                     <div className="flex justify-between items-start mb-2">
                       <p className="text-[9px] text-outline uppercase font-black tracking-widest">Total Revenue</p>
                     </div>
-                    <p className="text-2xl font-headline font-black text-white tracking-tight">{project.revenueCurrency || '₹'}{parseFloat(project.revenue || '0').toLocaleString()}</p>
+                    <p className="text-2xl font-headline font-black text-white tracking-tight">{getCurrencySymbol(project.revenueCurrency || 'USD')}{parseFloat(project.revenue || '0').toLocaleString()}</p>
                   </div>
 
                   {/* Paid Amount */}
                   <div className="relative overflow-hidden p-3.5 rounded-xl bg-surface-container-high/50 backdrop-blur-md border border-white/5 shadow-xl">
                     <p className="text-[9px] text-outline uppercase font-black tracking-widest mb-2">Paid Amount</p>
-                    <p className="text-2xl font-headline font-black text-success tracking-tight">{project.revenueCurrency || '₹'}{parseFloat(project.paidAmount || '0').toLocaleString()}</p>
+                    <p className="text-2xl font-headline font-black text-success tracking-tight">{getCurrencySymbol(project.revenueCurrency || 'USD')}{parseFloat(project.paidAmount || '0').toLocaleString()}</p>
                     <div className="mt-1 flex items-center gap-1.5">
                       <div className="flex-1 bg-stone-800 h-1 rounded-full overflow-hidden">
                         <div className="bg-success h-full" style={{ width: `${Math.min(100, (parseFloat(project.paidAmount || '0') / (parseFloat(project.revenue || '1') || 1)) * 100)}%` }}></div>
@@ -710,19 +1326,19 @@ export default function ProjectDetailsPage() {
                   <div className="relative overflow-hidden p-4 rounded-xl bg-[#1a1a14] border-l-4 border-[#fce003] shadow-2xl group hover:bg-[#1e1e16] transition-all">
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-widest">Balance Due</p>
-                      <span className="text-[8px] font-black text-outline uppercase">Pending Settlement</span>
+                      <span className="text-[8px] font-black text-outline">Pending Settlement</span>
                     </div>
                     <p className="text-3xl font-headline font-black text-[#fce003] tracking-tighter">
-                      {project.revenueCurrency || '₹'}{(parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')).toLocaleString()}
+                      {getCurrencySymbol(project.revenueCurrency || 'USD')}{(parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')).toLocaleString()}
                     </p>
                   </div>
 
                   {/* Consolidated Net Margin & Designer Cost */}
-                  <div className={`relative overflow-hidden p-4 rounded-xl bg-[#1a1a14] border-l-4 ${project.expenseCurrency === '$' ? 'border-red-500' : 'border-tertiary-container'} shadow-2xl`}>
+                  <div className={`relative overflow-hidden p-4 rounded-xl bg-[#1a1a14] border-l-4 ${getCurrencySymbol(project.expenseCurrency || 'INR') === '$' ? 'border-red-500' : 'border-tertiary-container'} shadow-2xl`}>
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-widest">Net Profit Margin (USD)</p>
                       <div className="flex flex-col items-end">
-                         <p className="text-[8px] text-outline uppercase font-black">Designer Cost: <span className="text-white">{project.expenseCurrency}{project.expense}</span></p>
+                         <p className="text-[8px] text-outline uppercase font-black">Designer Cost: <span className="text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense}</span></p>
                          <div className="flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
                             <span className="text-[7px] text-neutral-500 font-bold uppercase tracking-widest">Live Rate: 1$ = ₹{exchangeRate.toFixed(2)}</span>
@@ -734,14 +1350,22 @@ export default function ProjectDetailsPage() {
                         ${(() => {
                           const rev = parseFloat(project.revenue || '0');
                           const exp = parseFloat(project.expense || '0');
-                          const revUSD = project.revenueCurrency === '$' ? rev : rev / exchangeRate;
-                          const expUSD = project.expenseCurrency === '$' ? exp : exp / exchangeRate;
+                          
+                          const revCurrencyCode = project.revenueCurrency && project.revenueCurrency.length === 3 ? project.revenueCurrency.toUpperCase() : (GLOBAL_CURRENCIES.find(c => c.symbol === (project.revenueCurrency || '$'))?.code || 'USD');
+                          const expCurrencyCode = project.expenseCurrency && project.expenseCurrency.length === 3 ? project.expenseCurrency.toUpperCase() : (GLOBAL_CURRENCIES.find(c => c.symbol === (project.expenseCurrency || '$'))?.code || 'USD');
+                          
+                          const rateRevToUSD = allRates[revCurrencyCode] || 1;
+                          const rateExpToUSD = allRates[expCurrencyCode] || 1;
+                          
+                          const revUSD = rev / rateRevToUSD;
+                          const expUSD = exp / rateExpToUSD;
+                          
                           return (revUSD - expUSD).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                         })()}
                       </p>
                       {project.revenueCurrency !== project.expenseCurrency && (
                         <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">
-                          (Calculated from {project.revenueCurrency}{project.revenue} - {project.expenseCurrency}{project.expense})
+                          (Calculated from {getCurrencySymbol(project.revenueCurrency || 'USD')}{project.revenue} - {getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense})
                         </span>
                       )}
                     </div>
@@ -749,9 +1373,35 @@ export default function ProjectDetailsPage() {
                 </div>
               </div>
 
+                {/* Manual Payment Record */}
+                {manualPaymentInfo && Object.keys(manualPaymentInfo).length > 0 && (
+                  <div className="relative overflow-hidden p-6 rounded-2xl bg-[#1a1a17] border border-white/5 shadow-2xl mt-10">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                        <span className="material-symbols-outlined text-blue-400 text-xl">receipt_long</span>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight">Manual Payment Record</h4>
+                        <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest">
+                          Offline Settlement Details
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {Object.entries(manualPaymentInfo).map(([key, value]) => (
+                        <div key={key} className="space-y-1">
+                          <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-widest">{key}</p>
+                          <p className="text-xs font-bold text-white truncate">{value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Designer Payout Settlement */}
                 {/* Project Escrow Terminal */}
-                <div className="relative overflow-hidden p-6 rounded-2xl bg-[#1a1a17] border border-white/5 shadow-2xl mt-10">
+                {(!manualPaymentInfo && project.payoutStatus?.toLowerCase() !== 'paid') && (
+                  <div className="relative overflow-hidden p-6 rounded-2xl bg-[#1a1a17] border border-white/5 shadow-2xl mt-10">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
@@ -784,19 +1434,25 @@ export default function ProjectDetailsPage() {
                     )}
                   </div>
 
-                  {!isDesigner && !escrow && project.paymentStatus !== 'Escrow Secured' && project.paymentStatus !== 'Paid' && (
-                    <div className="flex flex-col gap-3 w-full">
+                  {!isDesigner && !manualPaymentInfo && project.payoutStatus?.toLowerCase() !== 'paid' && (
+                    <div className="flex gap-3">
+                      {!escrow && project.paymentStatus !== 'Escrow Secured' && project.paymentStatus !== 'Paid' && (
+                        <button 
+                          onClick={() => setShowPaymentModal(true)}
+                          className="flex-1 py-4 rounded-xl bg-orange-500 text-black font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                        >
+                          Secure Designer Fees
+                        </button>
+                      )}
                       <button 
-                        onClick={() => setShowPaymentModal(true)}
-                        className="w-full py-4 rounded-xl bg-orange-500 text-black font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-orange-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                        onClick={() => {
+                          setManualPaymentForm(prev => ({ ...prev, amountPaid: project.expense || '' }));
+                          setIsReceiptParsed(false);
+                          setShowManualPaymentModal(true);
+                        }}
+                        className="flex-1 py-4 rounded-xl border border-white/10 bg-white/5 text-white font-headline font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 active:scale-95 transition-all"
                       >
-                        Secure Designer Fees
-                      </button>
-                      <button 
-                        onClick={() => setShowManualPaymentModal(true)}
-                        className="w-full py-4 rounded-xl bg-zinc-900 border border-white/5 text-white/60 hover:text-white hover:border-white/20 transition-all font-headline font-black text-[10px] uppercase tracking-[0.2em] text-center active:scale-95"
-                      >
-                        Mark as Paid Manually
+                        Manual Payment
                       </button>
                     </div>
                   )}
@@ -810,7 +1466,7 @@ export default function ProjectDetailsPage() {
                         if (res.success) {
                           setNotification({ message: 'Funds released to designer! ✅', type: 'success' });
                           setEscrow(null);
-                          setProject((prev: any) => ({ ...prev, paymentStatus: 'Paid', status: 'Completed' }));
+                          setProject((prev: any) => ({ ...prev, paymentStatus: 'Paid', payoutStatus: 'Paid', status: 'Completed' }));
                         } else {
                           setNotification({ message: res.error || 'Failed to release funds.', type: 'error' });
                         }
@@ -827,139 +1483,9 @@ export default function ProjectDetailsPage() {
                     </div>
                   )}
 
-                  {project.paymentStatus === 'Paid' && (
+                  {(project.payoutStatus?.toLowerCase() === 'paid' || (project.paymentStatus === 'Paid' && !escrow && project.payoutStatus?.toLowerCase() !== 'pending' && !manualPaymentInfo)) && (
                     <div className="w-full py-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-headline font-black text-[10px] uppercase tracking-[0.2em] text-center">
                       Designer Settled
-                    </div>
-                  )}
-
-                  {project.paymentStatus === 'Paid' && (() => {
-                    const details = getManualPaymentDetails();
-                    if (!details) return null;
-                    return (
-                      <div className="mt-4 space-y-3 bg-green-500/5 border border-green-500/10 p-4 rounded-xl">
-                        <div className="flex items-center gap-2 border-b border-green-500/10 pb-2">
-                          <span className="material-symbols-outlined text-green-400 text-lg">check_circle</span>
-                          <span className="text-[10px] font-black text-green-400 uppercase tracking-widest">Manual Payment Confirmed</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-[10px]">
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Platform:</span>
-                            <span className="text-white font-black">{details.platform || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Transaction ID:</span>
-                            <span className="text-white font-black font-mono">{details.transactionid || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Amount Settled:</span>
-                            <span className="text-green-400 font-black">{project.expenseCurrency === 'USD' ? '$' : '₹'}{details.amountpaid || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Date:</span>
-                            <span className="text-white font-black">{details.date || 'N/A'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {project.paymentStatus === 'Paid (Pending Approval)' && (() => {
-                    const details = getManualPaymentDetails();
-                    if (!details) return null;
-                    return (
-                      <div className="mt-4 space-y-4 bg-zinc-900/50 border border-white/5 p-4 rounded-xl">
-                        <div className="flex items-center gap-2 border-b border-white/5 pb-2">
-                          <span className="material-symbols-outlined text-yellow-400 text-lg">receipt_long</span>
-                          <span className="text-[10px] font-black text-white uppercase tracking-widest">Pending Manual Payment Details</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-[10px]">
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Platform:</span>
-                            <span className="text-white font-black">{details.platform || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Transaction ID:</span>
-                            <span className="text-white font-black font-mono">{details.transactionid || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Recipient:</span>
-                            <span className="text-white font-black">{details.recipientname || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-neutral-500 font-bold block">Amount Paid:</span>
-                            <span className="text-[#fce003] font-black">{project.expenseCurrency === 'USD' ? '$' : '₹'}{details.amountpaid || 'N/A'}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-neutral-500 font-bold block">Date & Time:</span>
-                            <span className="text-white font-black">{details.date || 'N/A'} {details.time || ''}</span>
-                          </div>
-                        </div>
-                        
-                        {isDesigner ? (
-                          <div className="pt-3 border-t border-white/5 flex gap-2.5">
-                            <button
-                              onClick={async () => {
-                                if (!confirm('Confirm receipt of this payment? This will complete the project.')) return;
-                                try {
-                                  const { resolveManualPayment } = await import('@/app/actions');
-                                  const res = await resolveManualPayment(project.id, true);
-                                  if (res.success) {
-                                    setNotification({ message: 'Payment confirmed & project completed! ✅', type: 'success' });
-                                    setProject((prev: any) => ({ ...prev, paymentStatus: 'Paid', status: 'Completed' }));
-                                  } else {
-                                    setNotification({ message: res.error || 'Failed to resolve payment.', type: 'error' });
-                                  }
-                                } catch (e) {
-                                  setNotification({ message: 'An error occurred.', type: 'error' });
-                                }
-                              }}
-                              className="flex-1 py-3 rounded-lg bg-green-600 text-white font-black text-[9px] uppercase tracking-widest hover:bg-green-500 transition-colors active:scale-95"
-                            >
-                              Approve / Confirm Receipt
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (!confirm('Report payment as NOT received? This will mark the project as disputed.')) return;
-                                try {
-                                  const { resolveManualPayment } = await import('@/app/actions');
-                                  const res = await resolveManualPayment(project.id, false);
-                                  if (res.success) {
-                                    setNotification({ message: 'Payment marked as not received. ⚠️', type: 'error' });
-                                    setProject((prev: any) => ({ ...prev, paymentStatus: 'Unpaid', status: 'Payment Dispute' }));
-                                  } else {
-                                    setNotification({ message: res.error || 'Failed to resolve payment.', type: 'error' });
-                                  }
-                                } catch (e) {
-                                  setNotification({ message: 'An error occurred.', type: 'error' });
-                                }
-                              }}
-                              className="flex-1 py-3 rounded-lg bg-red-600/20 border border-red-500/30 text-red-500 font-black text-[9px] uppercase tracking-widest hover:bg-red-600/30 transition-colors active:scale-95"
-                            >
-                              Not Received
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="pt-3 border-t border-white/5 text-center">
-                            <span className="text-[9px] font-bold text-orange-400 uppercase tracking-widest animate-pulse flex items-center justify-center gap-1.5">
-                              <span className="material-symbols-outlined text-sm">schedule</span>
-                              Awaiting Designer Confirmation
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {project.status === 'Payment Dispute' && (
-                    <div className="mt-4 space-y-3 bg-red-500/5 border border-red-500/10 p-4 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-red-500 text-lg animate-bounce">warning</span>
-                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Payment Dispute Active</span>
-                      </div>
-                      <p className="text-[9.5px] text-neutral-400 leading-relaxed font-bold uppercase">
-                        The designer reported that they did not receive the manual payment. Please contact the designer to resolve the issue.
-                      </p>
                     </div>
                   )}
 
@@ -967,6 +1493,7 @@ export default function ProjectDetailsPage() {
                     Escrow system operates independently from CADONCE rewards points
                   </p>
                 </div>
+                )}
 
             </section>
           </div>
@@ -1084,7 +1611,7 @@ export default function ProjectDetailsPage() {
                       <div>
                         <h4 className="text-sm font-black text-white uppercase tracking-tight">{rev.label || `Revision ${project.revisions.length - idx}`}</h4>
                         <p className="text-[9px] font-bold text-outline uppercase tracking-widest mt-0.5">
-                          {formatDate(rev.createdAt)} • {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(rev.createdAt).toLocaleDateString()} • {new Date(rev.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                       <div className={`px-2 py-1 rounded text-[8px] font-black uppercase tracking-widest ${rev.status === 'Fixed' ? 'bg-success/20 text-success' : 'bg-white/5 text-neutral-500'
@@ -1312,7 +1839,7 @@ export default function ProjectDetailsPage() {
                       ))}
                     </div>
                     <span className="text-[9px] font-bold text-outline uppercase">
-                      {formatDate(feedback.created_at)}
+                      {new Date(feedback.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-xs text-on-surface leading-relaxed italic">
@@ -1381,7 +1908,7 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Sidebar Context Area (Right) */}
-            <aside className="lg:col-span-4 space-y-6 order-1 lg:order-2">
+            <aside className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-6 order-1 lg:order-2">
               <div className="lg:sticky lg:top-20 space-y-6">
                 {/* Primary Actions Bar */}
                 <div className="flex flex-col gap-2.5">
@@ -1394,20 +1921,7 @@ export default function ProjectDetailsPage() {
                   </Link>
                   {!isDesigner && project.status !== 'Completed' && (
                     <button
-                      onClick={async () => {
-                        if (project.paymentStatus !== 'Paid' && project.paymentStatus !== 'Escrow Secured') {
-                          setShowUnpaidAlertModal(true);
-                          return;
-                        }
-                        const { updateProjectStatus } = await import('@/app/actions');
-                        const res = await updateProjectStatus(params.id as string, 'Completed');
-                        if (res.success) {
-                          setNotification({ message: 'Project marked as completed! 🏆', type: 'success' });
-                          setProject((prev: any) => ({ ...prev, status: 'Completed' }));
-                        } else {
-                          setNotification({ message: res.error || 'Failed to update status.', type: 'error' });
-                        }
-                      }}
+                      onClick={() => setShowCompletionModal(true)}
                       className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-success/10 border border-success/30 text-success text-[10px] font-black uppercase tracking-widest active:scale-[0.98] transition-all hover:bg-success/20"
                     >
                       <span className="material-symbols-outlined text-lg">workspace_premium</span>
@@ -1447,15 +1961,18 @@ export default function ProjectDetailsPage() {
                       </div>
                       {!isDesigner && (
                         <button
-                          onClick={handleSendInvoice}
+                          onClick={() => setShowInvoiceModal(true)}
                           disabled={isSendingInvoice}
-                          className={`p-2.5 rounded-xl bg-surface-container-high border border-white/5 text-tertiary-container hover:text-[#fce003] transition-all active:scale-95 flex items-center justify-center min-w-[44px] ${isSendingInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`px-3 py-1.5 rounded-lg bg-surface-container-high border border-white/5 text-tertiary-container hover:text-[#fce003] transition-all active:scale-95 flex items-center justify-center gap-2 ${isSendingInvoice ? 'opacity-50 cursor-not-allowed' : ''}`}
                           title="Generate & Send Invoice"
                         >
                           {isSendingInvoice ? (
                             <div className="w-4 h-4 border-2 border-tertiary-container border-t-transparent rounded-full animate-spin"></div>
                           ) : (
-                            <span className="material-symbols-outlined text-xl">description</span>
+                            <>
+                              <span className="material-symbols-outlined text-[16px]">description</span>
+                              <span className="text-[9px] font-black uppercase tracking-widest">{project.invoiceSent ? 'View Invoice' : 'Generate Invoice'}</span>
+                            </>
                           )}
                         </button>
                       )}
@@ -1496,24 +2013,19 @@ export default function ProjectDetailsPage() {
                       <div className="w-2 h-2 rounded-full bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
                     </div>
                     <div className="flex flex-col gap-5">
-                      {(() => {
-                        const { personName: resolvedPersonName, companyName: resolvedCompanyName } = resolveClientPersonAndCompany(client, project?.client);
-                        return (
-                          <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex-shrink-0 border border-white/10 flex items-center justify-center overflow-hidden">
-                              {client?.avatar ? (
-                                <img src={client.avatar} alt={resolvedPersonName} className="w-full h-full object-cover" />
-                              ) : (
-                                <span className="material-symbols-outlined text-3xl text-outline">person</span>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-black text-white text-sm truncate">{resolvedCompanyName}</p>
-                              <p className="text-[9px] text-outline font-bold uppercase tracking-wider">{resolvedPersonName}</p>
-                            </div>
-                          </div>
-                        );
-                      })()}
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex-shrink-0 border border-white/10 flex items-center justify-center overflow-hidden">
+                          {client?.avatar ? (
+                            <img src={client.avatar} alt={client.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="material-symbols-outlined text-3xl text-outline">person</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-black text-white text-sm truncate">{client?.companyName || client?.name || project.client}</p>
+                          <p className="text-[9px] text-outline font-bold uppercase tracking-wider">{client?.name || 'Authorized Client'}</p>
+                        </div>
+                      </div>
 
                       <div className="space-y-4 pt-4 border-t border-white/5">
                         <div className="flex items-center justify-between">
@@ -1530,7 +2042,7 @@ export default function ProjectDetailsPage() {
                               <span className="text-base">
                                 {(client?.country?.toLowerCase() === 'india' || client?.mobile?.startsWith('+91')) ? '🇮🇳' :
                                   (client?.country?.toLowerCase() === 'united kingdom' || client?.country?.toLowerCase() === 'uk') ? '🇬🇧' :
-                                    (client?.country?.toLowerCase() === 'united states' || client?.country?.toLowerCase() === 'united states of america' || client?.country?.toLowerCase() === 'us') ? '🇺🇸' : '🌍'}
+                                    (client?.country?.toLowerCase() === 'united states' || client?.country?.toLowerCase() === 'us' || client?.country?.toLowerCase() === 'usa' || client?.country?.toLowerCase() === 'united states of america') ? '🇺🇸' : '🌍'}
                               </span>
                               {client?.country || (client?.mobile?.startsWith('+91') ? 'INDIA' : 'GLOBAL')}
                            </span>
@@ -1653,42 +2165,18 @@ export default function ProjectDetailsPage() {
                   )}
                 </button>
 
-                {isIndianDesigner ? (
-                  <button
-                    onClick={() => {
-                      const amountToPay = project.expenseCurrency === 'USD' ? parseFloat(project.expense) * exchangeRate : parseFloat(project.expense);
-                      handleRazorpayPayment(amountToPay);
-                    }}
-                    className="w-full py-5 rounded-2xl bg-[#0055ff]/10 border border-[#0055ff]/20 text-[#0055ff] flex items-center justify-between px-6 transition-all hover:bg-[#0055ff]/20 active:scale-[0.98]"
-                  >
-                    <div className="flex items-center gap-4 text-left">
-                      <span className="material-symbols-outlined text-2xl">payments</span>
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest">Razorpay Checkout</p>
-                        <p className="text-[9px] font-bold opacity-60">Pay via UPI, Cards or NetBanking (India Only)</p>
-                      </div>
-                    </div>
-                    <span className="material-symbols-outlined">arrow_forward</span>
-                  </button>
-                ) : (
-                  <div className="p-4 rounded-2xl bg-zinc-900 border border-white/5 text-center text-neutral-400">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-[#fce003] mb-1">Manual Payment Required</p>
-                    <p className="text-[9px] font-bold opacity-60">Razorpay Checkout is not supported for international designers. Please use the Manual Payment option below to proceed.</p>
-                  </div>
-                )}
-
                 <button
                   onClick={() => {
-                    setShowPaymentModal(false);
-                    setShowManualPaymentModal(true);
+                    const amountToPay = project.expenseCurrency === 'USD' ? parseFloat(project.expense) * exchangeRate : parseFloat(project.expense);
+                    handleRazorpayPayment(amountToPay);
                   }}
-                  className="w-full py-5 rounded-2xl bg-zinc-900 border border-white/10 text-white flex items-center justify-between px-6 transition-all hover:bg-zinc-800 hover:border-white/20 active:scale-[0.98]"
+                  className="w-full py-5 rounded-2xl bg-[#0055ff]/10 border border-[#0055ff]/20 text-[#0055ff] flex items-center justify-between px-6 transition-all hover:bg-[#0055ff]/20 active:scale-[0.98]"
                 >
                   <div className="flex items-center gap-4 text-left">
-                    <span className="material-symbols-outlined text-2xl text-emerald-500">check_circle</span>
+                    <span className="material-symbols-outlined text-2xl">payments</span>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest">Mark Paid Manually</p>
-                      <p className="text-[9px] font-bold opacity-60">Bypass platform escrow & record payment</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest">Razorpay Checkout</p>
+                      <p className="text-[9px] font-bold opacity-60">Pay via UPI, Cards or NetBanking</p>
                     </div>
                   </div>
                   <span className="material-symbols-outlined">arrow_forward</span>
@@ -1705,417 +2193,298 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       )}
-      {/* Manual Payment Screenshot Upload Modal */}
+
+      {/* Manual Payment Modal */}
       {showManualPaymentModal && project && (
         <div className="fixed inset-0 z-[600] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => { if (!isScanning && !isSubmittingManualPayment) setShowManualPaymentModal(false); }}></div>
-          <div className="relative w-full max-w-lg bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300 max-h-[90vh] overflow-y-auto no-scrollbar">
-            <div className="p-8 space-y-6">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
-                    <span className="material-symbols-outlined text-yellow-400 text-xl font-black">receipt_long</span>
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-black text-white uppercase tracking-wider">Manual Payout Uploader</h2>
-                    <p className="text-[7.5px] text-neutral-500 font-bold uppercase tracking-[0.2em]">{project.title}</p>
-                  </div>
-                </div>
-                <button
-                  disabled={isScanning || isSubmittingManualPayment}
-                  onClick={() => setShowManualPaymentModal(false)}
-                  className="text-neutral-500 hover:text-white disabled:opacity-30"
-                >
-                  <span className="material-symbols-outlined">close</span>
-                </button>
-              </div>
-
-              {!scanResult && !isScanning && (
-                <div className="space-y-6">
-                  {/* Manual Payment Instructions Card */}
-                  <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4 text-left">
-                    <div className="flex items-center gap-2 border-b border-white/5 pb-2.5">
-                      <span className="material-symbols-outlined text-[#fce003] text-lg">info_outline</span>
-                      <span className="text-[10px] font-black text-[#fce003] uppercase tracking-widest">Payment Instructions</span>
-                    </div>
-                    <p className="text-[9px] font-bold text-neutral-400 uppercase leading-relaxed">
-                      Please transfer the project amount of <span className="text-white font-black">{project.expenseCurrency === 'USD' ? '$' : '₹'}{project.expense}</span> using one of the channels below. Once done, upload the transaction receipt screenshot to confirm.
-                    </p>
-                    <div className="space-y-3">
-                      {designerPaymentMethods.length > 0 ? (
-                        designerPaymentMethods.map((method: any) => {
-                          const isBank = method.type.toLowerCase().includes('bank account');
-                          const isPaypal = method.type.toLowerCase() === 'paypal';
-                          const isWise = method.type.toLowerCase() === 'wise';
-                          
-                          // Choose icon
-                          let icon = 'account_balance_wallet';
-                          if (isPaypal) icon = 'payment';
-                          else if (isWise) icon = 'language';
-                          else if (isBank) icon = 'account_balance';
-                          
-                          // Determine the label and address to display/copy
-                          let displayLabel = method.type;
-                          let displayAddress = method.value || '';
-                          if (isPaypal) {
-                            displayLabel = 'PayPal Account';
-                            displayAddress = method.email || method.value || '';
-                          } else if (isWise) {
-                            displayLabel = 'Wise Identifier';
-                            displayAddress = method.value || '';
-                          } else if (isBank) {
-                            displayLabel = 'Direct Bank / SWIFT Transfer';
-                          }
-                          
-                          return (
-                            <div key={method.id} className="space-y-2">
-                              <button
-                                type="button"
-                                onClick={() => setExpandedMethod(expandedMethod === method.id ? null : method.id)}
-                                className="w-full p-3.5 rounded-xl bg-zinc-950/40 border border-white/5 flex justify-between items-center text-left hover:bg-zinc-900/50 transition-all active:scale-[0.99]"
-                              >
-                                <div className="flex items-center gap-2.5">
-                                  <span className="material-symbols-outlined text-[#fce003] text-sm">{icon}</span>
-                                  <span className="text-white text-[9px] font-black uppercase tracking-wider">{displayLabel}</span>
-                                </div>
-                                <span className="material-symbols-outlined text-neutral-500 text-sm transition-transform duration-300" style={{ transform: expandedMethod === method.id ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                                  keyboard_arrow_down
-                                </span>
-                              </button>
-                              {expandedMethod === method.id && (
-                                <div className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                                  {isBank ? (
-                                    <div className="grid grid-cols-2 gap-3.5 text-[9.5px] text-left">
-                                      {method.bankName && (
-                                        <div>
-                                          <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">Bank Name</span>
-                                          <span className="text-white font-black">{method.bankName}</span>
-                                        </div>
-                                      )}
-                                      {method.holder && (
-                                        <div>
-                                          <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">Account Name</span>
-                                          <span className="text-white font-black">{method.holder}</span>
-                                        </div>
-                                      )}
-                                      {method.value && (
-                                        <div className="col-span-2 border-t border-white/5 pt-2 mt-1">
-                                          <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">Account Number</span>
-                                          <div className="flex justify-between items-center">
-                                            <span className="text-white font-black font-mono text-[10px]">{method.value}</span>
-                                            <button
-                                              type="button"
-                                              onClick={() => {
-                                                navigator.clipboard.writeText(method.value);
-                                                alert("Copied to clipboard!");
-                                              }}
-                                              className="text-[#fce003] hover:underline text-[9px] font-bold uppercase tracking-wider"
-                                            >
-                                              Copy
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {method.routing && (
-                                        <div className="border-t border-white/5 pt-2 mt-1">
-                                          <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">IFSC / Routing Code</span>
-                                          <span className="text-white font-black font-mono">{method.routing}</span>
-                                        </div>
-                                      )}
-                                      {method.swiftCode && (
-                                        <div className="border-t border-white/5 pt-2 mt-1">
-                                          <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">SWIFT/BIC Code</span>
-                                          <span className="text-white font-black font-mono">{method.swiftCode}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  ) : (
-                                    <div className="flex justify-between items-center text-left">
-                                      <div>
-                                        <span className="text-neutral-500 font-bold block text-[7.5px] uppercase">{method.type} Address</span>
-                                        <span className="text-white font-black font-mono text-[9px]">{displayAddress}</span>
-                                      </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          navigator.clipboard.writeText(displayAddress);
-                                          alert("Copied to clipboard!");
-                                        }}
-                                        className="text-[#fce003] hover:underline text-[9px] font-bold uppercase tracking-wider"
-                                      >
-                                        Copy
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <div className="p-4 rounded-xl bg-zinc-950/40 border border-white/5 text-center text-neutral-500 text-[9px] font-bold uppercase tracking-wider">
-                          No payout methods configured by designer. Please contact the designer to add them under settings.
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-center p-8 bg-zinc-900/50 border-2 border-dashed border-white/10 rounded-2xl flex flex-col items-center justify-center relative hover:border-[#fce003]/30 transition-all group">
-                    <span className="material-symbols-outlined text-3xl text-neutral-500 group-hover:text-[#fce003] group-hover:scale-110 transition-all mb-3">upload_file</span>
-                    <p className="text-[10px] font-black text-white uppercase tracking-widest mb-1">Upload Receipt Screenshot</p>
-                    <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-wider mb-4">Select receipt from PhonePe, GPay, PayPal etc.</p>
-                    
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        
-                        setIsScanning(true);
-                        setIsDemoMode(false);
-                        
-                        try {
-                          const reader = new FileReader();
-                          reader.onloadend = async () => {
-                            const base64String = (reader.result as string).split(',')[1];
-                            const { parsePaymentScreenshot } = await import('@/app/actions');
-                            const res = await parsePaymentScreenshot(base64String, file.type);
-                            
-                            if (res.success && res.data) {
-                              setScanResult(res.data);
-                              setIsDemoMode(!!res.isDemo);
-                            } else {
-                              alert('Failed to scan screenshot. Please fill the details manually.');
-                              setScanResult({
-                                platform: '',
-                                transactionId: '',
-                                recipientName: '',
-                                date: '',
-                                time: '',
-                                amountPaid: project.expense || ''
-                              });
-                            }
-                            setIsScanning(false);
-                          };
-                          reader.readAsDataURL(file);
-                        } catch (err) {
-                          console.error(err);
-                          alert('Error reading file.');
-                          setIsScanning(false);
-                        }
-                      }}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                  <p className="text-[7.5px] text-neutral-500 font-bold uppercase tracking-widest text-center">
-                    Note: Your receipt image is parsed in-memory and NOT stored on our servers.
-                  </p>
-                </div>
-              )}
-
-              {isScanning && (
-                <div className="py-12 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-12 h-12 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                  <div className="text-center space-y-1">
-                    <p className="text-[10px] font-black text-yellow-400 uppercase tracking-widest animate-pulse">Scanning Receipt with Gemini AI...</p>
-                    <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest">Extracting transaction ID, amount, and recipient...</p>
-                  </div>
-                </div>
-              )}
-
-              {scanResult && !isScanning && (
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    setIsSubmittingManualPayment(true);
-                    try {
-                      const { submitManualPayment } = await import('@/app/actions');
-                      const res = await submitManualPayment(project.id, scanResult);
-                      if (res.success) {
-                        setNotification({ message: 'Payment record submitted for review! 💰', type: 'success' });
-                        setShowManualPaymentModal(false);
-                        setProject((prev: any) => ({ ...prev, paymentStatus: 'Paid (Pending Approval)' }));
-                        setScanResult(null);
-                      } else {
-                        setNotification({ message: res.error || 'Failed to submit payment details.', type: 'error' });
-                      }
-                    } catch (err: any) {
-                      setNotification({ message: 'An unexpected error occurred.', type: 'error' });
-                    } finally {
-                      setIsSubmittingManualPayment(false);
-                    }
-                  }}
-                  className="space-y-4 text-left"
-                >
-                  {isDemoMode && (
-                    <div className="p-3 bg-yellow-400/5 border border-yellow-400/20 rounded-xl flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-yellow-400 text-sm">info</span>
-                      <p className="text-[8px] text-yellow-400/80 font-bold uppercase tracking-wide">
-                        Demo Mode: AI keys not found. Fields pre-populated for demonstration.
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="bg-white/5 p-4 rounded-xl border border-white/5 space-y-3">
-                    <h3 className="text-[9px] font-black text-neutral-400 uppercase tracking-widest border-b border-white/5 pb-1.5">Verify Extracted Details</h3>
-                    
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Payment Platform</label>
-                        <input
-                          type="text"
-                          required
-                          value={scanResult.platform || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, platform: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30"
-                          placeholder="e.g. PhonePe, GPay, PayPal"
-                        />
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Transaction ID</label>
-                        <input
-                          type="text"
-                          required
-                          value={scanResult.transactionId || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, transactionId: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30 font-mono"
-                          placeholder="TXN123456789"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Recipient Name</label>
-                        <input
-                          type="text"
-                          required
-                          value={scanResult.recipientName || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, recipientName: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Amount Paid</label>
-                        <input
-                          type="text"
-                          required
-                          value={scanResult.amountPaid || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, amountPaid: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Payment Date</label>
-                        <input
-                          type="date"
-                          required
-                          value={scanResult.date || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, date: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30 color-scheme-dark"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-[8px] font-bold text-neutral-500 uppercase">Payment Time</label>
-                        <input
-                          type="text"
-                          required
-                          value={scanResult.time || ''}
-                          onChange={(e) => setScanResult({ ...scanResult, time: e.target.value })}
-                          className="w-full bg-zinc-950 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-bold text-white focus:outline-none focus:border-[#fce003]/30"
-                          placeholder="14:30"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-2">
-                    <button
-                      type="button"
-                      disabled={isSubmittingManualPayment}
-                      onClick={() => setScanResult(null)}
-                      className="flex-1 py-3.5 rounded-xl border border-white/10 text-white/60 text-[9px] font-black uppercase tracking-widest hover:border-white/20 active:scale-95 transition-all"
-                    >
-                      Re-upload
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={isSubmittingManualPayment}
-                      className="flex-1 py-3.5 rounded-xl electric-gradient text-zinc-950 text-[9px] font-black uppercase tracking-widest shadow-lg shadow-yellow-400/10 hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                      {isSubmittingManualPayment ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-zinc-950 border-t-transparent rounded-full animate-spin"></div>
-                          Submitting...
-                        </>
-                      ) : (
-                        'Confirm & Submit'
-                      )}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Unpaid Designer Confirmation Modal */}
-      {showUnpaidAlertModal && project && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowUnpaidAlertModal(false)}></div>
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowManualPaymentModal(false)}></div>
           <div className="relative w-full max-w-md bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
             <div className="p-8 space-y-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
-                  <span className="material-symbols-outlined text-yellow-400 text-xl font-black">warning</span>
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4 border border-blue-500/20">
+                  <span className="material-symbols-outlined text-blue-500 text-3xl">receipt_long</span>
                 </div>
-                <div>
-                  <h2 className="text-sm font-black text-white uppercase tracking-wider">Payment Outstanding</h2>
-                  <p className="text-[7.5px] text-neutral-500 font-bold uppercase tracking-[0.2em]">Designer Payout Required</p>
-                </div>
+                <h2 className="text-xl font-headline font-black text-white uppercase tracking-wider">Record Manual Payment</h2>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Offline Settlement Details</p>
               </div>
 
-              <div className="p-5 bg-white/5 border border-white/10 rounded-2xl text-left">
-                <p className="text-xs font-bold text-neutral-300 leading-relaxed">
-                  Make the payment to the Designer &ldquo;{project.designer || 'Unassigned'}&rdquo;
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <button
-                  onClick={async () => {
-                    setShowUnpaidAlertModal(false);
-                    const { updateProjectStatus } = await import('@/app/actions');
-                    const res = await updateProjectStatus(params.id as string, 'Completed');
-                    if (res.success) {
-                      setNotification({ message: 'Project marked as completed! 🏆', type: 'success' });
-                      setProject((prev: any) => ({ ...prev, status: 'Completed' }));
-                    } else {
-                      setNotification({ message: res.error || 'Failed to update status.', type: 'error' });
+              {!isReceiptParsed ? (
+                <div 
+                  className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all relative group flex flex-col items-center justify-center min-h-[300px] ${isParsingReceipt ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5'}`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && !isParsingReceipt) {
+                      handleReceiptUpload({ target: { files: [file] } } as any);
                     }
                   }}
-                  className="flex-1 py-3.5 rounded-xl bg-zinc-900 border border-white/5 hover:bg-zinc-800 text-white font-black uppercase tracking-widest text-[9px] active:scale-95 transition-all text-center"
                 >
-                  I&apos;ll pay later
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleReceiptUpload} 
+                    disabled={isParsingReceipt}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10" 
+                  />
+                  <div className="space-y-4 relative z-0 pointer-events-none">
+                    <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center transition-all ${isParsingReceipt ? 'bg-blue-500/20 animate-pulse' : 'bg-white/5 group-hover:bg-blue-500/10'}`}>
+                      <span className={`material-symbols-outlined text-4xl transition-all ${isParsingReceipt ? 'text-blue-400' : 'text-white/40 group-hover:text-blue-400'}`}>
+                        {isParsingReceipt ? 'hourglass_empty' : 'cloud_upload'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white">{isParsingReceipt ? 'Analyzing Receipt...' : 'Upload Payment Receipt'}</h3>
+                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">
+                        {isParsingReceipt ? 'Extracting details via Gemini AI' : 'Drag & drop image or click to browse'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="bg-success/10 border border-success/20 rounded-2xl p-4 flex items-center gap-3 mb-4">
+                    <span className="material-symbols-outlined text-success">check_circle</span>
+                    <div>
+                      <p className="text-[10px] font-black text-success uppercase tracking-widest">Parsed Successfully</p>
+                      <p className="text-[9px] font-bold text-success/60 mt-0.5">Please review the extracted details below</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Platform (e.g. Bank, GPay)</label>
+                      <input type="text" value={manualPaymentForm.platform} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Kotak811" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Transaction ID</label>
+                      <input type="text" value={manualPaymentForm.transactionId} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Txn ID" />
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Recipient Name</label>
+                      <input type="text" value={manualPaymentForm.recipientName} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Designer Name" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Date</label>
+                        <input type="date" value={manualPaymentForm.date} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Time</label>
+                        <input type="time" value={manualPaymentForm.time} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Amount Paid</label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₹</span>
+                        <input type="text" value={manualPaymentForm.amountPaid} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button 
+                      onClick={() => setShowManualPaymentModal(false)}
+                      className="flex-1 py-4 rounded-xl border border-white/10 bg-white/5 text-white font-headline font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 active:scale-95 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (!manualPaymentForm.platform || !manualPaymentForm.transactionId || !manualPaymentForm.amountPaid) {
+                          setNotification({ message: 'Please fill all required fields.', type: 'error' });
+                          return;
+                        }
+                        const manualPaymentBlock = `\n\n[MANUAL_PAYMENT]\nPlatform: ${manualPaymentForm.platform}\nTransaction ID: ${manualPaymentForm.transactionId}\nRecipient Name: ${manualPaymentForm.recipientName}\nDate: ${manualPaymentForm.date}\nTime: ${manualPaymentForm.time}\nAmount Paid: ${manualPaymentForm.amountPaid}`;
+                        
+                        const newDescription = (project.description || '') + manualPaymentBlock;
+                        
+                        const { updateProject } = await import('@/app/actions');
+                        const res = await updateProject(project.id, { 
+                          description: newDescription,
+                          payoutStatus: 'Paid'
+                        });
+                        
+                        if (res.success) {
+                          setNotification({ message: 'Manual payment recorded successfully!', type: 'success' });
+                          setShowManualPaymentModal(false);
+                          window.location.reload();
+                        } else {
+                          setNotification({ message: res.error || 'Failed to record manual payment.', type: 'error' });
+                        }
+                      }}
+                      className="flex-1 py-4 rounded-xl bg-blue-500 text-white font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                    >
+                      Save Record
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Completion Modal */}
+      {showCompletionModal && project && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => !isCompleting && setShowCompletionModal(false)}></div>
+          <div className="relative w-full max-w-md bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 rounded-2xl bg-success/10 flex items-center justify-center mx-auto mb-4 border border-success/20">
+                  <span className="material-symbols-outlined text-success text-3xl">workspace_premium</span>
+                </div>
+                <h2 className="text-xl font-headline font-black text-white uppercase tracking-wider">Mark Project Completed</h2>
+                <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Verify Payment Details Before Proceeding</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">1. Did the client pay?</label>
+                  <select 
+                    value={completionForm.clientPaid}
+                    onChange={(e) => setCompletionForm(prev => ({ ...prev, clientPaid: e.target.value }))}
+                    className="w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#fce003] transition-all cursor-pointer"
+                  >
+                    <option value="PAID">Yes, Fully Paid</option>
+                    <option value="ADVANCE">Advance Paid Only</option>
+                    <option value="UNPAID">No, Unpaid</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">2. Did you pay the Designer?</label>
+                  <select 
+                    value={completionForm.designerPaid}
+                    onChange={(e) => setCompletionForm(prev => ({ ...prev, designerPaid: e.target.value }))}
+                    className="w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#fce003] transition-all cursor-pointer"
+                  >
+                    <option value="PAID">Yes, Paid</option>
+                    <option value="PENDING">No, Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-white/5">
+                <button 
+                  onClick={() => setShowCompletionModal(false)}
+                  disabled={isCompleting}
+                  className="flex-1 py-4 rounded-xl border border-white/10 bg-white/5 text-white font-headline font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white/10 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  Cancel
                 </button>
-                <button
-                  onClick={() => {
-                    setShowUnpaidAlertModal(false);
-                    setShowPaymentModal(true);
+                <button 
+                  onClick={async () => {
+                    setIsCompleting(true);
+                    try {
+                      // Import actions dynamically
+                      const { updateProject } = await import('@/app/actions');
+                      
+                      // Update the payment status, payout status, and the overall status at once
+                      const res = await updateProject(project.id, {
+                        paymentStatus: completionForm.clientPaid,
+                        payoutStatus: completionForm.designerPaid,
+                        status: 'Completed'
+                      });
+                      
+                      if (res.success) {
+                        setNotification({ message: 'Project successfully completed & financials updated! 🏆', type: 'success' });
+                        setShowCompletionModal(false);
+                        // Refresh to show all changes instantly
+                        window.location.reload();
+                      } else {
+                        setNotification({ message: res.error || 'Failed to update project.', type: 'error' });
+                      }
+                    } catch (err: any) {
+                      setNotification({ message: 'Error: ' + err.message, type: 'error' });
+                    } finally {
+                      setIsCompleting(false);
+                    }
                   }}
-                  className="flex-1 py-3.5 rounded-xl electric-gradient text-black font-black uppercase tracking-widest text-[9px] active:scale-[0.98] transition-all text-center hover:brightness-110"
+                  disabled={isCompleting}
+                  className="flex-1 py-4 rounded-xl electric-gradient text-[#383100] font-headline font-black text-[10px] uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(252,224,3,0.3)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                 >
-                  Pay Now
+                  {isCompleting ? (
+                    <>
+                      <span className="material-symbols-outlined text-sm animate-spin">sync</span>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      Confirm
+                    </>
+                  )}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* Invoice Viewer Modal */}
+      {showInvoiceModal && project && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center p-2 sm:p-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowInvoiceModal(false)}></div>
+          <div className="relative w-full max-w-4xl h-[90vh] bg-[#0c0a04] border border-white/5 rounded-3xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col">
+            <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-black/50 shrink-0 gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-tertiary-container/10 flex items-center justify-center border border-tertiary-container/20 flex-shrink-0">
+                  <span className="material-symbols-outlined text-tertiary-container text-sm sm:text-base">receipt_long</span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-headline font-black text-white text-sm sm:text-lg tracking-wider uppercase truncate">Invoice</h3>
+                  <p className="text-[8px] sm:text-[10px] font-bold text-white/40 uppercase tracking-widest truncate">{project.title}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
+                <button
+                  onClick={() => window.open(`/api/projects/${project.id}/invoice?print=true`, '_blank')}
+                  className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-surface-container-high border border-white/10 text-white font-headline font-black text-[10px] uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all flex items-center gap-1 sm:gap-2"
+                  title="Download / Print"
+                >
+                  <span className="material-symbols-outlined text-sm">download</span>
+                  <span className="hidden sm:inline">Download</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleSendInvoice();
+                    setShowInvoiceModal(false);
+                  }}
+                  disabled={isSendingInvoice}
+                  className="px-3 py-2 sm:px-5 sm:py-2.5 rounded-xl electric-gradient text-black font-headline font-black text-[10px] uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-1 sm:gap-2 disabled:opacity-50"
+                  title="Send Invoice"
+                >
+                  {isSendingInvoice ? (
+                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm">send</span>
+                      <span className="hidden sm:inline">Send</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowInvoiceModal(false)}
+                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/5 text-white/60 hover:text-white hover:bg-white/10 flex items-center justify-center transition-all ml-1 sm:ml-2 flex-shrink-0"
+                >
+                  <span className="material-symbols-outlined text-base sm:text-xl">close</span>
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-hidden bg-white relative">
+              <iframe 
+                src={`/api/projects/${project.id}/invoice`} 
+                className="w-full h-full border-none absolute inset-0" 
+                title="Invoice Preview"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

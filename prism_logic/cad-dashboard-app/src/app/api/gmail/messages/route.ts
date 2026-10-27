@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabaseServer';
+import { supabase } from '@/lib/supabase';
 
 /** Returns a valid access token, refreshing it if expired */
-async function getValidAccessToken(supabaseServer: any, settings: any, userId: string): Promise<string | null> {
+async function getValidAccessToken(settings: any, userId: string): Promise<string | null> {
   const { gmailAccessToken, gmailRefreshToken, gmailTokenExpiry, gmailClientId, gmailClientSecret } = settings;
 
   if (!gmailAccessToken) return null;
@@ -25,10 +25,11 @@ async function getValidAccessToken(supabaseServer: any, settings: any, userId: s
   const tokens = await res.json();
   if (!tokens.access_token) return null;
 
-  await supabaseServer.from('settings').update({
+  await supabase.from('settings').upsert({
+    user_id: userId,
     gmailAccessToken: tokens.access_token,
     gmailTokenExpiry: tokens.expires_in ? Date.now() + tokens.expires_in * 1000 : null,
-  }).eq('user_id', userId);
+  }, { onConflict: 'user_id' });
 
   return tokens.access_token;
 }
@@ -76,18 +77,17 @@ async function fetchMessageDetails(accessToken: string, ids: string[]) {
 }
 
 export async function GET() {
-  const supabaseServer = await createClient();
-  const { data: { user } } = await supabaseServer.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   // 1. Load settings + client list for THIS user
   const [{ data: settingsData }, { data: clientsData }] = await Promise.all([
-    supabaseServer.from('settings').select('*').eq('user_id', user.id).limit(1),
-    supabaseServer.from('clients').select('email, name, companyName').eq('user_id', user.id),
+    supabase.from('settings').select('*').eq('user_id', user.id).limit(1),
+    supabase.from('clients').select('email, name, companyName').eq('user_id', user.id),
   ]);
 
   const settings = settingsData?.[0] || {};
-  const accessToken = await getValidAccessToken(supabaseServer, settings, user.id);
+  const accessToken = await getValidAccessToken(settings, user.id);
 
   if (!accessToken) {
     return NextResponse.json({ connected: false, messages: [] });
@@ -175,11 +175,10 @@ export async function GET() {
 }
 
 export async function DELETE() {
-  const supabaseServer = await createClient();
-  const { data: { user } } = await supabaseServer.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  await supabaseServer.from('settings').update({
+  await supabase.from('settings').update({
     gmailAccessToken: null,
     gmailRefreshToken: null,
     gmailTokenExpiry: null,

@@ -58,8 +58,8 @@ export default function ApprovalModal({
           {step === 'confirm' ? (
             <>
               <div className="text-center mb-8">
-                <div className="w-16 h-16 bg-[#fce003]/10 border border-[#fce003]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="material-symbols-outlined text-[#fce003] text-3xl">verified</span>
+                <div className="w-16 h-16 bg-[#F59E0B]/10 border border-[#F59E0B]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="material-symbols-outlined text-[#F59E0B] text-3xl">verified</span>
                 </div>
                 <h2 className="text-2xl font-headline font-black text-white uppercase tracking-tight">Final Design Approval</h2>
                 <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mt-2 px-8">
@@ -70,7 +70,7 @@ export default function ApprovalModal({
               <div className="bg-white/5 border border-white/5 rounded-2xl p-6 mb-8">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Final Balance Due</span>
-                  <span className="text-xl font-headline font-black text-[#fce003]">${balanceDue.toLocaleString()}</span>
+                  <span className="text-xl font-headline font-black text-[#F59E0B]">${balanceDue.toLocaleString()}</span>
                 </div>
                 <p className="text-[8px] font-bold text-neutral-600 uppercase tracking-widest">Payment is required to unlock the high-resolution CAD files.</p>
               </div>
@@ -107,7 +107,7 @@ export default function ApprovalModal({
               
               <button
                 onClick={onPaymentRequired}
-                className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-[#fce003] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full bg-white text-black py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-[#F59E0B] hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
                 Go to Payment Hub
               </button>
@@ -118,3 +118,4 @@ export default function ApprovalModal({
     </div>
   );
 }
+

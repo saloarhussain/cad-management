@@ -56,9 +56,9 @@ function ProjectRequestForm() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-6 text-center">
-        <div className="bg-surface-container p-10 rounded-[2.5rem] border border-[#fce003]/20 shadow-2xl animate-in zoom-in-95 duration-500">
-          <div className="w-20 h-20 bg-[#fce003]/10 rounded-full flex items-center justify-center mx-auto mb-6">
-            <span className="material-symbols-outlined text-[#fce003] text-4xl">check_circle</span>
+        <div className="bg-surface-container p-10 rounded-[2.5rem] border border-[#F59E0B]/20 shadow-2xl animate-in zoom-in-95 duration-500">
+          <div className="w-20 h-20 bg-[#F59E0B]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-symbols-outlined text-[#F59E0B] text-4xl">check_circle</span>
           </div>
           <h2 className="text-2xl font-headline font-black text-white uppercase tracking-tighter italic">Request Received</h2>
           <p className="text-sm text-neutral-400 mt-3 max-w-xs mx-auto leading-relaxed">
@@ -73,16 +73,16 @@ function ProjectRequestForm() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0c0a04] text-white font-body selection:bg-[#fce003] selection:text-black">
+    <div className="min-h-screen bg-[#0c0a04] text-white font-body selection:bg-[#F59E0B] selection:text-black">
       {/* Header */}
       <header className="p-6 border-b border-white/5 bg-black/40 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-3xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-3">
-             <div className="size-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-[#fce003]">
+             <div className="size-10 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center text-[#F59E0B]">
                 <span className="material-symbols-outlined">design_services</span>
              </div>
              <div>
-                <h1 className="text-xs font-black uppercase tracking-[0.3em] text-[#fce003]">Project Initialization</h1>
+                <h1 className="text-xs font-black uppercase tracking-[0.3em] text-[#F59E0B]">Project Initialization</h1>
                 <p className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest mt-0.5">Secure Studio Intake</p>
              </div>
           </div>
@@ -95,7 +95,7 @@ function ProjectRequestForm() {
 
       <main className="max-w-3xl mx-auto py-12 px-6">
         <div className="mb-10 text-left">
-          <h2 className="font-headline text-3xl font-black text-white uppercase tracking-tighter italic leading-none mb-4">Start Your <span className="text-[#fce003]">New Project</span></h2>
+          <h2 className="font-headline text-3xl font-black text-white uppercase tracking-tighter italic leading-none mb-4">Start Your <span className="text-[#F59E0B]">New Project</span></h2>
           <p className="text-neutral-500 text-sm max-w-lg leading-relaxed">
             Provide the tactical details for your next CAD assignment. Your brief will be directly synced to our production workstation.
           </p>
@@ -112,7 +112,7 @@ function ProjectRequestForm() {
                 name="title" 
                 required 
                 placeholder="e.g., Bespoke Emerald Pendant Design"
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#fce003]/50 outline-none transition-all placeholder:text-neutral-700" 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#F59E0B]/50 outline-none transition-all placeholder:text-neutral-700" 
               />
             </div>
 
@@ -122,7 +122,7 @@ function ProjectRequestForm() {
                 <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Currency</label>
                 <select 
                   name="currency"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#fce003]/50 outline-none transition-all appearance-none"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#F59E0B]/50 outline-none transition-all appearance-none"
                 >
                   <option value="USD">USD</option>
                   <option value="INR">INR</option>
@@ -137,13 +137,13 @@ function ProjectRequestForm() {
                   name="budget" 
                   type="number"
                   placeholder="0.00"
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#fce003]/50 outline-none transition-all placeholder:text-neutral-700" 
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#F59E0B]/50 outline-none transition-all placeholder:text-neutral-700" 
                 />
               </div>
               <div className="space-y-2 text-left">
                 <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Target Deadline *</label>
                 <div 
-                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus-within:border-[#fce003]/50 transition-all flex justify-between items-center cursor-pointer relative overflow-hidden"
+                  className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus-within:border-[#F59E0B]/50 transition-all flex justify-between items-center cursor-pointer relative overflow-hidden"
                 >
                   <span className={deadlineDisplay !== "DD/MM/YYYY" ? "text-white" : "text-neutral-700"}>
                     {deadlineDisplay}
@@ -171,7 +171,7 @@ function ProjectRequestForm() {
                 <a 
                   href="/projects/sample-brief" 
                   target="_blank"
-                  className="text-[9px] font-black text-[#fce003] uppercase tracking-widest hover:underline flex items-center gap-1"
+                  className="text-[9px] font-black text-[#F59E0B] uppercase tracking-widest hover:underline flex items-center gap-1"
                 >
                   <span className="material-symbols-outlined text-[10px]">info</span>
                   View Reference Guide
@@ -182,7 +182,7 @@ function ProjectRequestForm() {
                 required 
                 rows={5}
                 placeholder="Describe your vision, dimensions, stone settings, and any technical constraints..."
-                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#fce003]/50 outline-none transition-all resize-none placeholder:text-neutral-700" 
+                className="w-full bg-black/40 border border-white/10 rounded-xl p-4 text-sm text-white focus:border-[#F59E0B]/50 outline-none transition-all resize-none placeholder:text-neutral-700" 
               />
             </div>
           </div>
@@ -190,8 +190,8 @@ function ProjectRequestForm() {
           {/* Asset Section */}
           <div className="bg-surface-container p-8 rounded-3xl border border-white/5 shadow-xl">
              <div className="flex items-center gap-3 mb-6">
-                <div className="size-8 rounded-lg bg-[#fce003]/10 flex items-center justify-center border border-[#fce003]/20">
-                   <span className="material-symbols-outlined text-[#fce003] text-lg">collections</span>
+                <div className="size-8 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center border border-[#F59E0B]/20">
+                   <span className="material-symbols-outlined text-[#F59E0B] text-lg">collections</span>
                 </div>
                 <h3 className="text-xs font-black text-white uppercase tracking-widest">Reference Gallery</h3>
              </div>
@@ -230,7 +230,7 @@ function ProjectRequestForm() {
           <button 
             type="submit" 
             disabled={submitting}
-            className="w-full h-12 bg-gradient-to-r from-[#fce003] to-[#FF2626] rounded-xl text-black font-black uppercase tracking-widest text-[10px] shadow-xl active:scale-[0.98] transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full h-12 bg-gradient-to-r from-[#F59E0B] to-[#FF2626] rounded-xl text-black font-black uppercase tracking-widest text-[10px] shadow-xl active:scale-[0.98] transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {submitting ? (
               <div className="size-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
@@ -255,10 +255,11 @@ export default function ProjectRequestPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="size-8 border-2 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
+        <div className="size-8 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
       </div>
     }>
       <ProjectRequestForm />
     </Suspense>
   );
 }
+

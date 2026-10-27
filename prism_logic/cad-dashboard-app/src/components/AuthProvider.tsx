@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let activeUserId: string | null = null;
+
     // Intercept email verification redirect before rendering dashboard
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
@@ -89,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setSession(session);
         setUser(session.user);
+        activeUserId = session.user.id;
         setOrganizationName(session.user.user_metadata?.organization_name || null);
         
         // INSTANT RECOGNITION: Check metadata role immediately for speed
@@ -137,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (session?.user) {
+          activeUserId = session.user.id;
           await handleDataInitialization(session);
         } else {
           // Check if there's an auth-related hash in the URL. 
@@ -179,11 +183,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         // If it's a new sign in, show loading again to verify role
-        if (event === 'SIGNED_IN') setLoading(true);
+        if (event === 'SIGNED_IN' && activeUserId !== session.user.id) {
+          setLoading(true);
+        }
         await handleDataInitialization(session);
       } else {
         setSession(null);
         setUser(null);
+        activeUserId = null;
         setOrganizationName(null);
         setSubscription(null);
         setRole('undetermined');

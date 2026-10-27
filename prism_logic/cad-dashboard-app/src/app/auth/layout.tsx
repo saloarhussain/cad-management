@@ -8,7 +8,7 @@ const THEMES = [
     id: 'jewelry',
     headline: "For Organizations",
     title: (
-      <>THE GLOBAL <span className="text-[#fce003]">ORGANIZATION</span> <br /> COMMAND CENTER</>
+      <>THE GLOBAL <span className="text-[#F59E0B]">ORGANIZATION</span> <br /> COMMAND CENTER</>
     ),
     description: "Scale your studio and manage global design teams from a single high-fidelity dashboard. Stop losing margins—keep 100% of your profits.",
     image: "/jewelry_clean.png",
@@ -23,7 +23,7 @@ const THEMES = [
     id: 'civil',
     headline: "For Designers",
     title: (
-      <>THE PROFESSIONAL <span className="text-[#fce003]">DESIGNER</span> <br /> WORKSTATION</>
+      <>THE PROFESSIONAL <span className="text-[#F59E0B]">DESIGNER</span> <br /> WORKSTATION</>
     ),
     description: "Access elite global projects and track your performance in a prestigious workstation. Gain master status and keep every dollar you earn.",
     image: "/civil_hybrid.png",
@@ -38,7 +38,7 @@ const THEMES = [
     id: 'interior',
     headline: "For Everyone",
     title: (
-      <>THE PREMIER <span className="text-[#fce003]">CAD</span> <br /> COLLABORATION HUB</>
+      <>THE PREMIER <span className="text-[#F59E0B]">CAD</span> <br /> COLLABORATION HUB</>
     ),
     description: "A commission-free ecosystem built exclusively for high-end CAD production. No hidden platform fees, just world-class creation.",
     image: "/interior_hybrid.png",
@@ -53,7 +53,7 @@ const THEMES = [
     id: 'mechanical',
     headline: "For Elite Studios",
     title: (
-      <>THE HIGH-SPEED <span className="text-[#fce003]">PRODUCTION</span> <br /> ENGINE</>
+      <>THE HIGH-SPEED <span className="text-[#F59E0B]">PRODUCTION</span> <br /> ENGINE</>
     ),
     description: "The professional bridge between master designers and global brands. Launch projects instantly and scale your production without boundaries.",
     image: "/mechanical_hybrid.png",
@@ -77,14 +77,14 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         {/* Top: Logo & Nav */}
         <div className="relative z-30 flex items-center gap-4">
-           <div className="w-12 h-12 bg-[#fce003] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
+           <div className="w-12 h-12 bg-[#F59E0B] rounded-xl flex items-center justify-center shadow-[0_0_30px_rgba(252,224,3,0.3)]">
               <span className="material-symbols-outlined text-black text-2xl font-black">architecture</span>
            </div>
            <div>
               <h1 className="text-2xl font-headline font-black text-white tracking-tighter uppercase italic leading-none">
-                CAD<span className="text-[#fce003]">ONCE</span>
+                CAD<span className="text-[#F59E0B]">ONCE</span>
               </h1>
-              <p className="text-[10px] font-bold text-[#fce003] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
+              <p className="text-[10px] font-bold text-[#F59E0B] mt-1 drop-shadow-[0_0_100px_rgba(252,224,3,0.5)]">
                 {theme.headline}
               </p>
            </div>
@@ -103,7 +103,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               {theme.stats.map((stat, idx) => (
                 <React.Fragment key={stat.label}>
                   <div className="flex flex-col [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
-                    <span className="text-[#fce003] font-black text-xl italic tracking-tighter uppercase leading-none">{stat.value}</span>
+                    <span className="text-[#F59E0B] font-black text-xl italic tracking-tighter uppercase leading-none">{stat.value}</span>
                     <span className="text-[9px] font-bold text-white/50 uppercase tracking-widest mt-1">{stat.label}</span>
                   </div>
                   {idx < theme.stats.length - 1 && <div className="w-px h-8 bg-white/10"></div>}
@@ -140,7 +140,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         {/* Mobile Logo Header */}
         <div className="flex justify-center md:hidden z-20">
            <h1 className="text-3xl font-headline font-black text-white tracking-tighter uppercase italic">
-             CAD<span className="text-[#fce003]">ONCE</span>
+             CAD<span className="text-[#F59E0B]">ONCE</span>
            </h1>
         </div>
 
@@ -151,3 +151,4 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     </div>
   );
 }
+

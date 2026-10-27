@@ -40,7 +40,7 @@ export default function CountdownTimer({ deadline }: CountdownTimerProps) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className={`material-symbols-outlined text-sm ${isOverdue ? 'text-red-500 animate-pulse' : 'text-[#fce003]'}`}>
+      <span className={`material-symbols-outlined text-sm ${isOverdue ? 'text-red-500 animate-pulse' : 'text-[#F59E0B]'}`}>
         {isOverdue ? 'warning' : 'timer'}
       </span>
       <span className={`text-[10px] font-mono font-bold tracking-widest ${isOverdue ? 'text-red-500' : 'text-on-surface'}`}>
@@ -52,3 +52,4 @@ export default function CountdownTimer({ deadline }: CountdownTimerProps) {
 
 
 }
+

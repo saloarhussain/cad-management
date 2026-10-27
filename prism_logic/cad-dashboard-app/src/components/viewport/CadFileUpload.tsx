@@ -86,7 +86,7 @@ export default function CadFileUpload({ projectId, initialPath, onUploadSuccess 
 
   return (
     <div className="space-y-3">
-      <label className="font-label text-[10px] font-black uppercase tracking-widest text-[#fce003] ml-1">
+      <label className="font-label text-[10px] font-black uppercase tracking-widest text-[#F59E0B] ml-1">
         3D Model Delivery (STL / STP / 3DM)
       </label>
       
@@ -94,15 +94,15 @@ export default function CadFileUpload({ projectId, initialPath, onUploadSuccess 
         onDragOver={(e) => e.preventDefault()}
         onDrop={onDrop}
         className={`relative border-2 border-dashed rounded-2xl p-8 transition-all duration-500 flex flex-col items-center justify-center gap-3 ${
-          isUploading ? 'border-[#fce003]/50 bg-[#fce003]/5' : 
+          isUploading ? 'border-[#F59E0B]/50 bg-[#F59E0B]/5' : 
           currentPath ? 'border-green-500/30 bg-green-500/5' : 
-          'border-white/10 bg-white/[0.02] hover:border-[#fce003]/30 hover:bg-[#fce003]/[0.02]'
+          'border-white/10 bg-white/[0.02] hover:border-[#F59E0B]/30 hover:bg-[#F59E0B]/[0.02]'
         }`}
       >
         {isUploading ? (
           <>
-            <div className="w-10 h-10 border-2 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-[10px] font-black text-[#fce003] uppercase tracking-widest">Uploading {uploadProgress}%</p>
+            <div className="w-10 h-10 border-2 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-[10px] font-black text-[#F59E0B] uppercase tracking-widest">Uploading {uploadProgress}%</p>
             <p className="text-[8px] text-stone-500 uppercase font-bold tracking-tighter">Please wait for server response...</p>
           </>
         ) : currentPath ? (
@@ -117,14 +117,14 @@ export default function CadFileUpload({ projectId, initialPath, onUploadSuccess 
             <button 
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="text-[9px] font-black text-[#fce003] uppercase tracking-widest hover:underline mt-2 flex items-center gap-1"
+              className="text-[9px] font-black text-[#F59E0B] uppercase tracking-widest hover:underline mt-2 flex items-center gap-1"
             >
               <span className="material-symbols-outlined text-[10px]">sync</span> Replace File
             </button>
           </>
         ) : (
           <>
-            <div className="w-14 h-14 rounded-full bg-[#fce003]/10 flex items-center justify-center text-[#fce003] mb-2 border border-[#fce003]/20 shadow-[0_0_15px_rgba(252,224,3,0.1)]">
+            <div className="w-14 h-14 rounded-full bg-[#F59E0B]/10 flex items-center justify-center text-[#F59E0B] mb-2 border border-[#F59E0B]/20 shadow-[0_0_15px_rgba(252,224,3,0.1)]">
               <span className="material-symbols-outlined text-3xl">upload_file</span>
             </div>
             <div className="text-center">
@@ -160,3 +160,4 @@ export default function CadFileUpload({ projectId, initialPath, onUploadSuccess 
     </div>
   );
 }
+

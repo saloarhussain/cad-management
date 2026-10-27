@@ -3,88 +3,102 @@ import React, { useState, useEffect } from 'react';
 import md5 from 'md5';
 
 interface AvatarProps {
+  src?: string;
   email?: string;
   name?: string;
   website?: string;
   size?: number;
   className?: string;
-  /** Show a ring on hover */
   ring?: boolean;
 }
 
-function getDomainFromUrl(url?: string): string | null {
-  if (!url) return null;
-  let cleaned = url.trim();
-  if (!cleaned.startsWith('http://') && !cleaned.startsWith('https://')) {
-    cleaned = 'https://' + cleaned;
-  }
-  try {
-    const parsed = new URL(cleaned);
-    return parsed.hostname.replace(/^www\./, '');
-  } catch (e) {
-    return null;
-  }
-}
-
-/**
- * Smart Avatar component:
- * 1. Tries to load website logo if website is provided.
- * 2. Tries Gravatar (uses email MD5 hash) — shows real photo if person has a Gravatar account.
- * 3. Falls back to UI Avatars (branded initials avatar) if Gravatar or logo fails.
- */
-export default function Avatar({ email, name, website, size = 64, className = '', ring = false }: AvatarProps) {
-  const domain = getDomainFromUrl(website);
-  const [src, setSrc] = useState(() => {
-    if (domain) {
-      const sz = size > 64 ? 128 : 64;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=${sz}`;
+export default function Avatar({ src, email, name, website, size = 64, className = '', ring = false }: AvatarProps) {
+  const hash = email ? md5(email.trim().toLowerCase()) : '';
+  const gravatarUrl = email ? `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404` : '';
+  
+  // Extract domain from website if provided
+  let domain = '';
+  if (website) {
+    try {
+      const urlString = website.startsWith('http') ? website : `https://${website}`;
+      const url = new URL(urlString);
+      domain = url.hostname.replace('www.', '');
+    } catch (e) {
+      // Invalid URL
     }
-    return buildGravatarUrl(email, size);
-  });
+  }
+  
+  // We use unavatar.io which aggregates from Twitter, Google Favicons, etc.
+  const unavatarDomainUrl = domain ? `https://unavatar.io/${domain}?fallback=false` : '';
+  const unavatarEmailUrl = email ? `https://unavatar.io/${email}?fallback=false` : '';
+  
+  // 0 = Try Explicit Src
+  // 1 = Try Unavatar (Website)
+  // 2 = Try Unavatar (Email)
+  // 3 = Try Gravatar (Email)
+  // 4 = Show Initials
+  
+  const getInitialState = () => {
+    if (src) return 0;
+    if (domain) return 1;
+    if (email) return 2;
+    return 4;
+  };
 
+  const [imgState, setImgState] = useState(getInitialState());
+
+  // Reset state if props change
   useEffect(() => {
-    if (domain) {
-      const sz = size > 64 ? 128 : 64;
-      setSrc(`https://www.google.com/s2/favicons?domain=${domain}&sz=${sz}`);
-    } else {
-      setSrc(buildGravatarUrl(email, size));
-    }
-  }, [website, email, size, domain]);
+    setImgState(getInitialState());
+  }, [src, domain, email]);
 
-  const fallback = buildUiAvatarUrl(name || email || '?', size);
+  const getInitials = () => {
+    const text = name || email || '?';
+    const parts = text.split(/[ @]/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return text.substring(0, 2).toUpperCase();
+  };
 
   const handleError = () => {
-    // If the website logo fails, try Gravatar. Otherwise try UI Avatars.
-    if (src.includes('favicons')) {
-      setSrc(buildGravatarUrl(email, size));
+    if (imgState === 0) {
+      setImgState(domain ? 1 : (email ? 2 : 4));
+    } else if (imgState === 1 && email) {
+      setImgState(2); // Unavatar domain failed, try Unavatar email
+    } else if (imgState === 2 && email) {
+      setImgState(3); // Unavatar email failed, try Gravatar
     } else {
-      setSrc(fallback);
+      setImgState(4); // Everything failed, show Initials
     }
   };
 
+  if (imgState === 4) {
+    return (
+      <div 
+        style={{ width: size, height: size }}
+        className={`flex items-center justify-center bg-gradient-to-br from-[#333] to-[#111] text-[#F59E0B] font-bold tracking-widest rounded-full flex-shrink-0 ${ring ? 'ring-2 ring-yellow-400/30 hover:ring-yellow-400 transition-all' : ''} ${className}`}
+      >
+        {getInitials()}
+      </div>
+    );
+  }
+
+  const currentSrc = 
+    imgState === 0 ? src :
+    imgState === 1 ? unavatarDomainUrl :
+    imgState === 2 ? unavatarEmailUrl :
+    gravatarUrl;
+
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={name || email || 'Avatar'}
       width={size}
       height={size}
       onError={handleError}
-      className={`rounded-full object-cover bg-surface-container-highest ${ring ? 'ring-2 ring-yellow-400/30 hover:ring-yellow-400 transition-all' : ''} ${className}`}
+      className={`rounded-full object-cover bg-surface-container-highest flex-shrink-0 ${ring ? 'ring-2 ring-yellow-400/30 hover:ring-yellow-400 transition-all' : ''} ${className}`}
     />
   );
 }
 
-/** Build Gravatar URL with d=404 so onError fires if no image exists */
-function buildGravatarUrl(email?: string, size = 64): string {
-  if (!email) return buildUiAvatarUrl('?', size);
-  const hash = md5(email.trim().toLowerCase());
-  return `https://www.gravatar.com/avatar/${hash}?s=${size}&d=404`;
-}
-
-/** UI Avatars fallback — branded initials in gold/dark */
-function buildUiAvatarUrl(nameOrEmail: string, size = 64): string {
-  const displayName = nameOrEmail.includes('@')
-    ? nameOrEmail.split('@')[0]
-    : nameOrEmail;
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&size=${size}&background=1a1a17&color=fce003&bold=true&format=png`;
-}

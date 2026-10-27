@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { getDb } from '@/app/actions';
+import { getCurrencySymbol } from '@/lib/config';
 import AuthGuard from '@/components/AuthGuard';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -17,61 +18,56 @@ const getStatusClasses = (status: string) => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '--/--/----';
-  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [_, year, month, day] = match;
-    const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
-    ];
-    const monthIndex = parseInt(month, 10) - 1;
-    if (monthIndex >= 0 && monthIndex < 12) {
-      return `${parseInt(day, 10)} ${monthNames[monthIndex]} ${year}`;
-    }
-  }
-  
+  if (dateStr.includes('/')) return dateStr;
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
-  
-  const day = date.getDate();
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  const month = monthNames[date.getMonth()];
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
+  return `${day}/${month}/${year}`;
 };
 
 const DeadlineSection = ({ createdAt, deadlineDate }: { createdAt: string, deadlineDate: string }) => {
   const [timeLeft, setTimeLeft] = useState("00D 00H 00M 00S");
   const [progress, setProgress] = useState(0);
+  const [isLate, setIsLate] = useState(false);
 
   useEffect(() => {
     const calculate = () => {
+      if (!deadlineDate) return;
       const now = new Date();
       const end = new Date(deadlineDate);
       const diff = end.getTime() - now.getTime();
+      const start = createdAt ? new Date(createdAt) : now;
+      const totalDuration = end.getTime() - start.getTime();
 
       if (diff <= 0) {
-        setTimeLeft("00D 00H 00M 00S");
+        setIsLate(true);
+        // Calculate negative time
+        const absDiff = Math.abs(diff);
+        const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+
+        setTimeLeft(
+          `-${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
+        );
         setProgress(100);
-        return;
+      } else {
+        setIsLate(false);
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setTimeLeft(
+          `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
+        );
+        
+        const elapsed = now.getTime() - start.getTime();
+        setProgress(Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)));
       }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      setTimeLeft(
-        `${days.toString().padStart(2, '0')}D ${hours.toString().padStart(2, '0')}H ${minutes.toString().padStart(2, '0')}M ${seconds.toString().padStart(2, '0')}S`
-      );
-
-      const start = new Date(createdAt || now);
-      const totalDuration = end.getTime() - start.getTime();
-      const elapsed = now.getTime() - start.getTime();
-      setProgress(Math.min(100, Math.max(0, (elapsed / totalDuration) * 100)));
     };
     calculate();
     const timer = setInterval(calculate, 1000);
@@ -82,110 +78,46 @@ const DeadlineSection = ({ createdAt, deadlineDate }: { createdAt: string, deadl
     <div className="group">
       <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Deadline Timer</label>
       <div className="flex items-center gap-1.5 text-white text-left">
-        <span className="material-symbols-outlined text-yellow-400 text-[10px] animate-pulse">timer</span>
+        <span className={`material-symbols-outlined text-[10px] animate-pulse ${isLate ? 'text-red-500' : 'text-yellow-400'}`}>timer</span>
         <div className="flex items-baseline gap-1">
-          <span className="font-mono text-sm font-black text-yellow-400">{timeLeft}</span>
-          <span className="font-mono text-[7px] font-bold text-stone-500 uppercase tracking-tighter">Remaining</span>
+          <span className={`font-mono text-sm font-black ${isLate ? 'text-red-500' : 'text-yellow-400'}`}>{timeLeft}</span>
+          <span className="font-mono text-[7px] font-bold text-stone-500 uppercase tracking-tighter">
+            {isLate ? 'LATE' : 'Remaining'}
+          </span>
         </div>
       </div>
       <div className="mt-1.5 h-1 bg-stone-800 rounded-full overflow-hidden">
-        <div className="h-full electric-gradient" style={{ width: `${progress}%` }}></div>
+        <div className={`h-full ${isLate ? 'bg-red-500' : 'electric-gradient'}`} style={{ width: `${progress}%` }}></div>
       </div>
     </div>
   );
 };
-
-function resolveClientPersonAndCompany(c: any, fallbackName?: string) {
-  if (!c) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
-
-  const val1 = (c.name || '').trim();
-  const val2 = (c.companyName || '').trim();
-
-  if (!val1 && !val2) {
-    return {
-      personName: fallbackName || 'Unknown Client',
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val1) {
-    return {
-      personName: val2,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (!val2) {
-    const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-    if (companyKeywords.test(val1)) {
-      return {
-        personName: fallbackName || 'Unknown Client',
-        companyName: val1
-      };
-    }
-    return {
-      personName: val1,
-      companyName: 'Independent Partner'
-    };
-  }
-
-  if (val1 === val2) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  const companyKeywords = /\b(Maison|Jewelry|Jewellery|Minecom|Inc|Co|Ltd|Corp|Studio|Industries|Partner|Pence|C&R|Agency|Club|Brand|Store|Shop|Kabudachu|Mirella|Fallongoundry|RRT)\b/i;
-  const isVal1Company = companyKeywords.test(val1);
-  const isVal2Company = companyKeywords.test(val2);
-
-  if (isVal1Company && !isVal2Company) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-
-  if (isVal2Company && !isVal1Company) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  if (/Romain|Brun/i.test(val2)) {
-    return {
-      personName: val2,
-      companyName: val1
-    };
-  }
-  if (/Romain|Brun/i.test(val1)) {
-    return {
-      personName: val1,
-      companyName: val2
-    };
-  }
-
-  return {
-    personName: val1,
-    companyName: val2
-  };
-}
 
 export default function ProjectsPage() {
   const [realProjects, setRealProjects] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const { isAuthenticated, user, isDesigner } = useAuth();
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
+  const [filterMode, setFilterMode] = useState<'all' | 'day' | 'month' | 'year' | 'custom'>('all');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Instant optimistic render on mount if coming from project creation
+    try {
+      const saved = sessionStorage.getItem('optimistic_new_project');
+      if (saved) {
+        const item = JSON.parse(saved);
+        setRealProjects(prev => {
+          if (prev.some(p => p.id === item.id || (p.title === item.title && p.client === item.client))) return prev;
+          return [item, ...prev];
+        });
+      }
+    } catch (e) {}
+
     if (!isAuthenticated) return;
     const fetchData = async () => {
       setIsLoading(true);
@@ -197,8 +129,6 @@ export default function ProjectsPage() {
       if (isDesigner) {
         const designerRes = await getDesignerDb();
         dbProjects = designerRes.projects || [];
-        // For clients, we might need to fetch them differently if designers need details
-        // but for now, we'll use the basic db
         const fullDb = await getDb();
         dbClients = fullDb.clients || [];
       } else {
@@ -211,55 +141,104 @@ export default function ProjectsPage() {
 
       const formatted = dbProjects.map((p: any) => {
         const clientInfo = dbClients.find((c: any) => c.name === p.client || c.companyName === p.client);
-        
-        const { personName, companyName } = resolveClientPersonAndCompany(clientInfo, p.client);
-
         return {
           ...p,
-          clientCompany: companyName,
-          clientPerson: personName,
-          clientShortName: personName.slice(0, 2).toUpperCase(),
-          tags: p.tags && p.tags.length > 0 ? p.tags : ['High-Poly', 'Ray-Tracing', 'Nodes']
+          clientCompany: clientInfo?.companyName || 'Independent Partner',
+          clientShortName: (clientInfo?.companyName || clientInfo?.name || p.client || '??').slice(0, 2).toUpperCase(),
+          tags: p.tags || ['High-Poly', 'Ray-Tracing', 'Nodes']
         };
       });
+
+      // Clear optimistic cache after real DB is fetched
+      try {
+        sessionStorage.removeItem('optimistic_new_project');
+      } catch (e) {}
+
       setRealProjects(formatted);
       setIsLoading(false);
     };
     if (isAuthenticated) fetchData();
   }, [isAuthenticated, isDesigner]);
 
+  const filteredProjects = useMemo(() => {
+    return realProjects.filter((p: any) => {
+      const matchesTab = activeTab === 'completed' ? p.status === 'Completed' : p.status !== 'Completed';
+      if (!matchesTab) return false;
+
+      if (filterMode === 'all') return true;
+
+      const dateStr = p.createdAt || p.orderDate;
+      if (!dateStr) return false;
+
+      const pDate = new Date(dateStr);
+      if (isNaN(pDate.getTime())) return false;
+
+      if (filterMode === 'day') {
+        return pDate.toDateString() === selectedDate.toDateString();
+      }
+      if (filterMode === 'month') {
+        return pDate.getMonth() === selectedDate.getMonth() && pDate.getFullYear() === selectedDate.getFullYear();
+      }
+      if (filterMode === 'year') {
+        return pDate.getFullYear() === selectedDate.getFullYear();
+      }
+      if (filterMode === 'custom') {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return pDate >= start && pDate <= end;
+      }
+      return true;
+    });
+  }, [realProjects, activeTab, filterMode, selectedDate, startDate, endDate]);
+
   return (
     <AuthGuard>
       {isLoading ? (
         <div className="min-h-screen bg-[#161308] flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-            <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+            <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
           </div>
         </div>
       ) : (
-        <div className="pt-20 pb-32 px-6 max-w-7xl mx-auto space-y-8">
+        <>
+          <div className="pt-20 pb-32 px-4 sm:px-8 xl:px-12 w-full space-y-8">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="text-left">
             <h2 className="font-headline text-2xl font-black tracking-tight text-white uppercase italic">
-              Project <span className="text-[#fce003]">Studio</span>
+              Project <span className="text-[#F59E0B]">Studio</span>
             </h2>
             <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] mt-1">High-fidelity CAD design workspace and queue</p>
           </div>
 
-          <div className="flex items-center bg-white/5 backdrop-blur-xl rounded-2xl p-1 border border-white/10 shadow-2xl">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center bg-white/5 backdrop-blur-xl rounded-2xl p-1 border border-white/10 shadow-2xl">
+              <button
+                onClick={() => setActiveTab('active')}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'active' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
+              >
+                Active Queue
+              </button>
+              <button
+                onClick={() => setActiveTab('completed')}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'completed' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
+              >
+                Completed
+              </button>
+            </div>
+
             <button
-              onClick={() => setActiveTab('active')}
-              className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'active' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
+              onClick={() => setIsCalendarOpen(true)}
+              className="flex items-center bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors active:scale-95 text-[10px] font-bold tracking-wider px-3 py-1.5 cursor-pointer"
             >
-              Active Queue
-            </button>
-            <button
-              onClick={() => setActiveTab('completed')}
-              className={`px-8 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${activeTab === 'completed' ? 'electric-gradient text-black shadow-lg shadow-yellow-400/20' : 'text-white/40 hover:text-white'}`}
-            >
-              Completed
+              <span className="material-symbols-outlined text-[16px] pointer-events-none mr-1.5">calendar_month</span>
+              <span className="uppercase pointer-events-none font-bold">
+                {filterMode === 'all' ? 'ALL TIME' : filterMode === 'day' ? 'DAILY' : filterMode === 'month' ? 'MONTHLY' : filterMode === 'year' ? 'YEARLY' : 'CUSTOM'}
+              </span>
+              <span className="material-symbols-outlined text-[14px] pointer-events-none ml-1.5">expand_more</span>
             </button>
           </div>
 
@@ -275,11 +254,11 @@ export default function ProjectsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
           {/* Dynamic Project Cards */}
-          {realProjects.filter(p => activeTab === 'completed' ? ['Completed', 'Approved', 'Complete'].includes(p.status) : !['Completed', 'Approved', 'Complete'].includes(p.status)).length === 0 ? (
+          {filteredProjects.length === 0 ? (
             <div className="lg:col-span-12 flex flex-col items-center justify-center py-32 bg-white/[0.02] backdrop-blur-3xl rounded-[2.5rem] border border-white/5 mx-auto w-full max-w-2xl shadow-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-b from-yellow-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
               <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center mb-8 border border-white/10 group-hover:border-yellow-400/30 transition-all duration-500 shadow-xl relative z-10">
-                <span className="material-symbols-outlined text-4xl text-white/20 group-hover:text-[#fce003] group-hover:scale-110 transition-all duration-500">
+                <span className="material-symbols-outlined text-4xl text-white/20 group-hover:text-[#F59E0B] group-hover:scale-110 transition-all duration-500">
                   {activeTab === 'active' ? 'rocket_launch' : 'verified'}
                 </span>
               </div>
@@ -292,19 +271,17 @@ export default function ProjectsPage() {
                   : 'You haven\'t completed any production cycles yet'}
               </p>
               {activeTab === 'active' && !isDesigner && (
-                <Link href="/projects/new" className="mt-10 px-10 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#fce003] hover:text-black hover:border-[#fce003] transition-all active:scale-95 shadow-xl relative z-10">
+                <Link href="/projects/new" className="mt-10 px-10 py-4 rounded-xl bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#F59E0B] hover:text-black hover:border-[#F59E0B] transition-all active:scale-95 shadow-xl relative z-10">
                   Launch New Project
                 </Link>
               )}
             </div>
           ) : (
-            realProjects
-              .filter(p => activeTab === 'completed' ? ['Completed', 'Approved', 'Complete'].includes(p.status) : !['Completed', 'Approved', 'Complete'].includes(p.status))
-              .map((project, idx) => (
-                <div key={project.id || idx} className="lg:col-span-4 flex flex-col">
+            filteredProjects.map((project, idx) => (
+                <div key={project.id || idx} className="lg:col-span-4 2xl:col-span-3 flex flex-col">
                   <div className="bg-surface-container h-full rounded-lg border border-white/5 flex flex-col p-5 hover:border-primary/20 transition-all duration-300 relative overflow-hidden group">
                     <div className="space-y-4 flex-grow relative z-20">
-                      {!['Completed', 'Approved', 'Complete'].includes(project.status) && <DeadlineSection createdAt={project.createdAt} deadlineDate={project.deadlineDate} />}
+                      {project.status !== 'Completed' && <DeadlineSection createdAt={project.createdAt} deadlineDate={project.deadlineDate} />}
 
                       {/* Title & Badges Stack */}
                       <div className="flex justify-between items-start gap-4">
@@ -337,11 +314,10 @@ export default function ProjectsPage() {
                           )}
                           {project.useEscrow && project.paymentStatus === 'Paid' && (
                             <span className="text-[7px] font-black px-2 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white uppercase tracking-widest shadow-[0_0_10_rgba(34,197,94,0.5)] border border-green-400/20 h-5 flex items-center">
-                              FUNDS RELEASED ({project.expenseCurrency || '₹'}{project.expense})
+                              FUNDS RELEASED ({getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense})
                             </span>
                           )}
 
-                          {/* Rating Badge */}
                           {(() => {
                             const description = project.description || '';
                             const lines = description.split('\n');
@@ -374,21 +350,38 @@ export default function ProjectsPage() {
                         </div>
                       </div>
 
-                      {/* Financials (HIDDEN FOR DESIGNERS) */}
                       {!isDesigner && (
                         <div className="grid grid-cols-2 gap-4 text-left border-t border-white/5 pt-3">
-                          <div className={`p-2 rounded border ${project.revenueCurrency === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.revenueCurrency || 'USD') === '$' ? 'border-red-500' : 'border-[#F59E0B]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Revenue</label>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-headline font-black text-white">{project.revenueCurrency || '$'}{project.revenue}</span>
-                              <span className="material-symbols-outlined text-green-400 text-[12px]">trending_up</span>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-headline font-black text-white">{getCurrencySymbol(project.revenueCurrency || 'USD')}{project.revenue}</span>
+                                <span className="material-symbols-outlined text-green-400 text-[12px]">trending_up</span>
+                              </div>
+                                <span className={`text-[7px] font-bold py-0.5 px-1.5 rounded tracking-wide ${
+                                  project.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
+                                }`}>
+                                  {project.paymentStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                   project.paymentStatus?.toLowerCase() === 'pending' ? 'Pending' : 
+                                   'Unpaid'}
+                                </span>
                             </div>
                           </div>
-                          <div className={`p-2 rounded border ${project.expenseCurrency === '$' ? 'border-red-500' : 'border-[#fce003]'}`}>
+                          <div className={`p-2 rounded border flex flex-col justify-between ${getCurrencySymbol(project.expenseCurrency || 'INR') === '$' ? 'border-red-500' : 'border-[#F59E0B]'}`}>
                             <label className="text-[7px] font-bold text-stone-500 uppercase tracking-widest block mb-0.5">Expense</label>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-headline font-black text-white">{project.expenseCurrency || '₹'}{project.expense}</span>
-                              <span className="material-symbols-outlined text-red-400/70 text-[12px]">trending_down</span>
+                            <div className="flex items-center justify-between mt-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-headline font-black text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense}</span>
+                                <span className="material-symbols-outlined text-red-400/70 text-[12px]">trending_down</span>
+                              </div>
+                                <span className={`text-[7px] font-bold py-0.5 px-1.5 rounded tracking-wide ${
+                                  project.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
+                                }`}>
+                                  {project.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                   project.payoutStatus?.toLowerCase() === 'pending' ? 'Pending' : 
+                                   'Unpaid'}
+                                </span>
                             </div>
                           </div>
                         </div>
@@ -427,7 +420,7 @@ export default function ProjectsPage() {
                                 <div className="w-4 h-4 rounded-full bg-stone-800 flex items-center justify-center text-[7px] font-bold border border-white/10 text-yellow-400">
                                   {project.clientShortName}
                                 </div>
-                                <p className="font-bold text-xs text-white truncate">{project.clientPerson}</p>
+                                <p className="font-bold text-xs text-white truncate">{project.client}</p>
                               </div>
                             </div>
                             <div>
@@ -457,24 +450,17 @@ export default function ProjectsPage() {
                     <div className="mt-6 relative z-20 space-y-3">
                       <Link href={`/projects/${project.id}`} className="w-full py-3.5 bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300 rounded-xl group/btn flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg">
                         <span className="font-black text-[9px] uppercase tracking-[0.2em] text-white/40 group-hover/btn:text-white transition-colors">Project Workstation</span>
-                        <span className="material-symbols-outlined text-[10px] text-[#fce003]/40 group-hover/btn:text-[#fce003] transition-colors">arrow_forward_ios</span>
+                        <span className="material-symbols-outlined text-[10px] text-[#F59E0B]/40 group-hover/btn:text-[#F59E0B] transition-colors">arrow_forward_ios</span>
                       </Link>
 
                       {isDesigner && (
-                        ['Completed', 'Approved', 'Complete'].includes(project.status) ? (
-                          <div className="w-full py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-2">
-                            <span className="material-symbols-outlined text-sm font-bold">check_circle</span>
-                            DELIVERED
-                          </div>
-                        ) : (
-                          <Link
-                            href={`/projects/${project.id}/edit`}
-                            className="w-full py-3 rounded-xl electric-gradient text-black font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-yellow-400/20 hover:shadow-cyan-400/40 transition-all flex items-center justify-center gap-2 group/delivery active:scale-[0.98] border border-white/10"
-                          >
-                            <span className="material-symbols-outlined text-sm font-bold">rocket_launch</span>
-                            {(project.revisions?.length || 0) > 0 ? 'Revised Delivery' : 'Deliver Here'}
-                          </Link>
-                        )
+                        <Link
+                          href={`/projects/${project.id}/edit`}
+                          className="w-full py-3 rounded-xl electric-gradient text-black font-black uppercase tracking-[0.2em] text-[10px] shadow-lg shadow-yellow-400/20 hover:shadow-cyan-400/40 transition-all flex items-center justify-center gap-2 group/delivery active:scale-[0.98] border border-white/10"
+                        >
+                          <span className="material-symbols-outlined text-sm font-bold">rocket_launch</span>
+                          {(project.revisions?.length || 0) > 0 ? 'Revised Delivery' : 'Deliver Here'}
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -483,7 +469,165 @@ export default function ProjectsPage() {
           )}
         </div>
         </div>
+
+      {/* Date Filter Modal */}
+      {isCalendarOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div
+            className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
+            onClick={() => setIsCalendarOpen(false)}
+          />
+          <div className="relative w-full max-w-sm bg-surface-container border border-outline-variant/30 rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-headline font-black text-lg text-on-surface">Select Range</h3>
+              <button onClick={() => setIsCalendarOpen(false)} className="text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Mode Selector */}
+              <div className="flex p-1 bg-zinc-900 rounded-xl border border-white/5 overflow-x-auto no-scrollbar">
+                {(['all', 'day', 'month', 'year', 'custom'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setFilterMode(mode)}
+                    className={`flex-1 min-w-[60px] py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${filterMode === mode ? 'bg-[#F59E0B] text-zinc-950 shadow-lg' : 'text-on-surface-variant hover:text-on-surface'}`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+
+              {/* Date Input Area */}
+              <div className="space-y-4">
+                {filterMode === 'all' && (
+                  <div className="text-center py-4">
+                    <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">All Time Projects Selected</p>
+                  </div>
+                )}
+
+                {filterMode === 'day' && (
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Pick a Day</label>
+                    <input
+                      type="date"
+                      value={(() => {
+                        if (!selectedDate || isNaN(selectedDate.getTime())) return '';
+                        return selectedDate.toISOString().split('T')[0];
+                      })()}
+                      onChange={(e) => {
+                        const newDate = new Date(e.target.value);
+                        if (!isNaN(newDate.getTime())) {
+                          setSelectedDate(newDate);
+                        }
+                      }}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                    />
+                  </div>
+                )}
+
+                {filterMode === 'month' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Month</label>
+                      <select
+                        value={selectedDate.getMonth()}
+                        onChange={(e) => {
+                          const d = new Date(selectedDate);
+                          d.setMonth(parseInt(e.target.value));
+                          setSelectedDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                      >
+                        {Array.from({ length: 12 }).map((_, i) => (
+                          <option key={i} value={i} className="bg-[#161308] text-white">{new Date(2024, i).toLocaleString('default', { month: 'long' })}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Year</label>
+                      <select
+                        value={selectedDate.getFullYear()}
+                        onChange={(e) => {
+                          const d = new Date(selectedDate);
+                          d.setFullYear(parseInt(e.target.value));
+                          setSelectedDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                      >
+                        {[2024, 2025, 2026].map(y => <option key={y} value={y} className="bg-[#161308] text-white">{y}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {filterMode === 'year' && (
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">Select Year</label>
+                    <select
+                      value={selectedDate.getFullYear()}
+                      onChange={(e) => {
+                        const d = new Date(selectedDate);
+                        d.setFullYear(parseInt(e.target.value));
+                        setSelectedDate(d);
+                      }}
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                    >
+                      {[2024, 2025, 2026].map(y => <option key={y} value={y} className="bg-[#161308] text-white">{y}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {filterMode === 'custom' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">From</label>
+                      <input
+                        type="date"
+                        value={(() => {
+                          if (!startDate || isNaN(startDate.getTime())) return '';
+                          return startDate.toISOString().split('T')[0];
+                        })()}
+                        onChange={(e) => {
+                          const d = new Date(e.target.value);
+                          if (!isNaN(d.getTime())) setStartDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest ml-1">To</label>
+                      <input
+                        type="date"
+                        value={(() => {
+                          if (!endDate || isNaN(endDate.getTime())) return '';
+                          return endDate.toISOString().split('T')[0];
+                        })()}
+                        onChange={(e) => {
+                          const d = new Date(e.target.value);
+                          if (!isNaN(d.getTime())) setEndDate(d);
+                        }}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setIsCalendarOpen(false)}
+                className="w-full py-4 rounded-xl electric-gradient text-zinc-950 font-black uppercase tracking-widest text-[11px] shadow-lg shadow-[#F59E0B]/20 hover:scale-[1.02] active:scale-95 transition-all mt-4 animate-gradient bg-[length:200%_100%]"
+              >
+                Apply Filter
+              </button>
+            </div>
+          </div>
+        </div>
       )}
+      </>
+    )}
     </AuthGuard>
   );
 }
+

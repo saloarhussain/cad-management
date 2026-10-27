@@ -1,6 +1,6 @@
-import React, { useMemo, forwardRef } from 'react';
+import React, { useMemo, forwardRef, useEffect } from 'react';
 import { useLoader } from '@react-three/fiber';
-import { STLLoader, OBJLoader } from 'three-stdlib';
+import { STLLoader, OBJLoader, Rhino3dmLoader, GLTFLoader } from 'three-stdlib';
 import * as THREE from 'three';
 
 export type MetalType = 'gold' | 'silver' | 'rose';
@@ -13,6 +13,7 @@ interface JewelryModelProps {
   onPointerDown?: (event: any) => void;
   wireframe?: boolean;
   onLoadStats?: (volume: number) => void;
+  gemColor?: string;
 }
 
 function getExactVolume(geometry: THREE.BufferGeometry) {
@@ -42,38 +43,69 @@ function getExactVolume(geometry: THREE.BufferGeometry) {
 
 const METAL_PROPS = {
   gold: {
-    color: '#fcc201',
-    metalness: 1,
-    roughness: 0.1,
-    emissive: '#443300',
-    emissiveIntensity: 0.1,
-  },
-  silver: {
-    color: '#e5e5e5',
-    metalness: 1,
-    roughness: 0.05,
-    emissive: '#222222',
-    emissiveIntensity: 0.05,
-  },
-  rose: {
-    color: '#f4c2c2',
+    color: '#ffcc66',
     metalness: 1,
     roughness: 0.15,
-    emissive: '#442222',
-    emissiveIntensity: 0.1,
+  },
+  silver: {
+    color: '#e5e4e2',
+    metalness: 1,
+    roughness: 0.15,
+  },
+  rose: {
+    color: '#e8a39d',
+    metalness: 1,
+    roughness: 0.15,
   }
 };
 
-const JewelryModel = forwardRef<THREE.Mesh, JewelryModelProps>(({ url, metalType, fileName, onPointerDown, wireframe = false, onLoadStats }, ref) => {
+const GEM_COLORS: Record<string, string> = {
+  'Diamond': '#ffffff',
+  'Emerald': '#2fa854',
+  'Sapphire': '#114cb3',
+  'Ruby': '#d61845',
+};
+
+function getGemMaterial(colorKey: string) {
+  const hex = GEM_COLORS[colorKey] || GEM_COLORS['Diamond'];
+  return new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(hex),
+    metalness: 0.1, // Slight metallic highlight on facets
+    roughness: 0.0,
+    transmission: 0.9,
+    ior: 2.417, // Strict natural diamond IOR
+    thickness: 12.0, // Deep thickness to heavily refract and distort the shank behind the stone
+    envMapIntensity: 6.0, // Reactive and intense reflections
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.0,
+    flatShading: true,
+    dispersion: 0.1, // Realistic chromatic aberration fire
+    reflectivity: 1.0, // Max Fresnel reflectivity
+  });
+}
+
+const JewelryModel = forwardRef<THREE.Mesh, JewelryModelProps>(({ url, metalType, fileName, onPointerDown, wireframe = false, onLoadStats, gemColor = 'Diamond' }, ref) => {
   const isObj = url?.toLowerCase().split('?')[0].endsWith('.obj') || (fileName && fileName.toLowerCase().endsWith('.obj'));
-  const result = useLoader(isObj ? OBJLoader : STLLoader, url!);
-  
-  // OBJLoader returns a Group, STLLoader returns a BufferGeometry
+  const is3dm = url?.toLowerCase().split('?')[0].endsWith('.3dm') || (fileName && fileName.toLowerCase().endsWith('.3dm'));
+  const isGltf = url?.toLowerCase().split('?')[0].endsWith('.glb') || url?.toLowerCase().split('?')[0].endsWith('.gltf') || (fileName && (fileName.toLowerCase().endsWith('.glb') || fileName.toLowerCase().endsWith('.gltf')));
+
+  let LoaderClass: any = STLLoader;
+  if (isObj) LoaderClass = OBJLoader;
+  if (is3dm) LoaderClass = Rhino3dmLoader;
+  if (isGltf) LoaderClass = GLTFLoader;
+
+  const result = useLoader(LoaderClass, url!, (loader: any) => {
+    if (is3dm) {
+      loader.setLibraryPath('https://cdn.jsdelivr.net/npm/rhino3dm@8.4.0/');
+    }
+  });
+
+  // Extract geometry from the loaded result
   const geometry = useMemo(() => {
+    if (isGltf) return undefined; // Gltf loads a scene group directly
     let geo: THREE.BufferGeometry | undefined;
-    if (isObj) {
-      const group = result as THREE.Group;
-      // Find the first mesh in the group and get its geometry
+    if (isObj || is3dm) {
+      const group = result as THREE.Object3D;
       group.traverse((child) => {
         if ((child as THREE.Mesh).isMesh && !geo) {
           geo = (child as THREE.Mesh).geometry;
@@ -88,18 +120,52 @@ const JewelryModel = forwardRef<THREE.Mesh, JewelryModelProps>(({ url, metalType
       geo.center();
     }
     return geo;
-  }, [result, isObj]);
+  }, [result, isObj, isGltf]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (geometry && onLoadStats) {
       const volume = getExactVolume(geometry);
       onLoadStats(volume);
     }
   }, [geometry, onLoadStats]);
 
-  if (!geometry) return null;
+  // Materials definition for GLTF multi-mesh assignment
+  const metalMat = useMemo(() => {
+    const props = METAL_PROPS[metalType];
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color(props.color),
+      metalness: props.metalness,
+      roughness: props.roughness,
+      envMapIntensity: 2.0,
+    });
+  }, [metalType]);
 
-  const props = METAL_PROPS[metalType];
+  const gemMat = useMemo(() => getGemMaterial(gemColor), [gemColor]);
+
+  // If GLTF/GLB, traverse scene group and assign materials dynamically
+  if (isGltf) {
+    const gltfScene = result.scene || result;
+    const clonedScene = useMemo(() => gltfScene.clone(), [gltfScene]);
+
+    useEffect(() => {
+      clonedScene.traverse((child: any) => {
+        if (child.isMesh) {
+          const name = child.name.toLowerCase();
+          if (name.includes('gem') || name.includes('stone') || name.includes('diamond')) {
+            child.material = gemMat;
+          } else {
+            child.material = metalMat;
+          }
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+    }, [clonedScene, metalMat, gemMat]);
+
+    return <primitive object={clonedScene} ref={ref} onPointerDown={onPointerDown} />;
+  }
+
+  if (!geometry) return null;
 
   return (
     <mesh 
@@ -108,19 +174,14 @@ const JewelryModel = forwardRef<THREE.Mesh, JewelryModelProps>(({ url, metalType
       castShadow 
       receiveShadow
       onPointerDown={onPointerDown}
-    >
-      <meshStandardMaterial 
-        {...props}
-        envMapIntensity={1.5}
-        wireframe={wireframe}
-      />
-    </mesh>
+      material={metalMat}
+    />
   );
 });
 
 JewelryModel.displayName = 'JewelryModel';
 
-export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; metalType: MetalType; isObj: boolean; onPointerDown?: (event: any) => void; wireframe?: boolean; onLoadStats?: (volume: number) => void }>(({ data, metalType, isObj, onPointerDown, wireframe = false, onLoadStats }, ref) => {
+export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; metalType: MetalType; isObj: boolean; onPointerDown?: (event: any) => void; wireframe?: boolean; onLoadStats?: (volume: number) => void; gemColor?: string }>(({ data, metalType, isObj, onPointerDown, wireframe = false, onLoadStats, gemColor = 'Diamond' }, ref) => {
   const geometry = useMemo(() => {
     if (isObj) {
       const loader = new OBJLoader();
@@ -141,7 +202,6 @@ export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; 
       const loader = new STLLoader();
       const header = new TextDecoder().decode(data.slice(0, 500));
       let geo: THREE.BufferGeometry;
-      // ASCII STL files contain 'facet normal'
       if (header.includes('facet normal') || header.trim().startsWith('solid')) {
         const text = new TextDecoder().decode(data);
         geo = loader.parse(text) as THREE.BufferGeometry;
@@ -154,7 +214,7 @@ export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; 
     }
   }, [data, isObj]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (geometry && onLoadStats) {
       const volume = getExactVolume(geometry);
       onLoadStats(volume);
@@ -164,6 +224,14 @@ export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; 
   if (!geometry) return null;
 
   const props = METAL_PROPS[metalType];
+  const metalMat = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: new THREE.Color(props.color),
+      metalness: props.metalness,
+      roughness: props.roughness,
+      envMapIntensity: 2.0,
+    });
+  }, [props]);
 
   return (
     <mesh 
@@ -172,13 +240,8 @@ export const JewelryModelFromData = forwardRef<THREE.Mesh, { data: ArrayBuffer; 
       castShadow 
       receiveShadow
       onPointerDown={onPointerDown}
-    >
-      <meshStandardMaterial 
-        {...props}
-        envMapIntensity={1.5}
-        wireframe={wireframe}
-      />
-    </mesh>
+      material={metalMat}
+    />
   );
 });
 

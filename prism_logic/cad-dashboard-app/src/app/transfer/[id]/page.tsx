@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
 import ZipPreviewer from '@/components/viewport/ZipPreviewer';
 import TransferCheckout from '@/components/transfer/TransferCheckout';
+import VideoPreviewer from '@/components/transfer/VideoPreviewer';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -13,22 +14,9 @@ interface PageProps {
 export default async function DownloadPage({ params, searchParams }: PageProps) {
   const { id } = await params;
   const sp = await searchParams;
-  let isPaid = sp.success === 'true';
+  const isPaid = sp.success === 'true';
 
   const supabase = await createAdminClient();
-
-  if (sp.payment_id) {
-    const { data: paymentRecord } = await supabase
-      .from('file_transfer_payments')
-      .select('status')
-      .eq('id', sp.payment_id)
-      .maybeSingle();
-
-    if (paymentRecord && paymentRecord.status === 'approved') {
-      isPaid = true;
-    }
-  }
-
   const supabaseAuth = await createClient();
   const { data: { session } } = await supabaseAuth.auth.getSession();
   const isAuthenticated = !!session;
@@ -76,22 +64,15 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
 
   // Determine if payment is required
   const requiresPayment = transfer.price > 0 && !isPaid;
+  const isWatermarked = transfer.file_name.includes('[WATERMARKED]') || requiresPayment;
+  const displayFileName = transfer.file_name.replace(' [WATERMARKED]', '');
 
-  // Generate a short-lived signed URL for preview (inline) (1 hour)
-  const { data: previewUrlData } = await supabase
+  // Generate a short-lived signed URL for preview/download (1 hour)
+  const { data: urlData } = await supabase
     .storage
     .from('file-transfers')
     .createSignedUrl(transfer.file_path, 3600);
-  const previewUrl = previewUrlData?.signedUrl || '';
-
-  // Generate a short-lived signed URL for download (forced attachment download with original filename) (1 hour)
-  const { data: downloadUrlData } = await supabase
-    .storage
-    .from('file-transfers')
-    .createSignedUrl(transfer.file_path, 3600, {
-      download: transfer.file_name,
-    });
-  const downloadUrl = downloadUrlData?.signedUrl || '';
+  const downloadUrl = urlData?.signedUrl || '';
 
   return (
     <div className={`bg-[#121414] text-[#e2e2e2] font-body h-screen overflow-hidden flex flex-col selection:bg-[#ffe30c] selection:text-[#201c00] ${isAuthenticated ? 'pt-16' : ''}`}>
@@ -153,7 +134,7 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
                       </div>
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic tracking-tight font-headline break-all text-white">{transfer.file_name}</h3>
+                      <h3 className="text-xl font-black italic tracking-tight font-headline break-all text-white">{displayFileName}</h3>
                       <p className="text-xs text-white/40 font-bold uppercase tracking-widest">{(transfer.file_size / (1024 * 1024)).toFixed(2)} MB • READY FOR CLOUD</p>
                     </div>
                   </div>
@@ -161,7 +142,7 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
                   <div className="grid grid-cols-3 gap-2 py-4 border-y border-white/5">
                     <div className="flex flex-col gap-1">
                       <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Type</span>
-                      <span className="text-[11px] font-extrabold text-white">{transfer.mime_type?.split(';')[0]?.split('/')[1]?.toUpperCase() || 'FILE'}</span>
+                      <span className="text-[11px] font-extrabold text-white">{transfer.mime_type?.split('/')[1]?.toUpperCase() || 'FILE'}</span>
                     </div>
                     <div className="flex flex-col gap-1 items-center">
                       <span className="text-[9px] font-black uppercase tracking-widest text-white/30">Status</span>
@@ -189,12 +170,12 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
                     </div>
                     
                     {requiresPayment ? (
-                      <TransferCheckout transferId={transfer.id} fileName={transfer.file_name} price={transfer.price} uploaderMethods={uploaderMethods} />
+                      <TransferCheckout transferId={transfer.id} fileName={displayFileName} price={transfer.price} uploaderMethods={uploaderMethods} />
                     ) : downloadUrl ? (
                       <a 
                         href={downloadUrl}
                         className="w-full electric-gradient text-black py-5 rounded-2xl text-[13px] font-black uppercase tracking-[0.2em] shadow-xl active:scale-95 transition-all flex items-center justify-center"
-                        download={transfer.file_name}
+                        download={displayFileName}
                       >
                         DOWNLOAD FILE
                       </a>
@@ -212,27 +193,25 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
             );
 
             // If 3D single file
-            if (transfer.file_name.toLowerCase().endsWith('.stl') || transfer.file_name.toLowerCase().endsWith('.obj')) {
+            if (transfer.file_name.toLowerCase().endsWith('.stl') || transfer.file_name.toLowerCase().endsWith('.obj') || transfer.file_name.toLowerCase().endsWith('.3dm')) {
               return (
                 <div className="flex-1 w-full h-full relative min-h-0">
                   <ViewportCanvas 
-                    fileUrl={previewUrl} 
-                    fileName={transfer.file_name} 
+                    fileUrl={downloadUrl} 
+                    fileName={displayFileName} 
                     metalType="gold" 
                     isReviewMode={false}
                     sidebarFooter={downloadCardJsx}
                   />
-                  {requiresPayment && (
-                    <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden select-none flex flex-wrap items-center justify-center gap-12 p-8 opacity-[0.08]">
-                      {Array.from({ length: 40 }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="text-white font-headline font-black uppercase text-xl md:text-2xl tracking-[0.25em] -rotate-30 select-none whitespace-nowrap"
-                        >
-                          CADONCE PREVIEW
-                        </div>
-                      ))}
-                    </div>
+                  {isWatermarked && (
+                    <div 
+                      className="absolute inset-0 z-20 pointer-events-none select-none opacity-[0.15] mix-blend-difference"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='28' font-weight='900' fill='white' stroke='white' stroke-width='1' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 200, 200)' letter-spacing='5'%3ECADONCE%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'repeat',
+                        backgroundPosition: 'center'
+                      }}
+                    />
                   )}
                 </div>
               );
@@ -242,71 +221,47 @@ export default async function DownloadPage({ params, searchParams }: PageProps) 
             if (transfer.file_name.toLowerCase().endsWith('.zip')) {
               return (
                 <div className="flex-1 w-full h-full relative min-h-0">
-                  <ZipPreviewer zipUrl={previewUrl} sidebarFooter={downloadCardJsx} />
-                  {requiresPayment && (
-                    <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden select-none flex flex-wrap items-center justify-center gap-12 p-8 opacity-[0.08]">
-                      {Array.from({ length: 40 }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="text-white font-headline font-black uppercase text-xl md:text-2xl tracking-[0.25em] -rotate-30 select-none whitespace-nowrap"
-                        >
-                          CADONCE PREVIEW
-                        </div>
-                      ))}
-                    </div>
+                  <ZipPreviewer zipUrl={downloadUrl} sidebarFooter={downloadCardJsx} />
+                  {isWatermarked && (
+                    <div 
+                      className="absolute inset-0 z-20 pointer-events-none select-none opacity-[0.15] mix-blend-difference"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='28' font-weight='900' fill='white' stroke='white' stroke-width='1' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 200, 200)' letter-spacing='5'%3ECADONCE%3C/text%3E%3C/svg%3E")`,
+                        backgroundRepeat: 'repeat',
+                        backgroundPosition: 'center'
+                      }}
+                    />
                   )}
                 </div>
               );
             }
             
             // If Image or Video
-            const cleanMime = transfer.mime_type?.split(';')[0] || '';
-            const isImage = cleanMime.startsWith('image/') || transfer.file_name.match(/\.(jpg|jpeg|png|gif|webp|heic|bmp|svg)$/i);
-            const isVideo = cleanMime.startsWith('video/') || transfer.file_name.match(/\.(mp4|mov|webm|avi|mkv)$/i);
-            const isWatermarkEnabled = (!!transfer.watermark_enabled || !!transfer.mime_type?.includes('watermark=true')) && requiresPayment;
+            const isImage = transfer.mime_type?.startsWith('image/') || transfer.file_name.match(/\.(jpg|jpeg|png|gif|webp|heic|bmp|svg)$/i);
+            const isVideo = transfer.mime_type?.startsWith('video/') || transfer.file_name.match(/\.(mp4|mov|webm|avi|mkv)$/i);
 
             if (isImage || isVideo) {
               return (
                 <div className="flex-1 w-full h-full flex flex-col md:flex-row overflow-hidden relative group font-body bg-[#0c0f0f]">
                   {/* Media Viewport */}
                   <div className="w-full min-h-[50vh] md:min-h-0 md:flex-1 relative overflow-hidden bg-black/80 flex items-center justify-center p-4 md:p-8">
-                    {isImage ? (
-                      <img src={previewUrl} alt={transfer.file_name} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" />
-                    ) : (
-                      <video src={previewUrl} controls className="max-w-full max-h-full rounded-xl shadow-2xl outline-none" />
-                    )}
-                    {isWatermarkEnabled && (
-                      <>
-                        {/* Repeating Secure Watermark Grid */}
-                        <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden select-none flex flex-wrap items-center justify-center gap-12 p-8 opacity-[0.12]">
-                          {Array.from({ length: 40 }).map((_, i) => (
-                            <div 
-                              key={i} 
-                              className="text-white font-headline font-black uppercase text-xl md:text-2xl tracking-[0.3em] -rotate-30 select-none whitespace-nowrap"
-                            >
-                              CADONCE WATERMARK
-                            </div>
-                          ))}
-                        </div>
-                        {/* Floating secure badge */}
-                        <div className="absolute bottom-6 right-6 bg-[#0c0a04]/80 border border-[#fce003]/30 px-4 py-2 rounded-xl flex items-center gap-2 backdrop-blur-md shadow-xl z-20 pointer-events-none select-none">
-                          <span className="material-symbols-outlined text-[#fce003] text-sm animate-pulse">verified</span>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-white">CADONCE SECURE WATERMARK</span>
-                        </div>
-                      </>
-                    )}
-                    {requiresPayment && (
-                      <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden select-none flex flex-wrap items-center justify-center gap-12 p-8 opacity-[0.08]">
-                        {Array.from({ length: 40 }).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className="text-white font-headline font-black uppercase text-xl md:text-2xl tracking-[0.25em] -rotate-30 select-none whitespace-nowrap"
-                          >
-                            CADONCE PREVIEW
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <div className="relative flex items-center justify-center max-w-full max-h-full rounded-xl overflow-hidden shadow-2xl">
+                      {isImage ? (
+                        <img src={downloadUrl} alt={displayFileName} className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <VideoPreviewer src={downloadUrl} />
+                      )}
+                      {isWatermarked && (
+                        <div 
+                          className="absolute inset-0 z-20 pointer-events-none select-none opacity-[0.15] mix-blend-difference"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='28' font-weight='900' fill='white' stroke='white' stroke-width='1' text-anchor='middle' dominant-baseline='middle' transform='rotate(-30, 200, 200)' letter-spacing='5'%3ECADONCE%3C/text%3E%3C/svg%3E")`,
+                            backgroundRepeat: 'repeat',
+                            backgroundPosition: 'center'
+                          }}
+                        />
+                      )}
+                    </div>
                   </div>
 
                   {/* Sidebar */}

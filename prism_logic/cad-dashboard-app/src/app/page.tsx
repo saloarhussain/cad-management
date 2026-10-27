@@ -5,11 +5,12 @@ import { useAuth } from '@/components/AuthProvider';
 import { getDb, getDesignerStatus } from '@/app/actions';
 import dynamic from 'next/dynamic';
 import { GLOBAL_CURRENCIES } from '@/lib/config';
-import DashboardSkeleton from '@/components/DashboardSkeleton';
+
+import HomePage from '@/components/HomePage';
 
 const DashboardContent = dynamic(() => import('./DashboardContent'), { 
   ssr: false,
-  loading: () => <DashboardSkeleton /> 
+  loading: () => null 
 });
 
 export default function DashboardPage() {
@@ -24,9 +25,7 @@ export default function DashboardPage() {
     pendingRevenue: 0,
     activeProjects: 0,
     totalClients: 0,
-    activeClients: 0,
     totalDesigners: 0,
-    activeDesigners: 0,
     payoutsDue: 0,
     payoutsDueCount: 0,
     currency: '₹'
@@ -44,18 +43,14 @@ export default function DashboardPage() {
     setHasMounted(true);
   }, []);
 
-    useEffect(() => {
-      if (hasMounted && !authLoading && isAuthenticated && isDesigner) {
+  useEffect(() => {
+    // If authenticated designer, route to designer workstation
+    if (hasMounted && !authLoading) {
+      if (isAuthenticated && isDesigner) {
         router.replace('/designer');
       }
-      // Redirect to login if not authenticated (ONLY if not an invitation)
-      if (hasMounted && !authLoading && !isAuthenticated) {
-        const params = new URLSearchParams(window.location.search);
-        if (!params.has('email')) {
-          router.replace('/auth/login');
-        }
-      }
-    }, [isAuthenticated, isDesigner, authLoading, hasMounted, router]);
+    }
+  }, [isAuthenticated, isDesigner, authLoading, hasMounted, router]);
 
   const [allRates, setAllRates] = useState<Record<string, number>>({ USD: 1, INR: 83.5 });
   const [displayCurrency, setDisplayCurrency] = useState('₹');
@@ -87,7 +82,7 @@ export default function DashboardPage() {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || authLoading || isDesigner || !hasMounted) {
+    if (!isAuthenticated || authLoading || isDesigner || !hasMounted || !ratesLoaded) {
       return;
     }
 
@@ -109,18 +104,17 @@ export default function DashboardPage() {
         const clients = db.clients || [];
         const designers = db.designers || [];
 
-        // Helper to convert to display currency
         const convert = (amount: number, fromSymbol: string) => {
-          const fromCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === fromSymbol)?.code || 'USD';
-          const targetCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === displayCurrency)?.code || 'INR';
+          const fromCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === fromSymbol || c.code === fromSymbol)?.code || 'USD';
+          const targetCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === displayCurrency || c.code === displayCurrency)?.code || 'INR';
 
-          if (fromCurrency === targetCurrency) return amount;
+          if (fromCurrency === targetCurrency) return Math.round(amount);
           
           const rateFrom = allRates[fromCurrency] || 1;
           const rateTarget = allRates[targetCurrency] || 1;
 
           // Convert source to USD first, then to target
-          return (amount / rateFrom) * rateTarget;
+          return Math.round((amount / rateFrom) * rateTarget);
         };
 
         const filtered = projects.filter((p: any) => {
@@ -152,8 +146,10 @@ export default function DashboardPage() {
         const totalRevenue = filtered.reduce((sum: number, p: any) => 
           sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
         
-        const totalExpense = filtered.reduce((sum: number, p: any) => 
-          sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
+        const totalExpense = filtered
+          .filter((p: any) => p.designer && p.designer.trim() !== '')
+          .reduce((sum: number, p: any) => 
+            sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
         
         const pendingRevenue = projects
           .filter((p: any) => {
@@ -168,30 +164,10 @@ export default function DashboardPage() {
           return !s.includes('complete') && !s.includes('done');
         }).length;
 
-        const activeClientsCount = new Set(
-          projects
-            .filter((p: any) => {
-              const s = p.status?.toLowerCase() || '';
-              return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
-            })
-            .map((p: any) => p.client)
-            .filter(Boolean)
-        ).size;
-
-        const activeDesignersCount = new Set(
-          projects
-            .filter((p: any) => {
-              const s = p.status?.toLowerCase() || '';
-              return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
-            })
-            .map((p: any) => p.designer)
-            .filter(Boolean)
-        ).size;
-
         const payoutsDueProjects = projects.filter((p: any) => {
           const s = p.status?.toLowerCase() || '';
           const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-          return isComplete && p.paymentStatus !== 'Paid';
+          return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
         });
 
         const payoutsDue = payoutsDueProjects.reduce((sum: number, p: any) => 
@@ -203,9 +179,7 @@ export default function DashboardPage() {
           pendingRevenue,
           activeProjects: activeProjectsCount,
           totalClients: clients.length,
-          activeClients: activeClientsCount,
           totalDesigners: designers.length,
-          activeDesigners: activeDesignersCount,
           payoutsDue,
           payoutsDueCount: payoutsDueProjects.length,
           currency: displayCurrency
@@ -233,24 +207,26 @@ export default function DashboardPage() {
 
   if (!hasMounted || authLoading) {
     return (
-      <div className="min-h-screen bg-[#161308] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#fce003] border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-[10px] font-black text-[#fce003] uppercase tracking-[0.3em] animate-pulse">Initializing Studio...</span>
+          <div className="w-12 h-12 border-4 border-[#F59E0B] border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-[10px] font-black text-[#F59E0B] uppercase tracking-[0.3em] animate-pulse">Initializing CADONCE...</span>
         </div>
       </div>
     );
   }
 
-  // If we reach here and aren't authenticated or are a designer, the useEffect above will handle the redirect.
-  // We return null to avoid flashing the dashboard content.
-  if (!isAuthenticated || isDesigner) return null;
+  // If visitor is not authenticated, show the CADONCE Homepage!
+  if (!isAuthenticated) {
+    return <HomePage />;
+  }
 
-  const isDataLoading = loading || isInitialLoad || !ratesLoaded;
+  // If authenticated as designer, redirect to designer workstation
+  if (isDesigner) return null;
 
   return (
     <DashboardContent 
-      loading={isDataLoading}
+      loading={loading || isInitialLoad || !ratesLoaded}
       stats={stats}
       recentProjects={recentProjects}
       filteredProjects={filteredProjects}
@@ -270,3 +246,4 @@ export default function DashboardPage() {
   );
 
 }
+

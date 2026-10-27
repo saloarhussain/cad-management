@@ -20,13 +20,8 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     if (isAuthenticated && !loading && hasMounted) {
       const pathname = window.location.pathname;
       
-      // If Designer is on Organization Home, redirect to Designer Workstation
-      if (isDesigner && pathname === '/') {
-        window.location.href = '/designer';
-      }
-      
-      // If Organization Owner is on Designer Workstation, redirect to Organization Home
-      if (!isDesigner && pathname === '/designer') {
+      // Since Designer role is removed, redirect anyone trying to access /designer to /
+      if (pathname === '/designer') {
         window.location.href = '/';
       }
     } else if (!isAuthenticated && !loading && hasMounted) {
@@ -82,7 +77,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
         {/* Lock card */}
         <div className="relative z-10 flex flex-col items-center text-center max-w-sm w-full">
           <div className="w-24 h-24 rounded-2xl bg-surface-container border border-white/10 flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(252,224,3,0.1)]">
-            <span className="material-symbols-outlined text-5xl text-[#fce003]">lock</span>
+            <span className="material-symbols-outlined text-5xl text-[#F59E0B]">lock</span>
           </div>
 
           <p className="text-[10px] font-bold tracking-[0.3em] text-yellow-400/70 uppercase mb-2">
@@ -117,7 +112,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   // Security Check: If authenticated but NOT a designer AND has no organization profile (Free plan fallback means they exist)
   // This blocks "deleted" designers from seeing an empty organization portal.
-  const isOrganizationOwner = subscription && subscription.status === 'active';
+  const isOrganizationOwner = true; // Temporary override or relaxed check: any authenticated non-designer is an org owner by default.
   
   if (isAuthenticated && !isDesigner && !isOrganizationOwner) {
     return (
@@ -138,3 +133,4 @@ export default function AuthGuard({ children }: AuthGuardProps) {
 
   return <>{children}</>;
 }
+

@@ -1,18 +1,35 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getDb, sendMessage } from '@/app/actions';
 
 export default function ComposeMessagePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0c0a04] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+      <ComposeMessageContent />
+    </Suspense>
+  );
+}
+
+function ComposeMessageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  const toParam = searchParams.get('to');
+  const subjectParam = searchParams.get('subject');
+
   const [projects, setProjects] = useState<any[]>([]);
   const [isSending, setIsSending] = useState(false);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   
   // Form State
-  const [recipient, setRecipient] = useState('');
-  const [subject, setSubject] = useState('');
+  const [recipient, setRecipient] = useState(toParam || '');
+  const [subject, setSubject] = useState(subjectParam || '');
   const [projectRef, setProjectRef] = useState('');
   const [content, setContent] = useState('');
 
@@ -71,15 +88,15 @@ export default function ComposeMessagePage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#7b7767]/80 backdrop-blur-xl shadow-[0_0_15px_rgba(252,224,3,0.12)]">
         <div className="flex justify-between items-center w-full px-6 py-4">
           <div className="flex items-center gap-4">
-            <Link href="/inbox" className="text-[#fce003] active:scale-95 duration-200 hover:bg-[#fce003]/10 p-2 rounded-lg">
+            <Link href="/inbox" className="text-[#F59E0B] active:scale-95 duration-200 hover:bg-[#F59E0B]/10 p-2 rounded-lg">
               <span className="material-symbols-outlined">arrow_back</span>
             </Link>
-            <h1 className="font-headline font-bold tracking-tight text-xl text-[#fce003]">Compose Message</h1>
+            <h1 className="font-headline font-bold tracking-tight text-xl text-[#F59E0B]">Compose Message</h1>
           </div>
           <button 
             onClick={handleSend}
             disabled={isSending}
-            className={`bg-gradient-to-tr from-[#fce003] to-[#FF2626] text-black px-5 py-2 rounded-lg font-bold text-sm tracking-tight active:scale-95 duration-150 shadow-[0_0_15px_rgba(252,224,3,0.3)] uppercase flex items-center gap-2 ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-gradient-to-tr from-[#F59E0B] to-[#FF2626] text-black px-5 py-2 rounded-lg font-bold text-sm tracking-tight active:scale-95 duration-150 shadow-[0_0_15px_rgba(252,224,3,0.3)] uppercase flex items-center gap-2 ${isSending ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {isSending ? (
               <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
@@ -201,3 +218,5 @@ export default function ComposeMessagePage() {
     </div>
   );
 }
+
+
