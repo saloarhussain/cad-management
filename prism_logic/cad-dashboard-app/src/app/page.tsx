@@ -7,10 +7,11 @@ import dynamic from 'next/dynamic';
 import { GLOBAL_CURRENCIES } from '@/lib/config';
 
 import HomePage from '@/components/HomePage';
+import DashboardSkeleton from '@/components/DashboardSkeleton';
 
 const DashboardContent = dynamic(() => import('./DashboardContent'), { 
   ssr: false,
-  loading: () => null 
+  loading: () => <DashboardSkeleton /> 
 });
 
 export default function DashboardPage() {
