@@ -6,6 +6,12 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
 import { getPublicPortfolioItems, getPublicDesignerStatus, getPublicDesignerProfile } from '@/app/actions';
+import { 
+  PortfolioGridSkeleton, 
+  PortfolioTabsSkeleton, 
+  PortfolioMobileHeroSkeleton, 
+  PortfolioSidebarSkeleton 
+} from '@/components/PortfolioSkeleton';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -554,7 +560,10 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             </div>
 
             {/* Mobile / Tablet Designer Identity Hero (Visible < xl, hidden on desktop xl+) */}
-            <div className="xl:hidden rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col gap-4">
+            {isDataLoading ? (
+              <PortfolioMobileHeroSkeleton />
+            ) : (
+              <div className="xl:hidden rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-4 sm:p-6 shadow-xl relative overflow-hidden flex flex-col gap-4 animate-in fade-in duration-300">
               {/* Atmospheric Glow */}
               <div className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-gradient-to-b from-[#ffb955]/20 via-[#d9ee3c]/15 to-transparent rounded-full blur-2xl"></div>
 
@@ -678,13 +687,17 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                 </span>
               </div>
             </div>
+            )}
 
             {/* Core Portfolio Layout: Asymmetric 12-Column Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
               {/* Left 8 Columns: Navigation, Filter Matrix & CAD Showcase */}
               <div className="xl:col-span-8 flex flex-col gap-4 sm:gap-6 min-w-0">
                 {/* Instagram-style Tab Navigation Bar */}
-                <div className="bg-[#14161E]/90 backdrop-blur-md rounded-xl border border-[#282D3C] p-2 sm:p-2.5">
+                {isDataLoading ? (
+                  <PortfolioTabsSkeleton />
+                ) : (
+                  <div className="bg-[#14161E]/90 backdrop-blur-md rounded-xl border border-[#282D3C] p-2 sm:p-2.5 animate-in fade-in duration-300">
                   <div className="flex items-center justify-between border-b border-[#1B1E28] pb-1.5 sm:pb-2 px-1 sm:px-2 gap-2">
                     <nav 
                       className="flex items-center gap-3 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth flex-nowrap shrink min-w-0"
@@ -793,9 +806,14 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     })()}
                   </div>
                 </div>
+                )}
 
                 {/* Main Showcase Content: Portfolio Grid OR Shop Table */}
-                {activeTab === 'shop' ? (
+                {isDataLoading ? (
+                  <PortfolioGridSkeleton count={6} viewMode={viewMode} />
+                ) : (
+                  <>
+                    {activeTab === 'shop' ? (
                   <div className="p-5 bg-[#14161E]/90 rounded-xl border border-[#282D3C]" data-purpose="shop-showcase">
                     {/* Header with Add Product Button */}
                     <div className="flex justify-between items-center mb-4">
@@ -1150,10 +1168,15 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                     </button>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
 
               {/* Right 4 Columns: Sticky Designer Identity & Studio Dossier */}
-              <aside className="xl:col-span-4 flex flex-col gap-6 xl:sticky xl:top-24">
+              {isDataLoading ? (
+                <PortfolioSidebarSkeleton />
+              ) : (
+                <aside className="xl:col-span-4 flex flex-col gap-6 xl:sticky xl:top-24 animate-in fade-in duration-300">
                 {/* Primary Profile Dossier Card */}
                 <div className="hidden xl:flex relative rounded-2xl border border-[#282D3C] bg-[#14161E]/95 backdrop-blur-xl p-6 sm:p-7 flex-col items-center text-center shadow-2xl overflow-hidden">
                   {/* Atmospheric Radiant Glow Behind Avatar */}
@@ -1357,6 +1380,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                   </a>
                 </div>
               </aside>
+              )}
             </div>
           </div>
 
