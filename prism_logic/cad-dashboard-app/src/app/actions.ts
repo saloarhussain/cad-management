@@ -2137,18 +2137,38 @@ export async function getUserInitializationData() {
   }
 }
 
-export async function getDb() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+export async function getDb(clientUserId?: string) {
+  let userId = clientUserId;
+  let supabaseClient;
+  try {
+    supabaseClient = await createClient();
+    if (!userId) {
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      userId = user?.id;
+    }
+  } catch (err) {
+    console.warn('[getDb] auth check warning:', err);
+  }
+
+  if (!userId) {
     // Return empty state instead of throwing to prevent SSR errors 
     // when unauthenticated users hit protected pages behind AuthGuard
     return { projects: [], clients: [], designers: [], settings: {} };
   }
-  const db = await readDb(user.id, supabase);
-  db.settings = db.settings || {};
-  db.settings.favorite_clients = user.user_metadata?.favorite_clients || [];
-  return db;
+
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminClient = await createAdminClient();
+    const db = await readDb(userId, adminClient);
+    db.settings = db.settings || {};
+    return db;
+  } catch (err) {
+    console.warn('[getDb] admin fetch fallback to standard client:', err);
+    const client = supabaseClient || (await createClient());
+    const db = await readDb(userId, client);
+    db.settings = db.settings || {};
+    return db;
+  }
 }
 
 export async function saveFavoriteClients(clientIds: string[]) {

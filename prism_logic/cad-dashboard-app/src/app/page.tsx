@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [allProjects, setAllProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [dataReady, setDataReady] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const router = useRouter();
   const { isAuthenticated, user, isDesigner, loading: authLoading } = useAuth();
@@ -55,7 +56,6 @@ export default function DashboardPage() {
 
   const [allRates, setAllRates] = useState<Record<string, number>>({ USD: 1, INR: 83.5 });
   const [displayCurrency, setDisplayCurrency] = useState('₹');
-  const [ratesLoaded, setRatesLoaded] = useState(false);
 
   useEffect(() => {
     // Load preferred currency from local storage
@@ -73,8 +73,6 @@ export default function DashboardPage() {
         }
       } catch (err) {
         console.error("Failed to fetch exchange rates", err);
-      } finally {
-        setRatesLoaded(true);
       }
     };
     fetchRates();
@@ -83,24 +81,29 @@ export default function DashboardPage() {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!isAuthenticated || authLoading || isDesigner || !hasMounted || !ratesLoaded) {
+    if (!isAuthenticated || authLoading || isDesigner || !hasMounted) {
       return;
     }
+
+    let isSubscribed = true;
 
     const fetchData = async () => {
       setLoading(true);
       
       // Safety timeout to prevent permanent loading state
       const safetyTimeout = setTimeout(() => {
-        if (isInitialLoad) {
-          console.warn('Dashboard data fetch exceeded 5s safety limit');
+        if (isInitialLoad && isSubscribed) {
+          console.warn('Dashboard data fetch exceeded 6s safety limit');
           setLoading(false);
           setIsInitialLoad(false);
+          setDataReady(true);
         }
-      }, 5000);
+      }, 6000);
 
       try {
-        const db = await getDb();
+        const db = await getDb(user?.id);
+        if (!isSubscribed) return;
+
         const projects = db.projects || [];
         const clients = db.clients || [];
         const designers = db.designers || [];
@@ -141,8 +144,6 @@ export default function DashboardPage() {
           return false;
         });
 
-        setFilteredProjects(filtered);
-
         // Financial stats with proper conversion
         const totalRevenue = filtered.reduce((sum: number, p: any) => 
           sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
@@ -174,6 +175,13 @@ export default function DashboardPage() {
         const payoutsDue = payoutsDueProjects.reduce((sum: number, p: any) => 
           sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
 
+        const withDeadlines = projects
+          .filter((p: any) => p.deadlineDate && new Date(p.deadlineDate).getTime() > Date.now())
+          .sort((a: any, b: any) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
+          .slice(0, 4);
+
+        // Update all data synchronously together before turning loading off
+        setFilteredProjects(filtered);
         setStats({
           totalRevenue,
           totalExpense,
@@ -185,25 +193,27 @@ export default function DashboardPage() {
           payoutsDueCount: payoutsDueProjects.length,
           currency: displayCurrency
         });
-
         setRecentProjects(projects.slice(0, 3));
         setAllProjects(projects);
-
-        const withDeadlines = projects
-          .filter((p: any) => p.deadlineDate && new Date(p.deadlineDate).getTime() > Date.now())
-          .sort((a: any, b: any) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
-          .slice(0, 4);
         setUpcomingDeadlines(withDeadlines);
+        setDataReady(true);
       } catch (err) {
         console.error('Failed to load dashboard data', err);
       } finally {
         clearTimeout(safetyTimeout);
-        setLoading(false);
-        setIsInitialLoad(false);
+        if (isSubscribed) {
+          setLoading(false);
+          setIsInitialLoad(false);
+        }
       }
     };
+
     fetchData();
-  }, [isAuthenticated, authLoading, isDesigner, hasMounted, filterMode, selectedDate, startDate, endDate, displayCurrency, allRates]);
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [isAuthenticated, authLoading, isDesigner, hasMounted, filterMode, selectedDate, startDate, endDate, displayCurrency, allRates, user?.id]);
 
 
   if (!hasMounted || authLoading) {
@@ -227,7 +237,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardContent 
-      loading={loading || isInitialLoad || !ratesLoaded}
+      loading={!dataReady || loading || isInitialLoad}
       stats={stats}
       recentProjects={recentProjects}
       filteredProjects={filteredProjects}
