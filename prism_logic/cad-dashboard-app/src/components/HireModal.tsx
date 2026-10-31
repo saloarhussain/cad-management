@@ -63,7 +63,11 @@ export const HireModal: React.FC<HireModalProps> = ({
   if (!isOpen) return null;
 
   const designerDisplayName = designer?.fullName || designer?.organizationName || 'Designer';
-  const returnUrl = `/portfolio/${targetId}?hire=true${initialItem?.title ? `&title=${encodeURIComponent(initialItem.title)}` : ''}`;
+  const cleanPortfolioId = (targetId && targetId !== 'undefined') ? targetId : (designer?.username || designer?.id || '');
+  const currentPath = (typeof window !== 'undefined' && window.location.pathname.startsWith('/portfolio') && !window.location.pathname.includes('/undefined'))
+    ? window.location.pathname
+    : `/portfolio/${cleanPortfolioId}`;
+  const returnUrl = `${currentPath}?hire=true${initialItem?.title ? `&title=${encodeURIComponent(initialItem.title)}` : ''}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

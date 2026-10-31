@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams, useParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import ViewportCanvas from '@/components/viewport/ViewportCanvas';
 import { getPublicPortfolioItems, getPublicDesignerStatus, getPublicDesignerProfile } from '@/app/actions';
@@ -265,6 +265,11 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const routeParams = useParams();
+  const routeId = (routeParams?.id as string) 
+    || (typeof window !== 'undefined' ? window.location.pathname.replace(/^\/portfolio\/?/i, '').split('/')[0].replace(/[^a-zA-Z0-9_-]/g, '') : '') 
+    || params?.id 
+    || '';
   const [orgCount, setOrgCount] = useState(0);
   const [jobsCount, setJobsCount] = useState(0);
   const [projects, setProjects] = useState<any[]>([]);
@@ -2398,7 +2403,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           onClose={() => setIsHireModalOpen(false)}
           designer={designer}
           initialItem={hireInitialItem}
-          targetId={params.id}
+          targetId={routeId}
         />
 
         {/* Direct Message Modal */}
@@ -2406,7 +2411,7 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
           isOpen={isDirectMessageModalOpen}
           onClose={() => setIsDirectMessageModalOpen(false)}
           designer={designer}
-          targetId={params.id}
+          targetId={routeId}
         />
         </div>
       </div>

@@ -3,6 +3,15 @@ import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { registerUserAction } from '@/app/actions';
+
+function cleanRedirect(raw: string | null): string {
+  if (!raw) return '/';
+  if (raw.includes('/portfolio/undefined')) {
+    return raw.replace('/portfolio/undefined', '/portfolio');
+  }
+  return raw;
+}
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -66,42 +75,35 @@ function SignupForm() {
     }
 
     try {
-      const { data, error: signupError } = await supabase.auth.signUp({
+      const res = await registerUserAction({
         email,
         password,
-        options: {
-          data: {
-            organization_name: selectedRole === 'organization' ? name : 'Designer Workstation',
-            full_name: selectedRole === 'designer' ? name : null,
-            role: selectedRole,
-            whatsapp: whatsapp
-          }
-        }
+        name,
+        role: selectedRole,
+        whatsapp
       });
 
-      if (signupError) {
-        if (signupError.message.toLowerCase().includes('already registered')) {
-          setError('This email is already registered. Please log in instead.');
-          return;
-        }
-        throw signupError;
-      }
-
-      // Detect "Silent Success"
-      if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-        setError('This email is already registered. Please log in instead.');
+      if (!res.success) {
+        setError(res.error || 'Signup failed');
+        setLoading(false);
         return;
       }
 
-      if (data.session) {
-        const targetRedirect = searchParams.get('redirect') || '/';
-        window.location.href = targetRedirect;
+      // Automatically sign in the user immediately
+      const { data: signinData, error: signinError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (signinError) {
+        console.warn('[Signup] Auto-login error:', signinError);
+        const targetRedirect = cleanRedirect(searchParams.get('redirect'));
+        window.location.href = `/auth/login?redirect=${encodeURIComponent(targetRedirect)}`;
         return;
       }
 
-      if (data.user) {
-        setSuccess(true);
-      }
+      const targetRedirect = cleanRedirect(searchParams.get('redirect'));
+      window.location.href = targetRedirect;
     } catch (err: any) {
       setError(err.message || 'Signup failed');
     } finally {

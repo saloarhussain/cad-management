@@ -4,6 +4,14 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+function cleanRedirect(raw: string | null): string {
+  if (!raw) return '/';
+  if (raw.includes('/portfolio/undefined')) {
+    return raw.replace('/portfolio/undefined', '/portfolio');
+  }
+  return raw;
+}
+
 function LoginForm() {
   const searchParams = useSearchParams();
   const isSetup = searchParams.get('setup') === 'true';
@@ -25,7 +33,7 @@ function LoginForm() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // If already logged in, check if we were invited to join something
-        const targetRedirect = searchParams.get('redirect') || '/';
+        const targetRedirect = cleanRedirect(searchParams.get('redirect'));
         router.replace(targetRedirect);
       } else if (isSetup) {
         setVerifying(true);
@@ -33,7 +41,7 @@ function LoginForm() {
         setTimeout(async () => {
           const { data: { session: retrySession } } = await supabase.auth.getSession();
           if (retrySession) {
-            const targetRedirect = searchParams.get('redirect') || '/';
+            const targetRedirect = cleanRedirect(searchParams.get('redirect'));
             router.replace(targetRedirect);
           } else {
             setVerifying(false);
@@ -93,7 +101,7 @@ function LoginForm() {
         if (loginError) throw loginError;
 
         if (data.user) {
-          const targetRedirect = searchParams.get('redirect') || '/';
+          const targetRedirect = cleanRedirect(searchParams.get('redirect'));
           window.location.href = targetRedirect;
         }
       }

@@ -52,7 +52,11 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({
   if (!isOpen) return null;
 
   const designerDisplayName = designer?.fullName || designer?.organizationName || 'Designer';
-  const returnUrl = `/portfolio/${targetId}?to=${encodeURIComponent(designerDisplayName)}`;
+  const cleanPortfolioId = (targetId && targetId !== 'undefined') ? targetId : (designer?.username || designer?.id || '');
+  const currentPath = (typeof window !== 'undefined' && window.location.pathname.startsWith('/portfolio') && !window.location.pathname.includes('/undefined'))
+    ? window.location.pathname
+    : `/portfolio/${cleanPortfolioId}`;
+  const returnUrl = `${currentPath}?to=${encodeURIComponent(designerDisplayName)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

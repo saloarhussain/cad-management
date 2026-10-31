@@ -5322,5 +5322,91 @@ export async function sendDirectMessageAction(data: {
   }
 }
 
+export async function registerUserAction(formData: {
+  email: string;
+  password?: string;
+  name: string;
+  role: 'organization' | 'designer';
+  whatsapp?: string;
+}) {
+  try {
+    const email = formData.email?.trim().toLowerCase();
+    const password = formData.password?.trim();
+    const name = formData.name?.trim();
+    const role = formData.role || 'organization';
+    const whatsapp = formData.whatsapp?.trim() || '';
+
+    if (!email || !email.includes('@')) {
+      return { success: false, error: 'A valid email address is required.' };
+    }
+    if (!password || password.length < 6) {
+      return { success: false, error: 'Password must be at least 6 characters.' };
+    }
+    if (!name) {
+      return { 
+        success: false, 
+        error: role === 'organization' ? 'Organization name is required.' : 'Designer name is required.' 
+      };
+    }
+
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // Create the user directly with admin privileges & auto-confirm email.
+    // This completely bypasses Supabase's rate-limited / failing built-in SMTP service.
+    const { data: userData, error: createError } = await adminSupabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        organization_name: role === 'organization' ? name : 'Designer Workstation',
+        full_name: name,
+        role,
+        whatsapp
+      }
+    });
+
+    if (createError) {
+      const msg = createError.message.toLowerCase();
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        return { success: false, error: 'This email is already registered. Please log in instead.' };
+      }
+      throw createError;
+    }
+
+    const userId = userData.user?.id;
+
+    // Initialize default profile / settings rows
+    if (userId) {
+      try {
+        if (role === 'organization') {
+          await adminSupabase.from('settings').upsert({
+            user_id: userId,
+            organization_name: name,
+            payment_methods: []
+          }, { onConflict: 'user_id' });
+        } else if (role === 'designer') {
+          await adminSupabase.from('designers').upsert({
+            user_id: userId,
+            fullName: name,
+            email,
+            phone: whatsapp,
+            role: 'CAD Specialist',
+            status: 'Active'
+          }, { onConflict: 'user_id' });
+        }
+      } catch (initErr) {
+        console.warn('[registerUserAction] Profile init non-critical error:', initErr);
+      }
+    }
+
+    return { success: true, userId };
+  } catch (err: any) {
+    console.error('[registerUserAction] Error:', err.message || err);
+    return { success: false, error: err.message || 'Registration failed.' };
+  }
+}
+
+
 
 
