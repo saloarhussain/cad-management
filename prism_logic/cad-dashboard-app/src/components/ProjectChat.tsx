@@ -309,7 +309,13 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, projectTitl
         )}
         
         {messages.map((msg, idx) => {
-          const isMe = msg.sender_id === user?.id && msg.sender_role !== 'client';
+          const isProposalOrDirectInquiry = Boolean(
+            msg.content?.startsWith('✉') || 
+            msg.content?.startsWith('⚡') || 
+            msg.content?.includes('Direct message inquiry') || 
+            msg.content?.includes('HIRE PROPOSAL')
+          );
+          const isMe = msg.sender_id === user?.id && !isProposalOrDirectInquiry;
           const showName = idx === 0 || messages[idx-1].sender_id !== msg.sender_id;
           const isNextSame = idx < messages.length - 1 && messages[idx+1].sender_id === msg.sender_id;
 
@@ -338,7 +344,7 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, projectTitl
                 </span>
               )}
               <div 
-                className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[11px] leading-relaxed ${
+                className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-[11px] leading-relaxed whitespace-pre-wrap ${
                   isMe 
                     ? 'bg-yellow-400 text-black font-bold rounded-tr-none' 
                     : 'bg-white/5 text-white/90 border border-white/5 rounded-tl-none'

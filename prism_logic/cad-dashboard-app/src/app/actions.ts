@@ -2857,8 +2857,15 @@ export async function getProjectMessages(projectId: string) {
 
     if (error) throw error;
 
-    // Auto-heal: If no chat_messages exist yet for this project, but project has a description
-    if (!data || data.length === 0) {
+    // Auto-heal: If no chat_messages exist yet, or if initial inquiry description wasn't inserted
+    const hasInitial = data && data.some((m: any) => 
+      m.content?.startsWith('✉') || 
+      m.content?.startsWith('⚡') || 
+      m.content?.includes('Direct message inquiry') || 
+      m.content?.includes('HIRE PROPOSAL')
+    );
+
+    if (!hasInitial) {
       const { data: project } = await adminSupabase
         .from('projects')
         .select('*')
@@ -2866,12 +2873,17 @@ export async function getProjectMessages(projectId: string) {
         .maybeSingle();
 
       if (project && project.description) {
+        const prefix = project.status === 'Direct Message' ? '✉ **DIRECT MESSAGE**\n\n' : '⚡ **HIRE PROPOSAL & COMMISSION INQUIRY**\n\n';
+        const initialContent = project.description.startsWith('✉') || project.description.startsWith('⚡')
+          ? project.description
+          : `${prefix}${project.description}`;
+
         const seedMessage = {
           project_id: projectId,
           sender_id: project.user_id,
           sender_name: project.client || 'Client Inquiry',
-          sender_role: 'client',
-          content: project.description,
+          sender_role: 'agency',
+          content: initialContent,
           user_id: project.user_id,
           is_read: true,
           created_at: project.createdAt || new Date().toISOString()
@@ -2885,7 +2897,7 @@ export async function getProjectMessages(projectId: string) {
         if (seedError) {
           console.error('[getProjectMessages] Auto-heal insert error:', seedError);
         } else if (seeded) {
-          return [seeded];
+          return [seeded, ...(data || [])].sort((a, b) => a.created_at.localeCompare(b.created_at));
         }
       }
     }
@@ -5123,7 +5135,7 @@ export async function submitHireProposal(data: {
       project_id: projectId,
       sender_id: currentUserId,
       sender_name: data.clientName || user.user_metadata?.full_name || 'Client',
-      sender_role: 'client',
+      sender_role: 'agency',
       content: initialContent,
       user_id: designer.userId,
       is_read: false,
@@ -5258,7 +5270,7 @@ export async function sendDirectMessageAction(data: {
       project_id: threadId,
       sender_id: currentUserId,
       sender_name: data.senderName || user.user_metadata?.full_name || 'Client',
-      sender_role: 'client',
+      sender_role: 'agency',
       content: initialContent,
       user_id: designer.userId,
       is_read: false,
