@@ -8,7 +8,7 @@ import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } 
 
 interface Notification {
   id: string;
-  type: 'message' | 'annotation' | 'intake' | 'update';
+  type: 'message' | 'annotation' | 'intake' | 'update' | 'hire';
   title: string;
   content: string;
   link: string;
@@ -110,6 +110,7 @@ export const NotificationCenter: React.FC = () => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
+      case 'hire': return 'bolt';
       case 'message': return 'chat_bubble';
       case 'annotation': return '3d_rotation';
       case 'intake': return 'assignment_ind';
@@ -120,6 +121,7 @@ export const NotificationCenter: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
+      case 'hire': return 'text-[#d9ee3c] bg-[#d9ee3c]/15 border border-[#d9ee3c]/30 shadow-[0_0_12px_rgba(217,238,60,0.2)]';
       case 'message': return 'text-blue-400 bg-blue-400/10';
       case 'annotation': return 'text-orange-400 bg-orange-400/10';
       case 'intake': return 'text-purple-400 bg-purple-400/10';

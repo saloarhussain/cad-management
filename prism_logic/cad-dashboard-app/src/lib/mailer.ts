@@ -26,13 +26,14 @@ function createTransporter(creds: MailCredentials) {
 
 export interface SendEmailOptions {
   to: string;
+  replyTo?: string;
   subject: string;
   html: string;
   text?: string;
   credentials: MailCredentials;
 }
 
-export async function sendEmail({ to, subject, html, text, credentials }: SendEmailOptions) {
+export async function sendEmail({ to, replyTo, subject, html, text, credentials }: SendEmailOptions) {
   const transporter = createTransporter(credentials);
   const fromName = credentials.senderName || 'CADONCE CRM';
 
@@ -40,7 +41,7 @@ export async function sendEmail({ to, subject, html, text, credentials }: SendEm
     const info = await transporter.sendMail({
       from: `"${fromName}" <${credentials.user}>`,
       to: to.trim(),
-      replyTo: credentials.user,
+      replyTo: replyTo || credentials.user,
       subject,
       text: text || subject,
       html,
@@ -355,6 +356,7 @@ export function deliveryTemplate(project: any, clientName: string, magicLink: st
   </html>
   `;
 }
+
 export function clientInviteTemplate(client: any, magicLink: string, organizationName: string = 'CADONCE') {
   return `
   <!DOCTYPE html>
@@ -699,3 +701,206 @@ export function feedbackReceivedTemplate(project: any, rating: number, comment: 
   `;
 }
 
+export function hireProposalTemplate({
+  designerName,
+  clientName,
+  clientEmail,
+  clientPhone,
+  projectTitle,
+  description,
+  budget,
+  currency = '$',
+  deadlineDate,
+  message,
+  inboxUrl = 'https://cadonce.com/inbox'
+}: {
+  designerName: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  projectTitle: string;
+  description: string;
+  budget?: string;
+  currency?: string;
+  deadlineDate?: string;
+  message?: string;
+  inboxUrl?: string;
+}) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0c0a04; color: #f4f4f5; margin: 0; padding: 20px 10px; }
+      .container { max-width: 600px; margin: 0 auto; background: #14161e; border: 1px solid #282d3c; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+      .header { background: linear-gradient(135deg, #1b2207 0%, #14161e 100%); padding: 32px 32px 24px; border-bottom: 1px solid #282d3c; text-align: left; }
+      .badge { display: inline-block; background: #d9ee3c; color: #1a1e00; font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; margin-bottom: 12px; }
+      .headline { margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+      .subhead { margin: 6px 0 0; color: #a1a1aa; font-size: 13px; font-weight: 500; }
+      .body { padding: 32px; }
+      .card { background: #1a1e28; border: 1px solid #282d3c; border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222633; font-size: 13px; }
+      .row:last-child { border-bottom: none; padding-bottom: 0; }
+      .row:first-child { padding-top: 0; }
+      .label { color: #71717a; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+      .val { color: #ffffff; font-weight: 700; text-align: right; }
+      .highlight { color: #d9ee3c; font-size: 16px; font-weight: 900; }
+      .section-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #d9ee3c; font-weight: 900; margin: 24px 0 10px; }
+      .text-box { background: #0e1017; border: 1px solid #242938; border-radius: 10px; padding: 16px; font-size: 13px; line-height: 1.6; color: #d4d4d8; white-space: pre-wrap; word-break: break-word; }
+      .cta-btn { display: block; background: #d9ee3c; color: #1a1e00 !important; text-decoration: none; text-align: center; padding: 16px 28px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; margin: 28px 0 16px; box-shadow: 0 0 25px rgba(217,238,60,0.3); }
+      .footer { padding: 24px 32px; border-top: 1px solid #282d3c; font-size: 11px; color: #71717a; text-align: center; line-height: 1.6; }
+      .footer a { color: #d9ee3c; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <span class="badge">&#9889; New Hire Proposal</span>
+        <h1 class="headline">You have a new client inquiry</h1>
+        <p class="subhead">Hello ${designerName}, a prospective client wants to commission your 3D CAD expertise.</p>
+      </div>
+      <div class="body">
+        <div class="card">
+          <div class="row">
+            <span class="label">Project Title</span>
+            <span class="val">${projectTitle}</span>
+          </div>
+          <div class="row">
+            <span class="label">Client Name</span>
+            <span class="val">${clientName}</span>
+          </div>
+          <div class="row">
+            <span class="label">Client Email</span>
+            <span class="val"><a href="mailto:${clientEmail}" style="color:#d9ee3c; text-decoration:none;">${clientEmail}</a></span>
+          </div>
+          ${clientPhone ? `
+          <div class="row">
+            <span class="label">Phone / WhatsApp</span>
+            <span class="val">${clientPhone}</span>
+          </div>` : ''}
+          ${budget ? `
+          <div class="row">
+            <span class="label">Estimated Budget</span>
+            <span class="val highlight">${currency} ${budget}</span>
+          </div>` : ''}
+          ${deadlineDate ? `
+          <div class="row">
+            <span class="label">Target Timeline</span>
+            <span class="val">${deadlineDate}</span>
+          </div>` : ''}
+        </div>
+
+        <div class="section-heading">Project Scope &amp; Brief</div>
+        <div class="text-box">${(description || 'No description provided.').replace(/\n/g, '<br/>')}</div>
+
+        ${message && message !== description ? `
+        <div class="section-heading">Direct Message from Client</div>
+        <div class="text-box">${message.replace(/\n/g, '<br/>')}</div>
+        ` : ''}
+
+        <a href="${inboxUrl}" class="cta-btn">&#9889; Review &amp; Reply in CADONCE</a>
+
+        <p style="font-size: 11px; color: #71717a; text-align: center; margin: 0;">
+          Tip: You can hit <strong>Reply</strong> to directly email <strong>${clientName}</strong> (${clientEmail}).
+        </p>
+      </div>
+      <div class="footer">
+        CADONCE Studio Archive &bull; Live Client Direct Inquiries &bull; 2026
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+export function directMessageTemplate({
+  designerName,
+  senderName,
+  senderEmail,
+  senderPhone,
+  subject,
+  message,
+  inboxUrl = 'https://cadonce.com/inbox'
+}: {
+  designerName: string;
+  senderName: string;
+  senderEmail: string;
+  senderPhone?: string;
+  subject?: string;
+  message: string;
+  inboxUrl?: string;
+}) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0c0a04; color: #f4f4f5; margin: 0; padding: 20px 10px; }
+      .container { max-width: 600px; margin: 0 auto; background: #14161e; border: 1px solid #282d3c; border-radius: 18px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+      .header { background: linear-gradient(135deg, #0b1a28 0%, #14161e 100%); padding: 32px 32px 24px; border-bottom: 1px solid #282d3c; text-align: left; }
+      .badge { display: inline-block; background: #38bdf8; color: #082f49; font-size: 11px; font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 20px; margin-bottom: 12px; }
+      .headline { margin: 0; color: #ffffff; font-size: 24px; font-weight: 900; letter-spacing: -0.5px; }
+      .subhead { margin: 6px 0 0; color: #a1a1aa; font-size: 13px; font-weight: 500; }
+      .body { padding: 32px; }
+      .card { background: #1a1e28; border: 1px solid #282d3c; border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+      .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222633; font-size: 13px; }
+      .row:last-child { border-bottom: none; padding-bottom: 0; }
+      .row:first-child { padding-top: 0; }
+      .label { color: #71717a; text-transform: uppercase; font-size: 10px; font-weight: 800; letter-spacing: 1px; }
+      .val { color: #ffffff; font-weight: 700; text-align: right; }
+      .section-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #38bdf8; font-weight: 900; margin: 24px 0 10px; }
+      .text-box { background: #0e1017; border: 1px solid #242938; border-radius: 10px; padding: 18px; font-size: 14px; line-height: 1.7; color: #d4d4d8; white-space: pre-wrap; word-break: break-word; }
+      .cta-btn { display: block; background: #38bdf8; color: #082f49 !important; text-decoration: none; text-align: center; padding: 16px 28px; border-radius: 12px; font-weight: 900; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; margin: 28px 0 16px; box-shadow: 0 0 25px rgba(56,189,248,0.3); }
+      .footer { padding: 24px 32px; border-top: 1px solid #282d3c; font-size: 11px; color: #71717a; text-align: center; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <span class="badge">&#9993; Direct Message</span>
+        <h1 class="headline">New Direct Studio Message</h1>
+        <p class="subhead">Hello ${designerName}, you received a new direct message from ${senderName}.</p>
+      </div>
+      <div class="body">
+        <div class="card">
+          <div class="row">
+            <span class="label">Sender</span>
+            <span class="val">${senderName}</span>
+          </div>
+          <div class="row">
+            <span class="label">Sender Email</span>
+            <span class="val"><a href="mailto:${senderEmail}" style="color:#38bdf8; text-decoration:none;">${senderEmail}</a></span>
+          </div>
+          ${senderPhone ? `
+          <div class="row">
+            <span class="label">Phone / WhatsApp</span>
+            <span class="val">${senderPhone}</span>
+          </div>` : ''}
+          ${subject ? `
+          <div class="row">
+            <span class="label">Subject</span>
+            <span class="val">${subject}</span>
+          </div>` : ''}
+        </div>
+
+        <div class="section-heading">Message Content</div>
+        <div class="text-box">${(message || '').replace(/\n/g, '<br/>')}</div>
+
+        <a href="${inboxUrl}" class="cta-btn">&#9993; Open in CADONCE Message Hub</a>
+
+        <p style="font-size: 11px; color: #71717a; text-align: center; margin: 0;">
+          Tip: You can hit <strong>Reply</strong> to directly reply to <strong>${senderName}</strong> (${senderEmail}).
+        </p>
+      </div>
+      <div class="footer">
+        CADONCE Studio Archive &bull; Direct Communication Channel &bull; 2026
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+}

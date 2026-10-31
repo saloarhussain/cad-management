@@ -66,6 +66,8 @@ export async function GET(
         const username = s.username || null;
 
         designerProfile = {
+          id: authUserId,
+          userId: authUserId,
           fullName,
           organizationName,
           avatarUrl,

@@ -1520,12 +1520,20 @@ export async function getDesignerDb(organizationId?: string) {
       .eq('user_id', designer.user_id)
       .maybeSingle();
 
-    // 3. Fetch all projects for THIS organization owner assigned to this designer
-    const { data: assignedProjects } = await adminSupabase
-      .from('projects')
-      .select('*')
-      .eq('user_id', designer.user_id) // STRICT ISOLATION: Only projects from this organization
-      .eq('designer', designer.fullName);
+    // 3. Fetch all projects assigned to this designer or directly owned/created for them
+    const [assignedRes, directRes] = await Promise.all([
+      adminSupabase.from('projects').select('*').eq('designer', designer.fullName),
+      adminSupabase.from('projects').select('*').eq('user_id', user.id)
+    ]);
+
+    const projectMap = new Map();
+    (assignedRes.data || []).forEach(p => projectMap.set(p.id, p));
+    (directRes.data || []).forEach(p => projectMap.set(p.id, p));
+    const assignedProjects = Array.from(projectMap.values()).sort((a: any, b: any) => {
+      const da = new Date(a.createdAt || a.id || 0).getTime();
+      const db = new Date(b.createdAt || b.id || 0).getTime();
+      return db - da;
+    });
 
     return {
       projects: assignedProjects || [],
@@ -2998,14 +3006,15 @@ export async function getUnreadCounts(userId: string) {
       .neq('sender_id', user.id);
 
     if (designer) {
-      // For Designers: Filter by projects they are assigned to
-      // We do this in a subquery or join if possible, but for now, we'll keep the IDs fetch lean
-      const { data: projects } = await adminSupabase
-        .from('projects')
-        .select('id')
-        .eq('designer', designer.fullName);
-
-      const projectIds = projects?.map(p => p.id) || [];
+      // For Designers: Filter by projects they are assigned to, or directly owned by user_id
+      const [assignedProjects, directProjects] = await Promise.all([
+        adminSupabase.from('projects').select('id').eq('designer', designer.fullName),
+        adminSupabase.from('projects').select('id').eq('user_id', user.id)
+      ]);
+      const projectIds = Array.from(new Set([
+        ...(assignedProjects.data?.map(p => p.id) || []),
+        ...(directProjects.data?.map(p => p.id) || [])
+      ]));
       if (projectIds.length === 0) return {};
       query = query.in('project_id', projectIds);
     } else {
@@ -4915,5 +4924,352 @@ export async function getExploreItems() {
     return { success: false, error: err.message || err.toString() };
   }
 }
+
+// --- HIRE & DIRECT MESSAGE ACTIONS ---
+
+export async function resolveDesignerProfile(targetIdOrUsername: string) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+    const clean = (targetIdOrUsername || '').trim().replace(/[^a-zA-Z0-9_@.-]/g, '');
+    if (!clean) return null;
+    
+    let targetUserId = clean;
+    let targetEmail: string | null = null;
+    let targetName: string | null = null;
+    let avatarUrl: string | null = null;
+
+    // 1. Check if clean matches username in settings table
+    const { data: usernameSettings } = await adminSupabase
+      .from('settings')
+      .select('user_id, organization_name, owner_name, username, registered_email, avatar_url')
+      .eq('username', clean)
+      .limit(1);
+
+    if (usernameSettings && usernameSettings.length > 0) {
+      const s = usernameSettings[0];
+      targetUserId = s.user_id;
+      targetName = s.owner_name || s.organization_name || null;
+      targetEmail = s.registered_email || null;
+      avatarUrl = s.avatar_url || null;
+    }
+
+    // 2. Check if targetUserId is a valid UUID in auth.users
+    if (targetUserId) {
+      try {
+        const { data: { user } } = await adminSupabase.auth.admin.getUserById(targetUserId);
+        if (user) {
+          targetUserId = user.id;
+          if (!targetEmail) targetEmail = user.email || null;
+          if (!targetName) targetName = user.user_metadata?.full_name || user.user_metadata?.name || null;
+        }
+      } catch (authErr) {
+        // Not a direct UUID, keep clean
+      }
+    }
+
+    // 3. Check designers table by email or fullName or user_id or id
+    const { data: designerRecords } = await adminSupabase
+      .from('designers')
+      .select('*')
+      .or(`user_id.eq.${targetUserId},id.eq.${targetUserId},email.ilike.${clean},fullName.ilike.${clean}`)
+      .limit(1);
+
+    if (designerRecords && designerRecords.length > 0) {
+      const d = designerRecords[0];
+      if (d.user_id) targetUserId = d.user_id;
+      if (!targetEmail && d.email) targetEmail = d.email;
+      if (!targetName && d.fullName) targetName = d.fullName;
+      if (!avatarUrl && d.avatar_url) avatarUrl = d.avatar_url;
+    }
+
+    // 4. Fallback check on settings by user_id
+    if (targetUserId) {
+      const { data: directSettings } = await adminSupabase
+        .from('settings')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .limit(1);
+
+      if (directSettings && directSettings.length > 0) {
+        const s = directSettings[0];
+        if (!targetName) targetName = s.owner_name || s.organization_name || null;
+        if (!targetEmail) targetEmail = s.registered_email || null;
+        if (!avatarUrl) avatarUrl = s.avatar_url || null;
+      }
+    }
+
+    const fallbackName = targetName || (targetEmail ? targetEmail.split('@')[0] : 'Designer');
+    return {
+      userId: targetUserId,
+      email: targetEmail,
+      fullName: fallbackName,
+      avatarUrl
+    };
+  } catch (err: any) {
+    console.error('[resolveDesignerProfile] Error:', err);
+    return null;
+  }
+}
+
+export async function submitHireProposal(data: {
+  targetId: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  title: string;
+  description: string;
+  budget?: string;
+  currency?: string;
+  deadlineDate?: string;
+  message?: string;
+  portfolioItemId?: string;
+  portfolioItemTitle?: string;
+}) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    const designer = await resolveDesignerProfile(data.targetId);
+    if (!designer || !designer.userId) {
+      throw new Error('Designer profile could not be found.');
+    }
+
+    let currentUserId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUserId = user?.id || null;
+    } catch {}
+
+    const projectId = Date.now().toString();
+    const today = new Date().toISOString().split('T')[0];
+    const currency = data.currency || '$';
+    const budget = data.budget || '0';
+
+    // 1. Create Project in projects table
+    const fallbackDesc = `Client: ${data.clientName} (${data.clientEmail}${data.clientPhone ? ' | ' + data.clientPhone : ''})\nBudget: ${currency} ${budget}\nDeadline: ${data.deadlineDate || 'Flexible'}\n\nProject Scope:\n${data.description}${data.message ? '\n\nClient Note:\n' + data.message : ''}`;
+
+    const projectRecord = {
+      id: projectId,
+      title: data.title,
+      client: data.clientName,
+      designer: designer.fullName,
+      description: fallbackDesc,
+      status: 'Pending Review',
+      paymentStatus: 'Unpaid',
+      revenue: budget,
+      revenueCurrency: currency,
+      expense: '0',
+      expenseCurrency: currency,
+      orderDate: today,
+      deadlineDate: data.deadlineDate || '',
+      createdAt: new Date().toISOString(),
+      user_id: designer.userId
+    };
+
+    const { error: projError } = await adminSupabase
+      .from('projects')
+      .insert(projectRecord);
+
+    if (projError) {
+      console.error('[submitHireProposal] Project insert error:', projError);
+      throw projError;
+    }
+
+    // 2. Insert initial chat message
+    const initialContent = `⚡ **HIRE PROPOSAL & COMMISSION INQUIRY**\n\n**Project:** ${data.title}\n**Client:** ${data.clientName} (${data.clientEmail}${data.clientPhone ? ` • ${data.clientPhone}` : ''})\n**Budget:** ${currency} ${budget}\n**Target Timeline:** ${data.deadlineDate || 'Flexible'}\n\n**Brief:**\n${data.description}${data.message ? `\n\n**Client Note:**\n${data.message}` : ''}`;
+
+    await adminSupabase.from('chat_messages').insert({
+      project_id: projectId,
+      sender_id: currentUserId || `client_${Date.now()}`,
+      sender_name: data.clientName,
+      sender_role: 'agency',
+      content: initialContent,
+      user_id: designer.userId,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+
+    // 3. Trigger In-App Notification for Designer
+    await createNotification(
+      designer.userId,
+      'hire',
+      `⚡ New Hire Proposal: ${data.clientName}`,
+      `${data.title} • ${currency}${budget}`,
+      `/inbox`
+    );
+
+    // 4. Send Email Notification to Designer
+    try {
+      const { sendEmail, hireProposalTemplate } = await import('@/lib/mailer');
+      const { PLATFORM_CONFIG } = await import('@/lib/config');
+
+      const recipientEmail = designer.email || PLATFORM_CONFIG.FOUNDER_EMAIL;
+      const credentials = {
+        user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+        password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+        senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+        smtpHost: 'smtp.gmail.com',
+        smtpPort: 465,
+        smtpSecure: true
+      };
+
+      const html = hireProposalTemplate({
+        designerName: designer.fullName,
+        clientName: data.clientName,
+        clientEmail: data.clientEmail,
+        clientPhone: data.clientPhone,
+        projectTitle: data.title,
+        description: data.description,
+        budget: data.budget,
+        currency: data.currency,
+        deadlineDate: data.deadlineDate,
+        message: data.message,
+        inboxUrl: 'https://cadonce.com/inbox'
+      });
+
+      await sendEmail({
+        to: recipientEmail,
+        replyTo: data.clientEmail,
+        subject: `⚡ [CADONCE] New Hire Request: ${data.title} from ${data.clientName}`,
+        html,
+        credentials
+      });
+      console.log(`[submitHireProposal] Email dispatched to ${recipientEmail}`);
+    } catch (mailErr: any) {
+      console.error('[submitHireProposal] Mail dispatch failed:', mailErr?.message);
+    }
+
+    return { success: true, projectId, designerName: designer.fullName };
+  } catch (err: any) {
+    console.error('[submitHireProposal] Error:', err.message || err);
+    return { success: false, error: err.message || 'Failed to submit hire proposal.' };
+  }
+}
+
+export async function sendDirectMessageAction(data: {
+  targetId: string;
+  senderName: string;
+  senderEmail: string;
+  senderPhone?: string;
+  subject?: string;
+  message: string;
+}) {
+  try {
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    const designer = await resolveDesignerProfile(data.targetId);
+    if (!designer || !designer.userId) {
+      throw new Error('Designer profile could not be found.');
+    }
+
+    let currentUserId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUserId = user?.id || null;
+    } catch {}
+
+    const threadId = Date.now().toString();
+    const today = new Date().toISOString().split('T')[0];
+    const subject = data.subject?.trim() || `Direct Message from ${data.senderName}`;
+
+    // 1. Create Thread in projects table
+    const threadRecord = {
+      id: threadId,
+      title: subject,
+      client: data.senderName,
+      designer: designer.fullName,
+      description: `Direct message inquiry from ${data.senderName} (${data.senderEmail}${data.senderPhone ? ' | ' + data.senderPhone : ''})\n\n${data.message}`,
+      status: 'Direct Message',
+      paymentStatus: 'Unpaid',
+      revenue: '0',
+      revenueCurrency: '$',
+      expense: '0',
+      expenseCurrency: '$',
+      orderDate: today,
+      deadlineDate: '',
+      createdAt: new Date().toISOString(),
+      user_id: designer.userId
+    };
+
+    const { error: threadError } = await adminSupabase
+      .from('projects')
+      .insert(threadRecord);
+
+    if (threadError) {
+      console.error('[sendDirectMessageAction] Thread insert error:', threadError);
+      throw threadError;
+    }
+
+    // 2. Insert initial chat message
+    const initialContent = `✉ **DIRECT MESSAGE**\n\n**From:** ${data.senderName} (${data.senderEmail}${data.senderPhone ? ` • ${data.senderPhone}` : ''})\n**Subject:** ${subject}\n\n${data.message}`;
+
+    await adminSupabase.from('chat_messages').insert({
+      project_id: threadId,
+      sender_id: currentUserId || `client_${Date.now()}`,
+      sender_name: data.senderName,
+      sender_role: 'agency',
+      content: initialContent,
+      user_id: designer.userId,
+      is_read: false,
+      created_at: new Date().toISOString()
+    });
+
+    // 3. Trigger In-App Notification for Designer
+    await createNotification(
+      designer.userId,
+      'message',
+      `✉ Direct Message: ${data.senderName}`,
+      data.message.length > 100 ? data.message.substring(0, 100) + '...' : data.message,
+      `/inbox`
+    );
+
+    // 4. Send Email Notification to Designer
+    try {
+      const { sendEmail, directMessageTemplate } = await import('@/lib/mailer');
+      const { PLATFORM_CONFIG } = await import('@/lib/config');
+
+      const recipientEmail = designer.email || PLATFORM_CONFIG.FOUNDER_EMAIL;
+      const credentials = {
+        user: PLATFORM_CONFIG.FOUNDER_EMAIL,
+        password: PLATFORM_CONFIG.FOUNDER_EMAIL_PASSWORD,
+        senderName: PLATFORM_CONFIG.FOUNDER_SENDER_NAME || 'CADONCE',
+        smtpHost: 'smtp.gmail.com',
+        smtpPort: 465,
+        smtpSecure: true
+      };
+
+      const html = directMessageTemplate({
+        designerName: designer.fullName,
+        senderName: data.senderName,
+        senderEmail: data.senderEmail,
+        senderPhone: data.senderPhone,
+        subject: data.subject,
+        message: data.message,
+        inboxUrl: 'https://cadonce.com/inbox'
+      });
+
+      await sendEmail({
+        to: recipientEmail,
+        replyTo: data.senderEmail,
+        subject: `✉ [CADONCE] Direct Message from ${data.senderName}: ${subject}`,
+        html,
+        credentials
+      });
+      console.log(`[sendDirectMessageAction] Email dispatched to ${recipientEmail}`);
+    } catch (mailErr: any) {
+      console.error('[sendDirectMessageAction] Mail dispatch failed:', mailErr?.message);
+    }
+
+    return { success: true, threadId, designerName: designer.fullName };
+  } catch (err: any) {
+    console.error('[sendDirectMessageAction] Error:', err.message || err);
+    return { success: false, error: err.message || 'Failed to send direct message.' };
+  }
+}
+
 
 

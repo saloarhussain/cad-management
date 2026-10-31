@@ -12,6 +12,8 @@ import {
   PortfolioMobileHeroSkeleton, 
   PortfolioSidebarSkeleton 
 } from '@/components/PortfolioSkeleton';
+import { HireModal } from '@/components/HireModal';
+import { DirectMessageModal } from '@/components/DirectMessageModal';
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -268,6 +270,9 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
   const [projects, setProjects] = useState<any[]>([]);
   const [designer, setDesigner] = useState<any>(null);
   const [portfolioItems, setPortfolioItems] = useState<any[]>([]);
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [isDirectMessageModalOpen, setIsDirectMessageModalOpen] = useState(false);
+  const [hireInitialItem, setHireInitialItem] = useState<{ id?: string | number; title?: string } | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -350,6 +355,20 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
     };
     loadData();
   }, [params.id]);
+
+  useEffect(() => {
+    if (searchParams) {
+      if (searchParams.get('hire')) {
+        const itemTitle = searchParams.get('title');
+        if (itemTitle) {
+          setHireInitialItem({ title: decodeURIComponent(itemTitle) });
+        }
+        setIsHireModalOpen(true);
+      } else if (searchParams.get('to') || searchParams.get('message')) {
+        setIsDirectMessageModalOpen(true);
+      }
+    }
+  }, [searchParams]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -640,21 +659,24 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
               {/* Primary CTAs */}
               <div className="w-full flex flex-col sm:flex-row gap-2">
-                <Link 
-                  href={`/inbox?hire=${params.id}`} 
-                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.5)] flex items-center justify-center gap-1.5 text-xs sm:text-sm"
+                <button 
+                  onClick={() => {
+                    setHireInitialItem(null);
+                    setIsHireModalOpen(true);
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(217,238,60,0.5)] flex items-center justify-center gap-1.5 text-xs sm:text-sm active:scale-[0.99]"
                 >
                   <span className="material-symbols-outlined text-base">bolt</span>
                   <span>Hire {designer?.fullName?.split(' ')[0] || designer?.organizationName || 'Alexander'}</span>
-                </Link>
+                </button>
                 <div className="flex gap-2 flex-1">
-                  <Link 
-                    href={`/inbox?to=${params.id}`} 
-                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                  <button 
+                    onClick={() => setIsDirectMessageModalOpen(true)}
+                    className="flex-1 py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
                   >
                     <span className="material-symbols-outlined text-base">mail</span>
                     <span>Message</span>
-                  </Link>
+                  </button>
                   {user && user.id === params.id ? (
                     <Link 
                       href="/settings"
@@ -1255,21 +1277,24 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
 
                   {/* Primary CTAs */}
                   <div className="w-full flex flex-col gap-2.5">
-                    <Link 
-                      href={`/inbox?hire=${params.id}`} 
-                      className="w-full py-3 px-4 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.5)] flex items-center justify-center gap-2 text-sm"
+                    <button 
+                      onClick={() => {
+                        setHireInitialItem(null);
+                        setIsHireModalOpen(true);
+                      }}
+                      className="w-full py-3 px-4 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-bold tracking-wide transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.5)] flex items-center justify-center gap-2 text-sm active:scale-[0.99]"
                     >
                       <span className="material-symbols-outlined text-lg">bolt</span>
                       <span>Hire {designer?.fullName?.split(' ')[0] || designer?.organizationName || 'Alexander'}</span>
-                    </Link>
+                    </button>
                     <div className="grid grid-cols-2 gap-2">
-                      <Link 
-                        href={`/inbox?to=${params.id}`} 
-                        className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
+                      <button 
+                        onClick={() => setIsDirectMessageModalOpen(true)}
+                        className="py-2.5 px-3 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-[#d9ee3c] text-zinc-200 hover:text-[#d9ee3c] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5 active:scale-[0.99]"
                       >
                         <span className="material-symbols-outlined text-base">mail</span>
                         <span>Direct Message</span>
-                      </Link>
+                      </button>
                       {user && user.id === params.id ? (
                         <Link 
                           href="/settings"
@@ -1858,13 +1883,19 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
                           </div>
 
                           {/* Commission Bespoke Piece CTA */}
-                          <Link 
-                            href={`/inbox?hire=${selectedPortfolioItem.id || 'bespoke'}&title=${encodeURIComponent(selectedPortfolioItem.title || 'Bespoke CAD')}`}
-                            className="w-full min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.4)] active:translate-y-0"
+                          <button 
+                            onClick={() => {
+                              setHireInitialItem({
+                                id: selectedPortfolioItem.id,
+                                title: selectedPortfolioItem.title
+                              });
+                              setIsHireModalOpen(true);
+                            }}
+                            className="w-full min-h-[40px] sm:min-h-[44px] flex items-center justify-center gap-1.5 sm:gap-2 py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg bg-[#d9ee3c] text-[#1a1e00] text-xs sm:text-sm font-bold uppercase tracking-wider transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(217,238,60,0.4)] active:scale-[0.99]"
                           >
-                            <span className="material-symbols-outlined text-lg sm:text-xl">mail</span>
+                            <span className="material-symbols-outlined text-lg sm:text-xl">bolt</span>
                             <span className="text-center leading-tight">COMMISSION <span className="hidden sm:inline">BESPOKE PIECE </span>/ HIRE {creatorFirst.toUpperCase()}</span>
-                          </Link>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2360,6 +2391,23 @@ export default function PublicPortfolio({ params }: { params: { id: string } }) 
             </div>
           </div>
         )}
+
+        {/* Hire & Commission Modal */}
+        <HireModal
+          isOpen={isHireModalOpen}
+          onClose={() => setIsHireModalOpen(false)}
+          designer={designer}
+          initialItem={hireInitialItem}
+          targetId={params.id}
+        />
+
+        {/* Direct Message Modal */}
+        <DirectMessageModal
+          isOpen={isDirectMessageModalOpen}
+          onClose={() => setIsDirectMessageModalOpen(false)}
+          designer={designer}
+          targetId={params.id}
+        />
         </div>
       </div>
   );
