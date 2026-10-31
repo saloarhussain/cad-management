@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { sendDirectMessageAction } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
@@ -38,9 +38,21 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [successData, setSuccessData] = useState<{ threadId?: string; designerName?: string } | null>(null);
 
+  useEffect(() => {
+    if (user) {
+      if (!senderName && user.user_metadata?.full_name) {
+        setSenderName(user.user_metadata.full_name);
+      }
+      if (!senderEmail && user.email) {
+        setSenderEmail(user.email);
+      }
+    }
+  }, [user]);
+
   if (!isOpen) return null;
 
   const designerDisplayName = designer?.fullName || designer?.organizationName || 'Designer';
+  const returnUrl = `/portfolio/${targetId}?to=${encodeURIComponent(designerDisplayName)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,8 +139,67 @@ export const DirectMessageModal: React.FC<DirectMessageModalProps> = ({
           </button>
         </div>
 
-        {/* Success View */}
-        {successData ? (
+        {/* Authentication Gate: Required to Direct Message */}
+        {!user ? (
+          <div className="p-8 sm:p-10 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-sky-500/15 border border-sky-500/40 flex items-center justify-center text-sky-400 mb-5 shadow-[0_0_30px_rgba(56,189,248,0.2)]">
+              <span className="material-symbols-outlined text-3xl">lock</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/30 text-sky-400 text-[10px] font-black uppercase tracking-wider mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+              <span>Authentication Required</span>
+            </div>
+
+            <h3 className="text-xl font-extrabold text-white tracking-tight mb-2">
+              Sign In to Direct Message {designerDisplayName}
+            </h3>
+            
+            <p className="text-sm text-zinc-300 max-w-md leading-relaxed mb-6">
+              To send private messages to <strong className="text-white">{designerDisplayName}</strong>, exchange files, and maintain your conversation history in your CADONCE inbox, please sign in or register for a free account.
+            </p>
+
+            <div className="w-full bg-[#1A1E28] border border-[#282D3C] rounded-xl p-4 text-xs text-zinc-400 mb-6 space-y-2.5 text-left">
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-sky-400">check_circle</span>
+                <span>Private &amp; encrypted conversation thread</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-sky-400">check_circle</span>
+                <span>Real-time desktop and mobile inbox sync</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-sky-400">check_circle</span>
+                <span>Direct notification dispatched to the designer</span>
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col sm:flex-row gap-3">
+              <Link
+                href={`/auth/login?redirect=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 py-3 px-4 rounded-xl bg-sky-500 text-black font-extrabold text-xs uppercase tracking-wider transition-all duration-200 hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(56,189,248,0.3)]"
+              >
+                <span className="material-symbols-outlined text-base">login</span>
+                <span>Sign In to Continue</span>
+              </Link>
+              <Link
+                href={`/auth/signup?redirect=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-zinc-500 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">person_add</span>
+                <span>Register Account</span>
+              </Link>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider font-semibold"
+            >
+              Cancel and return
+            </button>
+          </div>
+        ) : successData ? (
           <div className="p-8 sm:p-10 flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-2xl bg-sky-500/20 border border-sky-500/50 flex items-center justify-center text-sky-400 mb-5 shadow-[0_0_30px_rgba(56,189,248,0.3)] animate-in zoom-in duration-300">
               <span className="material-symbols-outlined text-3xl">mark_email_read</span>

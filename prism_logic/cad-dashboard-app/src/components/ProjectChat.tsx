@@ -10,7 +10,7 @@ interface Message {
   project_id: string;
   sender_id: string;
   sender_name: string;
-  sender_role: 'organization' | 'designer';
+  sender_role: 'organization' | 'designer' | 'client' | string;
   content: string;
   created_at: string;
   is_read: boolean;
@@ -309,7 +309,7 @@ export const ProjectChat: React.FC<ProjectChatProps> = ({ projectId, projectTitl
         )}
         
         {messages.map((msg, idx) => {
-          const isMe = msg.sender_id === user?.id;
+          const isMe = msg.sender_id === user?.id && msg.sender_role !== 'client';
           const showName = idx === 0 || messages[idx-1].sender_id !== msg.sender_id;
           const isNextSame = idx < messages.length - 1 && messages[idx+1].sender_id === msg.sender_id;
 

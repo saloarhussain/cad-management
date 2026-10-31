@@ -2847,14 +2847,49 @@ export async function updateRevisionStatus(projectId: string, revisionId: string
 
 export async function getProjectMessages(projectId: string) {
   try {
-    const supabase = await createClient();
-    const { data, error } = await supabase
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+    const { data, error } = await adminSupabase
       .from('chat_messages')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
+
+    // Auto-heal: If no chat_messages exist yet for this project, but project has a description
+    if (!data || data.length === 0) {
+      const { data: project } = await adminSupabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .maybeSingle();
+
+      if (project && project.description) {
+        const seedMessage = {
+          project_id: projectId,
+          sender_id: project.user_id,
+          sender_name: project.client || 'Client Inquiry',
+          sender_role: 'client',
+          content: project.description,
+          user_id: project.user_id,
+          is_read: true,
+          created_at: project.createdAt || new Date().toISOString()
+        };
+        const { data: seeded, error: seedError } = await adminSupabase
+          .from('chat_messages')
+          .insert(seedMessage)
+          .select()
+          .maybeSingle();
+
+        if (seedError) {
+          console.error('[getProjectMessages] Auto-heal insert error:', seedError);
+        } else if (seeded) {
+          return [seeded];
+        }
+      }
+    }
+
     return data || [];
   } catch (err: any) {
     console.error('[getProjectMessages] Error:', err.message);
@@ -5027,6 +5062,15 @@ export async function submitHireProposal(data: {
   portfolioItemTitle?: string;
 }) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { 
+        success: false, 
+        error: 'You must be signed in or register an account to submit a hire proposal.' 
+      };
+    }
+
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
@@ -5035,12 +5079,7 @@ export async function submitHireProposal(data: {
       throw new Error('Designer profile could not be found.');
     }
 
-    let currentUserId: string | null = null;
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      currentUserId = user?.id || null;
-    } catch {}
+    const currentUserId = user.id;
 
     const projectId = Date.now().toString();
     const today = new Date().toISOString().split('T')[0];
@@ -5080,16 +5119,20 @@ export async function submitHireProposal(data: {
     // 2. Insert initial chat message
     const initialContent = `⚡ **HIRE PROPOSAL & COMMISSION INQUIRY**\n\n**Project:** ${data.title}\n**Client:** ${data.clientName} (${data.clientEmail}${data.clientPhone ? ` • ${data.clientPhone}` : ''})\n**Budget:** ${currency} ${budget}\n**Target Timeline:** ${data.deadlineDate || 'Flexible'}\n\n**Brief:**\n${data.description}${data.message ? `\n\n**Client Note:**\n${data.message}` : ''}`;
 
-    await adminSupabase.from('chat_messages').insert({
+    const { error: chatError } = await adminSupabase.from('chat_messages').insert({
       project_id: projectId,
-      sender_id: currentUserId || `client_${Date.now()}`,
-      sender_name: data.clientName,
-      sender_role: 'agency',
+      sender_id: currentUserId,
+      sender_name: data.clientName || user.user_metadata?.full_name || 'Client',
+      sender_role: 'client',
       content: initialContent,
       user_id: designer.userId,
       is_read: false,
       created_at: new Date().toISOString()
     });
+
+    if (chatError) {
+      console.error('[submitHireProposal] Chat message insert error:', chatError);
+    }
 
     // 3. Trigger In-App Notification for Designer
     await createNotification(
@@ -5157,6 +5200,15 @@ export async function sendDirectMessageAction(data: {
   message: string;
 }) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { 
+        success: false, 
+        error: 'You must be signed in or register an account to send a direct message.' 
+      };
+    }
+
     const { createAdminClient } = await import('@/lib/supabaseServer');
     const adminSupabase = await createAdminClient();
 
@@ -5165,12 +5217,7 @@ export async function sendDirectMessageAction(data: {
       throw new Error('Designer profile could not be found.');
     }
 
-    let currentUserId: string | null = null;
-    try {
-      const supabase = await createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      currentUserId = user?.id || null;
-    } catch {}
+    const currentUserId = user.id;
 
     const threadId = Date.now().toString();
     const today = new Date().toISOString().split('T')[0];
@@ -5207,16 +5254,20 @@ export async function sendDirectMessageAction(data: {
     // 2. Insert initial chat message
     const initialContent = `✉ **DIRECT MESSAGE**\n\n**From:** ${data.senderName} (${data.senderEmail}${data.senderPhone ? ` • ${data.senderPhone}` : ''})\n**Subject:** ${subject}\n\n${data.message}`;
 
-    await adminSupabase.from('chat_messages').insert({
+    const { error: chatError } = await adminSupabase.from('chat_messages').insert({
       project_id: threadId,
-      sender_id: currentUserId || `client_${Date.now()}`,
-      sender_name: data.senderName,
-      sender_role: 'agency',
+      sender_id: currentUserId,
+      sender_name: data.senderName || user.user_metadata?.full_name || 'Client',
+      sender_role: 'client',
       content: initialContent,
       user_id: designer.userId,
       is_read: false,
       created_at: new Date().toISOString()
     });
+
+    if (chatError) {
+      console.error('[sendDirectMessageAction] Chat message insert error:', chatError);
+    }
 
     // 3. Trigger In-App Notification for Designer
     await createNotification(

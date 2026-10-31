@@ -25,14 +25,16 @@ function LoginForm() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         // If already logged in, check if we were invited to join something
-        router.replace('/');
+        const targetRedirect = searchParams.get('redirect') || '/';
+        router.replace(targetRedirect);
       } else if (isSetup) {
         setVerifying(true);
         // Fallback for slower connections
         setTimeout(async () => {
           const { data: { session: retrySession } } = await supabase.auth.getSession();
           if (retrySession) {
-            router.replace('/');
+            const targetRedirect = searchParams.get('redirect') || '/';
+            router.replace(targetRedirect);
           } else {
             setVerifying(false);
           }
@@ -91,7 +93,8 @@ function LoginForm() {
         if (loginError) throw loginError;
 
         if (data.user) {
-          window.location.href = '/';
+          const targetRedirect = searchParams.get('redirect') || '/';
+          window.location.href = targetRedirect;
         }
       }
     } catch (err: any) {
@@ -257,7 +260,10 @@ function LoginForm() {
         <div className="text-center mt-8">
           <p className="text-[10px] text-neutral-500 uppercase tracking-widest">
             New agent?{' '}
-            <Link href="/auth/signup" className="text-yellow-400 font-bold hover:underline">
+            <Link 
+              href={`/auth/signup${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`} 
+              className="text-yellow-400 font-bold hover:underline"
+            >
               Register now
             </Link>
           </p>

@@ -93,6 +93,12 @@ function SignupForm() {
         return;
       }
 
+      if (data.session) {
+        const targetRedirect = searchParams.get('redirect') || '/';
+        window.location.href = targetRedirect;
+        return;
+      }
+
       if (data.user) {
         setSuccess(true);
       }
@@ -116,7 +122,7 @@ function SignupForm() {
           We've sent a verification link to <span className="text-white font-bold">{email}</span>. Please verify your account to unlock your {selectedRole === 'designer' ? 'workstation' : 'portal'}.
         </p>
         <Link 
-          href="/auth/login"
+          href={`/auth/login${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`}
           className="text-yellow-400 font-bold text-sm hover:underline uppercase tracking-widest"
         >
           Back to login
@@ -278,7 +284,10 @@ function SignupForm() {
       <div className="text-center mt-6">
         <p className="text-xs text-neutral-500">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-yellow-400 font-bold hover:underline">
+          <Link 
+            href={`/auth/login${searchParams.get('redirect') ? `?redirect=${encodeURIComponent(searchParams.get('redirect')!)}` : ''}`} 
+            className="text-yellow-400 font-bold hover:underline"
+          >
             Log in
           </Link>
         </p>

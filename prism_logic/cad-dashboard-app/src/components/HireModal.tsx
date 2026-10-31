@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { submitHireProposal } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
@@ -49,9 +49,21 @@ export const HireModal: React.FC<HireModalProps> = ({
   const [errorMsg, setErrorMsg] = useState('');
   const [successData, setSuccessData] = useState<{ projectId?: string; designerName?: string } | null>(null);
 
+  useEffect(() => {
+    if (user) {
+      if (!clientName && user.user_metadata?.full_name) {
+        setClientName(user.user_metadata.full_name);
+      }
+      if (!clientEmail && user.email) {
+        setClientEmail(user.email);
+      }
+    }
+  }, [user]);
+
   if (!isOpen) return null;
 
   const designerDisplayName = designer?.fullName || designer?.organizationName || 'Designer';
+  const returnUrl = `/portfolio/${targetId}?hire=true${initialItem?.title ? `&title=${encodeURIComponent(initialItem.title)}` : ''}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,8 +160,67 @@ export const HireModal: React.FC<HireModalProps> = ({
           </button>
         </div>
 
-        {/* Success View */}
-        {successData ? (
+        {/* Authentication Gate: Required to Hire */}
+        {!user ? (
+          <div className="p-8 sm:p-10 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#d9ee3c]/15 border border-[#d9ee3c]/40 flex items-center justify-center text-[#d9ee3c] mb-5 shadow-[0_0_30px_rgba(217,238,60,0.2)]">
+              <span className="material-symbols-outlined text-3xl">lock</span>
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#d9ee3c]/10 border border-[#d9ee3c]/30 text-[#d9ee3c] text-[10px] font-black uppercase tracking-wider mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#d9ee3c] animate-pulse" />
+              <span>Authentication Required</span>
+            </div>
+
+            <h3 className="text-xl font-extrabold text-white tracking-tight mb-2">
+              Sign In to Hire {designerDisplayName}
+            </h3>
+            
+            <p className="text-sm text-zinc-300 max-w-md leading-relaxed mb-6">
+              To send hire proposals, commission custom CAD pieces, and communicate directly with <strong className="text-white">{designerDisplayName}</strong>, please sign in or register for a free account.
+            </p>
+
+            <div className="w-full bg-[#1A1E28] border border-[#282D3C] rounded-xl p-4 text-xs text-zinc-400 mb-6 space-y-2.5 text-left">
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-[#d9ee3c]">check_circle</span>
+                <span>Direct workspace chat &amp; encrypted messaging</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-[#d9ee3c]">check_circle</span>
+                <span>Send 3D files (.3dm, .stl, .step) and design briefs</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-zinc-300">
+                <span className="material-symbols-outlined text-base text-[#d9ee3c]">check_circle</span>
+                <span>Instant notifications sent to the designer</span>
+              </div>
+            </div>
+
+            <div className="w-full flex flex-col sm:flex-row gap-3">
+              <Link
+                href={`/auth/login?redirect=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#d9ee3c] text-[#1a1e00] font-extrabold text-xs uppercase tracking-wider transition-all duration-200 hover:brightness-110 active:scale-[0.99] flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(217,238,60,0.3)]"
+              >
+                <span className="material-symbols-outlined text-base">login</span>
+                <span>Sign In to Continue</span>
+              </Link>
+              <Link
+                href={`/auth/signup?redirect=${encodeURIComponent(returnUrl)}`}
+                className="flex-1 py-3 px-4 rounded-xl bg-[#1E222D] border border-[#282D3C] hover:border-zinc-500 text-white font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="material-symbols-outlined text-base">person_add</span>
+                <span>Register Account</span>
+              </Link>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors uppercase tracking-wider font-semibold"
+            >
+              Cancel and return
+            </button>
+          </div>
+        ) : successData ? (
           <div className="p-8 sm:p-10 flex flex-col items-center text-center">
             <div className="w-16 h-16 rounded-2xl bg-[#d9ee3c]/20 border border-[#d9ee3c]/50 flex items-center justify-center text-[#d9ee3c] mb-5 shadow-[0_0_30px_rgba(217,238,60,0.3)] animate-in zoom-in duration-300">
               <span className="material-symbols-outlined text-3xl">check_circle</span>
