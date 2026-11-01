@@ -1311,55 +1311,123 @@ export default function DashboardContent({
               <h3 className="font-headline font-bold text-lg tracking-tight text-white">Earnings Overview</h3>
               <span className="material-symbols-outlined text-[#F59E0B] text-[18px]">trending_up</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-white/5 w-fit">
-              <button 
-                onClick={() => setEarningsViewMode('MONTHLY')}
-                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'MONTHLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
-              >
-                MONTHLY
-              </button>
-              <button 
-                onClick={() => setEarningsViewMode('YEARLY')}
-                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'YEARLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
-              >
-                YEARLY
-              </button>
-              
-              {earningsViewMode === 'MONTHLY' && (
-                <>
-                  <div className="h-3 w-px bg-white/10 mx-1" />
-                  <div className="relative" ref={yearDropdownRef}>
-                    <button 
-                      onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
-                      className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold tracking-wider text-[#F59E0B] hover:bg-white/5 transition-all"
-                    >
-                      <span>{selectedEarningsYear}</span>
-                      <span className={`material-symbols-outlined text-[13px] transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
-                    </button>
+            {isFiguresLoading ? (
+              <div className="h-7 w-36 bg-white/5 rounded-lg skeleton-shimmer border border-white/5" />
+            ) : (
+              <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-white/5 w-fit">
+                <button 
+                  onClick={() => setEarningsViewMode('MONTHLY')}
+                  className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'MONTHLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+                >
+                  MONTHLY
+                </button>
+                <button 
+                  onClick={() => setEarningsViewMode('YEARLY')}
+                  className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'YEARLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+                >
+                  YEARLY
+                </button>
+                
+                {earningsViewMode === 'MONTHLY' && (
+                  <>
+                    <div className="h-3 w-px bg-white/10 mx-1" />
+                    <div className="relative" ref={yearDropdownRef}>
+                      <button 
+                        onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold tracking-wider text-[#F59E0B] hover:bg-white/5 transition-all"
+                      >
+                        <span>{selectedEarningsYear}</span>
+                        <span className={`material-symbols-outlined text-[13px] transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                      </button>
 
-                    {isYearDropdownOpen && (
-                      <div className="absolute right-0 top-full mt-1.5 w-24 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
-                        {availableEarningsYears.map(yr => (
-                          <button
-                            key={yr}
-                            onClick={() => {
-                              setSelectedEarningsYear(yr);
-                              setIsYearDropdownOpen(false);
-                            }}
-                            className={`w-full text-left px-3 py-1.5 text-[11px] font-bold tracking-wide transition-colors ${selectedEarningsYear === yr ? 'text-[#F59E0B] bg-[#F59E0B]/10' : 'text-zinc-300 hover:bg-white/5 hover:text-white'}`}
-                          >
-                            {yr}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
+                      {isYearDropdownOpen && (
+                        <div className="absolute right-0 top-full mt-1.5 w-24 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                          {availableEarningsYears.map(yr => (
+                            <button
+                              key={yr}
+                              onClick={() => {
+                                setSelectedEarningsYear(yr);
+                                setIsYearDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-1.5 text-[11px] font-bold tracking-wide transition-colors ${selectedEarningsYear === yr ? 'text-[#F59E0B] bg-[#F59E0B]/10' : 'text-zinc-300 hover:bg-white/5 hover:text-white'}`}
+                            >
+                              {yr}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-6 relative overflow-hidden group">
+          {isFiguresLoading ? (
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-6 relative overflow-hidden skeleton-card">
+              {/* Top Row Skeleton */}
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 relative z-10">
+                <div>
+                  <div className="flex items-baseline gap-3 flex-wrap">
+                    <div className="h-9 w-44 bg-white/10 rounded-lg skeleton-shimmer" />
+                    <div className="h-5 w-16 bg-white/10 rounded-full skeleton-shimmer" />
+                  </div>
+                  <div className="h-3 w-48 bg-white/10 rounded skeleton-shimmer mt-2" />
+                </div>
+                <div className="h-7 w-28 bg-white/10 rounded-full skeleton-shimmer" />
+              </div>
+
+              {/* Chart Area Skeleton */}
+              <div className="relative w-full h-44 my-2 select-none">
+                {/* Y-axis Ticks */}
+                <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between py-0.5">
+                  <div className="h-2 w-6 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-2 w-5 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-2 w-5 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-2 w-3 bg-white/10 rounded skeleton-shimmer" />
+                </div>
+
+                {/* Background Grid Lines */}
+                <div className="absolute left-9 right-0 top-1 bottom-6 flex flex-col justify-between pointer-events-none">
+                  <div className="w-full border-b border-dashed border-white/5" />
+                  <div className="w-full border-b border-dashed border-white/5" />
+                  <div className="w-full border-b border-dashed border-white/5" />
+                  <div className="w-full border-b border-white/10" />
+                </div>
+
+                {/* Shimmer Chart Wave Placeholder */}
+                <div className="absolute left-9 right-0 top-4 bottom-6 overflow-hidden rounded-xl flex items-end">
+                  <div className="w-full h-3/5 bg-gradient-to-t from-white/[0.04] to-transparent rounded-t-2xl relative overflow-hidden skeleton-shimmer">
+                    <div className="absolute inset-x-0 top-0 h-0.5 bg-white/10" />
+                  </div>
+                </div>
+
+                {/* X-axis Labels */}
+                <div className="absolute left-9 right-0 bottom-0 flex justify-between pt-1">
+                  {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m) => (
+                    <div key={m} className="h-2 w-4 sm:w-5 bg-white/10 rounded skeleton-shimmer" />
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom 3 Summary Stats Cards */}
+              <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-3 gap-4 relative z-10">
+                <div className="flex flex-col space-y-2">
+                  <div className="h-2.5 w-16 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-4 w-20 bg-white/10 rounded skeleton-shimmer" />
+                </div>
+                <div className="flex flex-col border-x border-white/5 px-4 space-y-2">
+                  <div className="h-2.5 w-16 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-4 w-28 bg-white/10 rounded skeleton-shimmer" />
+                </div>
+                <div className="flex flex-col items-end space-y-2">
+                  <div className="h-2.5 w-16 bg-white/10 rounded skeleton-shimmer" />
+                  <div className="h-4 w-20 bg-white/10 rounded skeleton-shimmer" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-6 relative overflow-hidden group animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 relative z-10">
               <div>
                 <div className="flex items-baseline gap-3 flex-wrap">
@@ -1535,7 +1603,8 @@ export default function DashboardContent({
               </div>
             </div>
           </div>
-        </section>
+        )}
+      </section>
           </div>
 
           {/* Right Container: Column 3 (Span 1 Column) */}
