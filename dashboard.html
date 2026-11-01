@@ -352,7 +352,7 @@ body { -webkit-tap-highlight-color: transparent; }
 <div class="w-full border-b border-white/10"></div>
 </div>
 <!-- Interactive Hover Slices -->
-<div class="absolute left-9 right-0 top-0 bottom-6 flex z-30" id="hover-slices"></div>
+<div class="absolute left-9 right-0 top-0 bottom-6 flex z-30 touch-none cursor-ew-resize select-none" id="hover-slices"></div>
 <!-- SVG Chart -->
 <svg class="absolute left-9 right-0 top-1 h-[120px] w-[calc(100%-36px)] overflow-visible pointer-events-none" preserveAspectRatio="none" viewBox="0 0 500 90">
 <defs>
@@ -593,6 +593,61 @@ function hoverPoint(idx) {
 function unhoverPoint() {
   hoveredIdx = null;
   renderEarningsChart();
+}
+
+let isDraggingChart = false;
+
+function updatePointFromClientX(clientX) {
+  const container = document.getElementById('hover-slices');
+  if (!container) return;
+  const rect = container.getBoundingClientRect();
+  if (rect.width <= 0) return;
+  const relX = clientX - rect.left;
+  const ratio = Math.max(0, Math.min(1, relX / rect.width));
+  const dataset = currentMode === 'MONTHLY' ? (monthlyDataByYear[currentYear] || monthlyDataByYear[2026]) : yearlyData;
+  const count = dataset.length;
+  if (count <= 1) return;
+  const newIdx = Math.min(count - 1, Math.max(0, Math.round(ratio * (count - 1))));
+  hoverPoint(newIdx);
+}
+
+const hoverElem = document.getElementById('hover-slices');
+if (hoverElem) {
+  hoverElem.addEventListener('pointerdown', (e) => {
+    isDraggingChart = true;
+    try { hoverElem.setPointerCapture(e.pointerId); } catch(err){}
+    updatePointFromClientX(e.clientX);
+  });
+  hoverElem.addEventListener('pointermove', (e) => {
+    if (isDraggingChart || e.pointerType === 'mouse') {
+      updatePointFromClientX(e.clientX);
+    }
+  });
+  hoverElem.addEventListener('pointerup', (e) => {
+    isDraggingChart = false;
+    try { hoverElem.releasePointerCapture(e.pointerId); } catch(err){}
+  });
+  hoverElem.addEventListener('pointercancel', (e) => {
+    isDraggingChart = false;
+    try { hoverElem.releasePointerCapture(e.pointerId); } catch(err){}
+  });
+  hoverElem.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 0) {
+      isDraggingChart = true;
+      updatePointFromClientX(e.touches[0].clientX);
+    }
+  }, { passive: true });
+  hoverElem.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0) {
+      updatePointFromClientX(e.touches[0].clientX);
+    }
+  }, { passive: true });
+  hoverElem.addEventListener('touchend', () => {
+    isDraggingChart = false;
+  });
+  hoverElem.addEventListener('mouseleave', () => {
+    if (!isDraggingChart) unhoverPoint();
+  });
 }
 
 document.addEventListener('click', function(e) {

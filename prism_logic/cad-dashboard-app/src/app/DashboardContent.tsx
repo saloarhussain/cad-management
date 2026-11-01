@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import Link from 'next/link';
 import { searchProducts, Product, Platform } from '@/lib/productSearchMock';
@@ -365,6 +365,79 @@ export default function DashboardContent({
     const ratio = activeChartPoint.x / 500;
     return Math.min(88, Math.max(12, ratio * 100));
   }, [activeChartPoint]);
+
+  // --- TOUCH & POINTER SCRUBBING FOR CHART (MOBILE SLIDING) ---
+  const chartAreaRef = useRef<HTMLDivElement>(null);
+  const isDraggingChartRef = useRef<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const updatePointFromPointer = useCallback((clientX: number) => {
+    if (!chartAreaRef.current || computedChartPoints.length === 0) return;
+    const rect = chartAreaRef.current.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const relX = clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, relX / rect.width));
+    const count = computedChartPoints.length;
+    if (count <= 1) return;
+    const newIdx = Math.min(count - 1, Math.max(0, Math.round(ratio * (count - 1))));
+    setHoveredPointIdx((prev) => (prev === newIdx ? prev : newIdx));
+  }, [computedChartPoints]);
+
+  const handleChartPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+    isDraggingChartRef.current = true;
+    setIsDragging(true);
+    updatePointFromPointer(e.clientX);
+  }, [updatePointFromPointer]);
+
+  const handleChartPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (isDraggingChartRef.current || e.pointerType === 'mouse') {
+      updatePointFromPointer(e.clientX);
+    }
+  }, [updatePointFromPointer]);
+
+  const handleChartPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+    isDraggingChartRef.current = false;
+    setIsDragging(false);
+  }, []);
+
+  const handleChartPointerCancel = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+    isDraggingChartRef.current = false;
+    setIsDragging(false);
+  }, []);
+
+  const handleChartTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      isDraggingChartRef.current = true;
+      setIsDragging(true);
+      updatePointFromPointer(e.touches[0].clientX);
+    }
+  }, [updatePointFromPointer]);
+
+  const handleChartTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      updatePointFromPointer(e.touches[0].clientX);
+    }
+  }, [updatePointFromPointer]);
+
+  const handleChartTouchEnd = useCallback(() => {
+    isDraggingChartRef.current = false;
+    setIsDragging(false);
+  }, []);
+
+  const handleChartMouseLeave = useCallback(() => {
+    if (!isDraggingChartRef.current) {
+      setHoveredPointIdx(null);
+    }
+  }, []);
 
 
   const handleCardClick = (metric: string) => {
@@ -1473,17 +1546,37 @@ export default function DashboardContent({
                 <div className="w-full border-b border-white/10" />
               </div>
 
-              {/* Interactive Slices for Hover */}
-              <div className="absolute left-9 right-0 top-0 bottom-6 flex z-30">
+              {/* Dynamic Vertical Guideline aligned with Active Dot */}
+              {activeChartPoint && (
+                <div 
+                  className={`absolute top-0 bottom-6 w-px pointer-events-none z-10 -translate-x-1/2 transition-all ${isDragging ? 'duration-75' : 'duration-150'}`}
+                  style={{ 
+                    left: `calc(36px + (${activeChartPoint.x / 500} * (100% - 36px)))` 
+                  }}
+                >
+                  <div className="w-full h-full bg-gradient-to-b from-[#F59E0B]/60 via-[#F59E0B]/20 to-transparent" />
+                </div>
+              )}
+
+              {/* Interactive Scrubbing & Hover Overlay (Supports finger sliding on mobile & mouse hover/drag on desktop) */}
+              <div 
+                ref={chartAreaRef}
+                onPointerDown={handleChartPointerDown}
+                onPointerMove={handleChartPointerMove}
+                onPointerUp={handleChartPointerUp}
+                onPointerCancel={handleChartPointerCancel}
+                onTouchStart={handleChartTouchStart}
+                onTouchMove={handleChartTouchMove}
+                onTouchEnd={handleChartTouchEnd}
+                onMouseLeave={handleChartMouseLeave}
+                className="absolute left-9 right-0 top-0 bottom-6 flex z-30 touch-none cursor-ew-resize select-none"
+              >
                 {computedChartPoints.map((pt, idx) => (
                   <div
                     key={pt.label}
-                    onMouseEnter={() => setHoveredPointIdx(idx)}
-                    onMouseLeave={() => setHoveredPointIdx(null)}
-                    className="flex-1 h-full cursor-pointer relative group flex justify-center"
-                  >
-                    <div className={`w-px h-full bg-[#F59E0B]/25 transition-opacity duration-150 ${hoveredPointIdx === idx ? 'opacity-100' : 'opacity-0'}`} />
-                  </div>
+                    onMouseEnter={() => !isDraggingChartRef.current && setHoveredPointIdx(idx)}
+                    className="flex-1 h-full cursor-pointer"
+                  />
                 ))}
               </div>
 
@@ -1525,13 +1618,16 @@ export default function DashboardContent({
               {/* Perfectly Round Point Marker (HTML div with 1:1 aspect ratio to avoid SVG non-uniform stretching) */}
               {activeChartPoint && (
                 <div 
-                  className="absolute pointer-events-none transition-all duration-150 z-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+                  className={`absolute pointer-events-none z-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2 transition-all ${isDragging ? 'duration-75 scale-125' : 'duration-150'}`}
                   style={{ 
                     left: `calc(36px + (${activeChartPoint.x / 500} * (100% - 36px)))`, 
                     top: `calc(4px + ${(activeChartPoint.y / 90) * 120}px)` 
                   }}
                 >
-                  <div className="w-3.5 h-3.5 rounded-full bg-[#F59E0B] border-2 border-[#131315] shadow-[0_0_8px_rgba(245,158,11,0.8)] flex items-center justify-center">
+                  {/* Subtle animated touch/drag halo when sliding with finger */}
+                  <div className={`absolute -inset-2 rounded-full border border-[#F59E0B]/50 transition-opacity duration-150 ${isDragging ? 'opacity-100 scale-125 animate-ping' : 'opacity-0'}`} />
+                  
+                  <div className={`w-3.5 h-3.5 rounded-full bg-[#F59E0B] border-2 border-[#131315] shadow-[0_0_10px_rgba(245,158,11,0.9)] flex items-center justify-center transition-all ${isDragging ? 'shadow-[0_0_16px_rgba(245,158,11,1)] ring-2 ring-[#F59E0B]/40' : ''}`}>
                     <div className="w-1.5 h-1.5 rounded-full bg-white" />
                   </div>
                 </div>
@@ -1540,13 +1636,13 @@ export default function DashboardContent({
               {/* Dynamic Floating Tooltip */}
               {activeChartPoint && (
                 <div 
-                  className="absolute top-0 -translate-y-2 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none transition-all duration-150"
+                  className={`absolute top-0 -translate-y-2 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none transition-all ${isDragging ? 'duration-75' : 'duration-150'}`}
                   style={{ 
                     left: `calc(36px + (${tooltipHorizontalPercent / 100} * (100% - 36px)))`, 
                     transform: 'translateX(-50%)' 
                   }}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B] shrink-0" />
                   <span className="text-[10px] text-[#F59E0B] font-bold tracking-tight whitespace-nowrap">
                     {activeChartPoint.label}: {stats.currency}{activeChartPoint.value.toLocaleString()}
                     {activeChartPoint.projectCount > 0 && ` (${activeChartPoint.projectCount} ${activeChartPoint.projectCount === 1 ? 'proj' : 'projs'})`}
@@ -1558,12 +1654,12 @@ export default function DashboardContent({
               <div className="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-bold text-on-surface-variant/60 uppercase pt-1">
                 {computedChartPoints.map((pt, idx) => {
                   const isCurrent = idx === defaultHighlightIndex;
-                  const isHovered = idx === hoveredPointIdx;
+                  const isActive = idx === activeHighlightIndex;
                   return (
                     <span
                       key={pt.label}
                       onClick={() => setHoveredPointIdx(idx)}
-                      className={`cursor-pointer transition-colors ${isHovered || isCurrent ? 'text-[#F59E0B] font-black' : pt.isFuture ? 'opacity-40 hover:opacity-80' : 'hover:text-white'}`}
+                      className={`cursor-pointer transition-all duration-150 ${isActive ? 'text-[#F59E0B] font-black scale-110 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]' : isCurrent ? 'text-white/80 font-bold' : pt.isFuture ? 'opacity-40 hover:opacity-80' : 'hover:text-white'}`}
                     >
                       {pt.label}
                     </span>
