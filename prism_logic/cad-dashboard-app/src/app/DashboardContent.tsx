@@ -1133,10 +1133,15 @@ export default function DashboardContent({
           </div>
         </div>
 
-        {/* Main Grid: Pending Jobs, Deadlines & Earn CADONCE Points */}
+                {/* Main 3-Column Layout: Left (2 Cols) has Pending Jobs, Deadlines & Earnings Overview; Right (1 Col) has Earn Points */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* Column 1: Pending Jobs Count Card */}
+          {/* Left Container: Span 2 Columns (Matching User's Drawn Container) */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            
+            {/* Row 1: Pending Jobs & Deadlines (Side by side in 2 equal columns) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+              {/* Column 1: Pending Jobs Count Card */}
           <section className="space-y-4">
             <div className="flex justify-between items-center px-2 shrink-0">
               <h3 className="font-headline font-bold text-lg tracking-tight">Pending Jobs</h3>
@@ -1230,7 +1235,7 @@ export default function DashboardContent({
             </div>
           </section>
 
-          {/* Column 2: Upcoming Deadlines */}
+              {/* Column 2: Upcoming Deadlines */}
           <section className="space-y-4">
             <h3 className="font-headline font-bold text-lg tracking-tight px-2 shrink-0">Deadlines</h3>
             <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 overflow-hidden transition-all duration-300">
@@ -1297,105 +1302,9 @@ export default function DashboardContent({
               )}
             </div>
           </section>
-
-          {/* Column 3: Earn CADONCE Points */}
-          <section className="space-y-4">
-            <div className="flex justify-between items-center px-2 shrink-0">
-              <h3 className="font-headline font-bold text-lg tracking-tight">Earn Points</h3>
-              {isFounder && (
-                <button
-                  onClick={() => setShowLinkInput(!showLinkInput)}
-                  className="text-[11px] font-bold text-[#F59E0B] tracking-wider px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#F59E0B]/30 transition-all focus:outline-none"
-                >
-                  {showLinkInput ? 'Cancel' : 'Add Link'}
-                </button>
-              )}
             </div>
 
-            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4 overflow-hidden">
-              {showLinkInput && (
-                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 w-full shrink-0">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={linkInput}
-                      onChange={(e) => setLinkInput(e.target.value)}
-                      placeholder="Paste Amazon link..."
-                      className="w-full bg-zinc-900 border border-white/10 rounded-xl pl-3 pr-20 py-2.5 text-[10px] text-white font-bold placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B]/50 transition-all"
-                    />
-                    <button
-                      onClick={handleAddByLink}
-                      disabled={isFetchingLink}
-                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#F59E0B] text-zinc-950 text-[11px] font-bold tracking-wider rounded-lg disabled:opacity-50 transition-all active:scale-95"
-                    >
-                      {isFetchingLink ? 'Fetching...' : 'Fetch'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 min-h-[160px] w-full flex-1">
-                {isLoadingProducts ? (
-                  <div className="flex items-center justify-center w-full py-10 opacity-30 animate-pulse">
-                    <span className="text-[11px] font-bold tracking-wider">Synchronizing...</span>
-                  </div>
-                ) : products.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center w-full py-10 rounded-xl text-center">
-                    <span className="material-symbols-outlined text-[#F59E0B] text-2xl mb-2 opacity-50">shopping_basket</span>
-                    <span className="text-[11px] font-bold text-white/40 tracking-wider">No Products Curated</span>
-                    {isFounder && <p className="text-[11px] font-bold text-white/20 mt-1">Add products to begin</p>}
-                  </div>
-                ) : (
-                  products.map((product) => {
-                    const estimatedPoints = product.points ?? Math.round(product.price * 0.0175);
-                    return (
-                      <a
-                        key={product.id}
-                        href={product.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex flex-col flex-shrink-0 w-32 rounded-xl bg-surface-container border border-outline-variant/10 shadow-lg overflow-hidden transition-all hover:border-[#F59E0B]/30 hover:scale-[1.02] active:scale-95 cursor-pointer block"
-                      >
-                        <div className="w-full aspect-square overflow-hidden relative bg-zinc-900">
-                          <img alt={product.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" src={product.imageUrl} />
-                          {isFounder && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                handleDeleteProduct(product);
-                              }}
-                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-500/80 text-white backdrop-blur-md border border-white/10 hover:bg-red-600 transition-all z-10"
-                            >
-                              <span className="material-symbols-outlined text-xs">delete</span>
-                            </button>
-                          )}
-                        </div>
-                        <div className="p-2 space-y-1">
-                          <h4 className="text-[9px] font-bold text-on-surface truncate leading-tight opacity-95">{product.title}</h4>
-                          <div className="flex flex-col">
-                            <p className="text-xs font-headline font-extrabold text-[#F59E0B]">
-                              {new Intl.NumberFormat(product.countryCode === 'IN' ? 'en-IN' : 'en-US', {
-                                style: 'currency',
-                                currency: product.currency || (product.countryCode === 'IN' ? 'INR' : 'USD'),
-                                maximumFractionDigits: product.currency === 'INR' ? 0 : 2
-                              }).format(product.price)}
-                            </p>
-                          </div>
-                          <div className="flex flex-nowrap gap-1">
-                            <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-[#F59E0B]/30 text-[7px] font-black text-[#F59E0B] uppercase tracking-tighter truncate">+{estimatedPoints} Pts</span>
-                          </div>
-                        </div>
-                      </a>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          </section>
-
-        </div>
-
-        {/* Earnings Overview Section */}
+            {/* Earnings Overview Section */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
@@ -1619,6 +1528,107 @@ export default function DashboardContent({
             </div>
           </div>
         </section>
+          </div>
+
+          {/* Right Container: Column 3 (Span 1 Column) */}
+          <div className="lg:col-span-1">
+            {/* Column 3: Earn CADONCE Points */}
+          <section className="space-y-4">
+            <div className="flex justify-between items-center px-2 shrink-0">
+              <h3 className="font-headline font-bold text-lg tracking-tight">Earn Points</h3>
+              {isFounder && (
+                <button
+                  onClick={() => setShowLinkInput(!showLinkInput)}
+                  className="text-[11px] font-bold text-[#F59E0B] tracking-wider px-3 py-1.5 bg-zinc-900 border border-white/5 rounded-lg hover:border-[#F59E0B]/30 transition-all focus:outline-none"
+                >
+                  {showLinkInput ? 'Cancel' : 'Add Link'}
+                </button>
+              )}
+            </div>
+
+            <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-5 space-y-4 overflow-hidden">
+              {showLinkInput && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300 w-full shrink-0">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      placeholder="Paste Amazon link..."
+                      className="w-full bg-zinc-900 border border-white/10 rounded-xl pl-3 pr-20 py-2.5 text-[10px] text-white font-bold placeholder:text-white/20 focus:outline-none focus:border-[#F59E0B]/50 transition-all"
+                    />
+                    <button
+                      onClick={handleAddByLink}
+                      disabled={isFetchingLink}
+                      className="absolute right-1.5 top-1.5 bottom-1.5 px-3 bg-[#F59E0B] text-zinc-950 text-[11px] font-bold tracking-wider rounded-lg disabled:opacity-50 transition-all active:scale-95"
+                    >
+                      {isFetchingLink ? 'Fetching...' : 'Fetch'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 min-h-[160px] w-full flex-1">
+                {isLoadingProducts ? (
+                  <div className="flex items-center justify-center w-full py-10 opacity-30 animate-pulse">
+                    <span className="text-[11px] font-bold tracking-wider">Synchronizing...</span>
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center w-full py-10 rounded-xl text-center">
+                    <span className="material-symbols-outlined text-[#F59E0B] text-2xl mb-2 opacity-50">shopping_basket</span>
+                    <span className="text-[11px] font-bold text-white/40 tracking-wider">No Products Curated</span>
+                    {isFounder && <p className="text-[11px] font-bold text-white/20 mt-1">Add products to begin</p>}
+                  </div>
+                ) : (
+                  products.map((product) => {
+                    const estimatedPoints = product.points ?? Math.round(product.price * 0.0175);
+                    return (
+                      <a
+                        key={product.id}
+                        href={product.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex flex-col flex-shrink-0 w-32 rounded-xl bg-surface-container border border-outline-variant/10 shadow-lg overflow-hidden transition-all hover:border-[#F59E0B]/30 hover:scale-[1.02] active:scale-95 cursor-pointer block"
+                      >
+                        <div className="w-full aspect-square overflow-hidden relative bg-zinc-900">
+                          <img alt={product.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-110" src={product.imageUrl} />
+                          {isFounder && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleDeleteProduct(product);
+                              }}
+                              className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-red-500/80 text-white backdrop-blur-md border border-white/10 hover:bg-red-600 transition-all z-10"
+                            >
+                              <span className="material-symbols-outlined text-xs">delete</span>
+                            </button>
+                          )}
+                        </div>
+                        <div className="p-2 space-y-1">
+                          <h4 className="text-[9px] font-bold text-on-surface truncate leading-tight opacity-95">{product.title}</h4>
+                          <div className="flex flex-col">
+                            <p className="text-xs font-headline font-extrabold text-[#F59E0B]">
+                              {new Intl.NumberFormat(product.countryCode === 'IN' ? 'en-IN' : 'en-US', {
+                                style: 'currency',
+                                currency: product.currency || (product.countryCode === 'IN' ? 'INR' : 'USD'),
+                                maximumFractionDigits: product.currency === 'INR' ? 0 : 2
+                              }).format(product.price)}
+                            </p>
+                          </div>
+                          <div className="flex flex-nowrap gap-1">
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-950 border border-[#F59E0B]/30 text-[7px] font-black text-[#F59E0B] uppercase tracking-tighter truncate">+{estimatedPoints} Pts</span>
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </section>
+          </div>
+
+        </div>
       </div>
     </AuthGuard>
   );

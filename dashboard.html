@@ -274,8 +274,14 @@ body { -webkit-tap-highlight-color: transparent; }
 </div>
 </div>
 </div>
-<!-- Secondary Sections: Jobs, Deadlines, Earn Points -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+<!-- Main 3-Column Layout: Left (2 Cols) has Pending Jobs, Deadlines & Earnings Overview; Right (1 Col) has Earn Points -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+<!-- Left Container: Span 2 Columns (Matching User's Drawn Container) -->
+<div class="lg:col-span-2 flex flex-col gap-6">
+
+<!-- Row 1: Pending Jobs & Deadlines (Side by side in 2 equal columns) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
 <!-- Pending Jobs -->
 <div class="flex flex-col gap-4">
 <h2 class="font-headline-lg-mobile text-on-surface">Pending Jobs</h2>
@@ -284,6 +290,7 @@ body { -webkit-tap-highlight-color: transparent; }
 <button class="flex items-center gap-1.5 px-4 py-2 border border-luxury-gold/30 rounded-lg text-luxury-gold font-label-caps text-[10px] hover:bg-luxury-gold/10 transition-colors">SHOW DETAILS<span class="material-symbols-outlined text-[16px]">expand_more</span></button>
 </div>
 </div>
+
 <!-- Deadlines -->
 <div class="flex flex-col gap-4">
 <h2 class="font-headline-lg-mobile text-on-surface">Deadlines</h2>
@@ -292,15 +299,8 @@ body { -webkit-tap-highlight-color: transparent; }
 <button class="flex items-center gap-1.5 px-4 py-2 border border-luxury-gold/30 rounded-lg text-luxury-gold font-label-caps text-[10px] hover:bg-luxury-gold/10 transition-colors">SHOW DETAILS<span class="material-symbols-outlined text-[16px]">expand_more</span></button>
 </div>
 </div>
-<!-- Earn Points -->
-<div class="flex flex-col gap-4">
-<h2 class="font-headline-lg-mobile text-on-surface">Earn Points</h2>
-<div class="bg-surface-container rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center h-[120px] text-center">
-<span class="material-symbols-outlined text-luxury-gold text-2xl mb-1.5 opacity-60">shopping_basket</span>
-<span class="text-xs text-on-surface-variant/60 font-medium">No Products Curated</span>
 </div>
-</div>
-</div>
+
 <!-- Earnings Overview (Full Width Dynamic Earning Preview) -->
 <div class="flex flex-col gap-4" id="earnings-overview-container">
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -398,6 +398,21 @@ body { -webkit-tap-highlight-color: transparent; }
 </div>
 </div>
 </div>
+</div>
+</div>
+
+<!-- Right Container: Column 3 (Span 1 Column) -->
+<div class="lg:col-span-1">
+<!-- Earn Points -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg-mobile text-on-surface">Earn Points</h2>
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center h-[120px] text-center">
+<span class="material-symbols-outlined text-luxury-gold text-2xl mb-1.5 opacity-60">shopping_basket</span>
+<span class="text-xs text-on-surface-variant/60 font-medium">No Products Curated</span>
+</div>
+</div>
+</div>
+
 </div>
 </main>
 </div>
