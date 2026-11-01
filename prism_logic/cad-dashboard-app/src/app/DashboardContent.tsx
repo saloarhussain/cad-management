@@ -71,6 +71,7 @@ export default function DashboardContent({
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [isPendingJobsExpanded, setIsPendingJobsExpanded] = useState(false);
   const [isDeadlinesExpanded, setIsDeadlinesExpanded] = useState(false);
+  const [earningsMode, setEarningsMode] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
 
   const handleCardClick = (metric: string) => {
     setSelectedMetric(metric);
@@ -1100,6 +1101,122 @@ export default function DashboardContent({
 
         </div>
 
+        {/* Earnings Overview Section */}
+        <section className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h3 className="font-headline font-bold text-lg tracking-tight text-white">Earnings Overview</h3>
+              <span className="material-symbols-outlined text-[#F59E0B] text-[18px]">trending_up</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-white/5 w-fit">
+              <button 
+                onClick={() => setEarningsMode('MONTHLY')}
+                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsMode === 'MONTHLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+              >
+                MONTHLY
+              </button>
+              <button 
+                onClick={() => setEarningsMode('YEARLY')}
+                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsMode === 'YEARLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+              >
+                YEARLY
+              </button>
+              <div className="h-3 w-px bg-white/10 mx-1" />
+              <button className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold tracking-wider text-[#F59E0B] hover:bg-white/5 transition-all">
+                <span>2026</span>
+                <span className="material-symbols-outlined text-[13px]">expand_more</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-surface-container-low shadow-2xl border border-white/5 p-6 relative overflow-hidden group">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <div className="flex items-baseline gap-3 flex-wrap">
+                  <span className="text-3xl sm:text-4xl font-headline font-black text-white tracking-tight">{stats.currency}1,48,250</span>
+                  <span className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 text-[10px] font-bold flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[12px]">arrow_upward</span>+24.8%
+                  </span>
+                </div>
+                <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-wider mt-1">Total Earned • Jan - Aug 2026</p>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/5 w-fit">
+                <div className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
+                <span className="text-[10px] text-[#F59E0B] uppercase tracking-wider font-bold">Active Cycle</span>
+              </div>
+            </div>
+
+            <div className="relative w-full h-44 my-2 select-none">
+              <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] font-mono text-on-surface-variant/50 leading-none py-0.5">
+                <span>30k</span>
+                <span>20k</span>
+                <span>10k</span>
+                <span>0</span>
+              </div>
+              <div className="absolute left-9 right-0 top-1 bottom-6 flex flex-col justify-between pointer-events-none">
+                <div className="w-full border-b border-dashed border-white/5" />
+                <div className="w-full border-b border-dashed border-white/5" />
+                <div className="w-full border-b border-dashed border-white/5" />
+                <div className="w-full border-b border-white/10" />
+              </div>
+              <svg className="absolute left-9 right-0 top-1 h-[120px] w-[calc(100%-36px)] overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 90">
+                <defs>
+                  <linearGradient id="earningsGrad" x1="0%" x2="0%" y1="0%" y2="100%">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.35" />
+                    <stop offset="70%" stopColor="#F59E0B" stopOpacity="0.05" />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="lineGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+                    <stop offset="0%" stopColor="#2DD4BF" />
+                    <stop offset="50%" stopColor="#F59E0B" />
+                    <stop offset="100%" stopColor="#10B981" />
+                  </linearGradient>
+                  <filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+                    <feDropShadow dx="0" dy="2" floodColor="#F59E0B" floodOpacity="0.4" stdDeviation="3" />
+                  </filter>
+                </defs>
+                <path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10 L 430,90 L 0,90 Z" fill="url(#earningsGrad)" />
+                <path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10" fill="none" filter="url(#glow)" stroke="url(#lineGrad)" strokeLinecap="round" strokeWidth="2.5" />
+                <path d="M 430,10 Q 465,25 500,32" fill="none" opacity="0.5" stroke="#909097" strokeDasharray="3,3" strokeLinecap="round" strokeWidth="1.5" />
+                <circle cx="430" cy="10" fill="#F59E0B" r="5" stroke="#131315" strokeWidth="2" />
+                <circle cx="430" cy="10" fill="#FFFFFF" r="2" />
+              </svg>
+              <div className="absolute right-6 top-0 -translate-y-1 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                <span className="text-[10px] text-[#F59E0B] font-bold tracking-tight">Aug: {stats.currency}28,400</span>
+              </div>
+              <div className="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-bold text-on-surface-variant/60 uppercase pt-1">
+                <span>Jan</span>
+                <span>Feb</span>
+                <span>Mar</span>
+                <span>Apr</span>
+                <span>May</span>
+                <span>Jun</span>
+                <span>Jul</span>
+                <span className="text-[#F59E0B] font-black">Aug</span>
+                <span className="opacity-40">Sep</span>
+                <span className="opacity-40">Oct</span>
+                <span className="opacity-40">Nov</span>
+                <span className="opacity-40">Dec</span>
+              </div>
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-3 gap-4 relative z-10">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Monthly Avg</span>
+                <span className="text-sm font-bold text-white mt-1">{stats.currency}18,530</span>
+              </div>
+              <div className="flex flex-col border-x border-white/5 px-4">
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Best Month</span>
+                <span className="text-sm font-bold text-[#F59E0B] mt-1">{stats.currency}28,400 <span className="text-[10px] font-normal text-on-surface-variant">(Aug)</span></span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Projected</span>
+                <span className="text-sm font-bold text-emerald-400 mt-1">{stats.currency}1,95,000</span>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </AuthGuard>
   );

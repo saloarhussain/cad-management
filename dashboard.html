@@ -1,0 +1,414 @@
+<!DOCTYPE html><html lang="en" style=""><svg class="inline-defs-container" aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden"></svg><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script id="tailwind-config">
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      "colors": {
+        "on-background": "#e4e2e4", "soft-teal": "#2DD4BF", "on-secondary-fixed": "#241a00", "tertiary": "#dec29a",
+        "error": "#ffb4ab", "surface-tint": "#bec6e0", "inverse-on-surface": "#303032", "inverse-surface": "#e4e2e4",
+        "on-tertiary-fixed-variant": "#574425", "surface-container": "#1f1f21", "on-primary": "#283044", "on-tertiary": "#3e2d11",
+        "surface": "#131315", "on-surface-variant": "#c6c6cd", "surface-dim": "#131315", "inverse-primary": "#565e74",
+        "on-error": "#690005", "primary-fixed-dim": "#bec6e0", "surface-bright": "#39393b", "on-tertiary-fixed": "#271901",
+        "secondary-fixed": "#ffe088", "outline": "#909097", "secondary-fixed-dim": "#e9c349", "tertiary-fixed": "#fcdeb5",
+        "outline-variant": "#45464d", "on-error-container": "#ffdad6", "on-secondary-container": "#342800",
+        "surface-container-high": "#2a2a2b", "primary-fixed": "#dae2fd", "luxury-gold": "#F59E0B", "surface-container-lowest": "#0e0e10",
+        "secondary": "#e9c349", "emerald-action": "#10B981", "on-secondary-fixed-variant": "#574500", "surface-container-low": "#1b1b1d",
+        "on-tertiary-container": "#957d5a", "primary": "#bec6e0", "on-primary-fixed-variant": "#3f465c", "on-primary-container": "#798098",
+        "midnight-surface": "#1E293B", "on-primary-fixed": "#131b2e", "tertiary-fixed-dim": "#dec29a", "on-secondary": "#3c2f00",
+        "on-surface": "#e4e2e4", "tertiary-container": "#231500", "primary-container": "#0f172a", "error-container": "#93000a",
+        "secondary-container": "#af8d11", "background": "#131315", "surface-variant": "#353436", "surface-container-highest": "#353436"
+      },
+      "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+      "spacing": { "gutter-grid": "1.5rem", "padding-card": "1.5rem", "margin-page": "2rem", "stack-section": "3rem" },
+      "fontFamily": {
+        "headline-lg": ["Inter"], "headline-lg-mobile": ["Inter"], "body-lg": ["Inter"],
+        "headline-xl": ["Inter"], "display-lg": ["Inter"], "body-md": ["Inter"], "label-caps": ["Inter"]
+      },
+      "fontSize": {
+        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "0.03em", "fontWeight": "600" }],
+        "headline-lg-mobile": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "0.02em", "fontWeight": "700" }],
+        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+      }
+    }
+  }
+};
+</script>
+<style>
+@layer base { .pb-safe { padding-bottom: env(safe-area-inset-bottom); } .pt-safe { padding-top: env(safe-area-inset-top); } }
+body { -webkit-tap-highlight-color: transparent; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+</style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen overflow-hidden flex">
+<!-- Persistent Desktop Sidebar -->
+<aside class="hidden lg:flex relative w-64 h-full bg-surface-container border-r border-white/5 flex-col p-6 overflow-y-auto shrink-0 z-20">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 rounded bg-luxury-gold flex items-center justify-center text-surface-container font-bold"><span class="material-symbols-outlined text-[20px]">architecture</span></div>
+<div class="flex flex-col">
+<span class="font-headline-lg-mobile text-luxury-gold uppercase tracking-widest leading-none">Cadonce</span>
+<span class="text-[10px] text-luxury-gold/70 font-bold tracking-wider">For Organizations</span>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-4 p-3 rounded-lg bg-luxury-gold/10 text-luxury-gold relative" href="#">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-luxury-gold rounded-r-full"></div>
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-caps">Home</span>
+<div class="w-1.5 h-1.5 rounded-full bg-luxury-gold ml-auto"></div>
+</a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">account_tree</span><span class="font-label-caps">Projects</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">explore</span><span class="font-label-caps">Explore</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">groups</span><span class="font-label-caps">Team</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">badge</span><span class="font-label-caps">Clients</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">mail</span><span class="font-label-caps">Inbox</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">move_up</span><span class="font-label-caps">Transfers</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-caps">Settings</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">view_in_ar</span><span class="font-label-caps">Render</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5 transition-colors" href="#"><span class="material-symbols-outlined">folder_special</span><span class="font-label-caps">Portfolio</span></a>
+</nav>
+<div class="mt-auto pt-8">
+<button class="w-full bg-gradient-to-r from-soft-teal to-emerald-action text-on-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">add</span><span class="">NEW PROJECT</span>
+</button>
+</div>
+</aside>
+<!-- Mobile Sidebar Overlay (Hidden on Desktop) -->
+<div class="lg:hidden fixed inset-0 z-[100] -translate-x-full transition-transform duration-300 ease-in-out" id="side-menu">
+<div class="absolute inset-0 bg-surface/80 backdrop-blur-sm" onclick="document.getElementById('side-menu').classList.add('-translate-x-full')"></div>
+<aside class="relative w-72 h-full bg-surface-container border-r border-white/5 flex flex-col p-6 overflow-y-auto">
+<div class="flex items-center justify-between mb-8">
+<span class="font-headline-lg-mobile text-luxury-gold uppercase tracking-widest">Cadonce</span>
+<button class="text-on-surface-variant" onclick="document.getElementById('side-menu').classList.add('-translate-x-full')"><span class="material-symbols-outlined">close</span></button>
+</div>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-4 p-3 rounded-lg bg-luxury-gold/10 text-luxury-gold" href="#"><span class="material-symbols-outlined">home</span><span class="font-label-caps">Home</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">account_tree</span><span class="font-label-caps">Projects</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">explore</span><span class="font-label-caps">Explore</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">groups</span><span class="font-label-caps">Team</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">badge</span><span class="font-label-caps">Clients</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">mail</span><span class="font-label-caps">Inbox</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">move_up</span><span class="font-label-caps">Transfers</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">settings</span><span class="font-label-caps">Settings</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">view_in_ar</span><span class="font-label-caps">Render</span></a>
+<a class="flex items-center gap-4 p-3 rounded-lg text-on-surface-variant hover:bg-white/5" href="#"><span class="material-symbols-outlined">folder_special</span><span class="font-label-caps">Portfolio</span></a>
+</nav>
+<div class="mt-auto pt-8">
+<button class="w-full bg-gradient-to-r from-soft-teal to-emerald-action text-on-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg"><span class="material-symbols-outlined">add</span><span class="">NEW PROJECT</span></button>
+</div>
+</aside>
+</div>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- Header -->
+<header class="w-full z-10 bg-surface border-b border-white/5 pt-safe flex-shrink-0">
+<div class="h-16 px-4 lg:px-8 flex items-center justify-between gap-4">
+<!-- Mobile Logo & Menu -->
+<div class="flex lg:hidden items-center gap-2">
+<span class="font-headline-lg-mobile text-luxury-gold uppercase tracking-widest">Cadonce</span>
+</div>
+<!-- Desktop Search -->
+<div class="hidden lg:flex items-center flex-1 max-w-xl bg-surface-container rounded-full px-4 py-2 border border-white/5 text-on-surface-variant focus-within:border-luxury-gold/50 focus-within:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[20px] mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-sm w-full placeholder:text-on-surface-variant/50 text-on-surface" placeholder="Search assets, projects, or designers..." type="text">
+</div>
+<!-- Header Actions -->
+<div class="flex items-center gap-3 lg:gap-6">
+<!-- Badges (Desktop) -->
+<div class="hidden lg:flex items-center gap-3">
+<div class="flex items-center gap-1.5 px-3 py-1 bg-surface-container rounded-full border border-white/10">
+<span class="font-label-caps text-[10px] text-on-surface-variant">FREE</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">workspace_premium</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-luxury-gold/10 rounded-full border border-luxury-gold/20">
+<span class="material-symbols-outlined text-[16px] text-luxury-gold">toll</span>
+<span class="font-label-caps text-[10px] text-luxury-gold">0 PTS</span>
+</div>
+</div>
+<!-- Org Status (Desktop) -->
+<div class="hidden lg:flex flex-col items-end justify-center mr-2">
+<span class="font-label-caps text-[10px] tracking-widest text-on-surface">ORGANIZATION</span>
+<span class="text-[9px] font-bold text-emerald-action uppercase tracking-widest">ONLINE</span>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container text-on-surface-variant hover:text-luxury-gold transition-colors border border-white/5">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center overflow-hidden border-2 border-white/10 cursor-pointer relative">
+<!-- Dummy Avatar using initials or icon -->
+<div class="absolute inset-0 bg-gradient-to-br from-blue-400 to-indigo-600"></div>
+<div class="absolute inset-0 bg-surface-container/50"></div>
+<span class="material-symbols-outlined text-white text-[20px] relative z-10">person</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Scrollable Main Content -->
+<main class="flex-1 overflow-y-auto overflow-x-hidden bg-surface pb-24 lg:pb-8">
+<div class="w-full max-w-7xl mx-auto px-4 lg:px-8 pt-6 flex flex-col gap-8">
+<!-- Outstanding Banner -->
+<div class="w-full bg-error-container/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden group border border-error/10">
+<div class="absolute inset-0 bg-gradient-to-r from-error/5 to-transparent pointer-events-none"></div>
+<div class="flex items-start sm:items-center gap-4 relative z-10">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-error-container">account_balance_wallet</span>
+</div>
+<div>
+<h3 class="font-headline-lg-mobile text-on-error-container text-sm uppercase tracking-wider font-bold">Payouts Outstanding</h3>
+<p class="font-body-md text-error text-sm mt-0.5">You have 3 completed projects pending designer payment</p>
+</div>
+</div>
+<button class="w-full sm:w-auto px-8 bg-error text-on-error font-label-caps py-3 rounded-lg hover:bg-error/90 transition-colors relative z-10 whitespace-nowrap shadow-lg shadow-error/20">
+          Pay Now
+        </button>
+</div>
+<!-- Header Section -->
+<div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+<div class="flex flex-col gap-4 lg:gap-2">
+<div class="flex items-baseline gap-3">
+<h1 class="font-headline-xl text-on-surface">Data Overview</h1>
+<p class="hidden lg:block font-label-caps text-on-surface-variant tracking-widest text-[10px] uppercase">Strategic Dashboard</p>
+</div>
+<p class="lg:hidden font-label-caps text-on-surface-variant tracking-widest text-[10px] uppercase">Strategic Dashboard</p>
+<!-- Quick Stats Chips -->
+<div class="flex gap-2 flex-wrap">
+<div class="bg-surface-container rounded-full px-4 py-2 flex items-center gap-2 border border-white/5">
+<span class="material-symbols-outlined text-secondary-fixed text-[18px]">person</span>
+<span class="font-label-caps text-on-surface text-[11px]">20 Clients <span class="text-secondary-fixed">(6 Active)</span></span>
+</div>
+<div class="bg-surface-container rounded-full px-4 py-2 flex items-center gap-2 border border-white/5">
+<span class="material-symbols-outlined text-soft-teal text-[18px]">groups</span>
+<span class="font-label-caps text-on-surface text-[11px]">12 Team <span class="text-soft-teal">(3 Active)</span></span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar justify-between lg:justify-end">
+<div class="flex items-center gap-2 mr-2 lg:hidden">
+<div class="w-2 h-2 rounded-full bg-emerald-action"></div>
+<p class="font-label-caps text-on-surface-variant text-[10px] uppercase whitespace-nowrap">Viewing: August 2026</p>
+</div>
+<div class="flex items-center gap-3 shrink-0 ml-auto lg:ml-0">
+<button class="hidden lg:flex items-center gap-2 px-4 py-2 bg-surface-container rounded-lg border border-white/5 text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="font-label-caps text-[10px]">EXPORT</span>
+<span class="material-symbols-outlined text-[16px]">download</span>
+</button>
+<button class="flex items-center gap-2 px-4 py-2 bg-luxury-gold rounded-lg text-surface-container hover:bg-luxury-gold/90 transition-colors font-bold">
+<span class="font-label-caps text-[10px] text-surface-container">MONTHLY</span>
+<span class="material-symbols-outlined text-[16px]">calendar_month</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Main Metrics Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+<!-- Total Revenue Card -->
+<div class="bg-surface-container rounded-2xl p-6 relative overflow-hidden border border-white/5 shadow-sm flex flex-col justify-between h-40">
+<div class="flex justify-between items-start relative z-10">
+<h3 class="font-label-caps text-on-surface-variant text-[11px] tracking-widest">TOTAL REVENUE</h3>
+<span class="material-symbols-outlined text-on-surface-variant/50 text-[18px]">info</span>
+</div>
+<div class="relative z-10 mt-auto">
+<div class="flex items-center justify-between mb-2">
+<span class="font-display-lg text-on-surface text-4xl">₹14,782</span>
+<div class="px-2 py-1 bg-luxury-gold/20 rounded-full border border-luxury-gold/30 text-luxury-gold font-label-caps text-[10px]">+100.0%</div>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-luxury-gold/50"></div>
+<span class="font-label-caps text-on-surface-variant/70 text-[9px] uppercase tracking-wider">Performance: Month</span>
+</div>
+</div>
+<svg class="absolute bottom-0 left-0 w-full h-24 text-luxury-gold/5 pointer-events-none" preserveAspectRatio="none" viewBox="0 0 100 40">
+<path d="M0,40 L0,20 Q25,30 50,15 T100,5 L100,40 Z" fill="currentColor"></path>
+</svg>
+</div>
+<!-- Pending Pipeline Card -->
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-sm flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<div class="flex items-center gap-2">
+<h3 class="font-label-caps text-on-surface-variant text-[11px] tracking-widest">PENDING</h3>
+<div class="w-1.5 h-1.5 rounded-full bg-luxury-gold"></div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/50 text-[18px]">info</span>
+</div>
+<div class="mt-auto">
+<div class="font-display-lg text-luxury-gold text-4xl mb-2">₹34,333</div>
+<div class="font-label-caps text-luxury-gold/70 text-[9px] tracking-widest uppercase">Pipeline</div>
+</div>
+</div>
+<!-- Expenses Card -->
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-sm flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<h3 class="font-label-caps text-on-surface-variant text-[11px] tracking-widest">EXPENSES</h3>
+<span class="material-symbols-outlined text-on-surface-variant/50 text-[18px]">info</span>
+</div>
+<div class="mt-auto">
+<div class="font-display-lg text-on-surface text-4xl mb-2">₹0</div>
+<div class="font-label-caps text-on-surface-variant/70 text-[9px] tracking-widest uppercase">Designer Payouts</div>
+</div>
+</div>
+<!-- Payouts Due Card -->
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-sm flex flex-col justify-between h-40 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-error/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex justify-between items-start relative z-10">
+<h3 class="font-label-caps text-on-surface-variant text-[11px] tracking-widest">PAYOUTS DUE</h3>
+<span class="material-symbols-outlined text-on-surface-variant/50 text-[18px]">info</span>
+</div>
+<div class="mt-auto relative z-10">
+<div class="flex flex-col gap-2">
+<div class="font-display-lg text-on-surface text-4xl">₹2,500</div>
+<div class="flex items-center justify-between">
+<div class="font-label-caps text-on-surface-variant/70 text-[9px] tracking-widest uppercase">Outstanding Payouts</div>
+<div class="px-2 py-1 bg-surface rounded-full border border-white/5 text-on-surface-variant font-label-caps text-[9px]">3 PENDING</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Sections: Jobs, Deadlines, Earn Points -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+<!-- Pending Jobs -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg-mobile text-on-surface">Pending Jobs</h2>
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 flex items-center justify-between h-[120px]">
+<div class="font-headline-xl text-luxury-gold text-3xl">6 Jobs</div>
+<button class="flex items-center gap-1.5 px-4 py-2 border border-luxury-gold/30 rounded-lg text-luxury-gold font-label-caps text-[10px] hover:bg-luxury-gold/10 transition-colors">SHOW DETAILS<span class="material-symbols-outlined text-[16px]">expand_more</span></button>
+</div>
+</div>
+<!-- Deadlines -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg-mobile text-on-surface">Deadlines</h2>
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 flex items-center justify-between h-[120px]">
+<div class="font-headline-xl text-luxury-gold text-3xl">1 Deadline</div>
+<button class="flex items-center gap-1.5 px-4 py-2 border border-luxury-gold/30 rounded-lg text-luxury-gold font-label-caps text-[10px] hover:bg-luxury-gold/10 transition-colors">SHOW DETAILS<span class="material-symbols-outlined text-[16px]">expand_more</span></button>
+</div>
+</div>
+<!-- Earn Points -->
+<div class="flex flex-col gap-4">
+<h2 class="font-headline-lg-mobile text-on-surface">Earn Points</h2>
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center h-[120px] text-center">
+<span class="material-symbols-outlined text-luxury-gold text-2xl mb-1.5 opacity-60">shopping_basket</span>
+<span class="text-xs text-on-surface-variant/60 font-medium">No Products Curated</span>
+</div>
+</div>
+</div>
+<!-- Earnings Overview (Full Width Earning Preview) -->
+<div class="flex flex-col gap-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-lg-mobile text-on-surface">Earnings Overview</h2>
+<span class="material-symbols-outlined text-luxury-gold text-[18px]">trending_up</span>
+</div>
+<div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-white/5 w-fit">
+<button class="px-3 py-1 rounded text-[10px] font-label-caps bg-luxury-gold text-surface-container font-bold shadow-sm transition-all">MONTHLY</button>
+<button class="px-3 py-1 rounded text-[10px] font-label-caps text-on-surface-variant hover:text-on-surface transition-all">YEARLY</button>
+<div class="h-3 w-px bg-white/10 mx-1"></div>
+<button class="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-label-caps text-luxury-gold hover:bg-white/5 transition-all"><span class="">2026</span><span class="material-symbols-outlined text-[13px]">expand_more</span></button>
+</div>
+</div>
+<div class="bg-surface-container rounded-2xl p-6 border border-white/5 shadow-sm flex flex-col justify-between relative overflow-hidden group">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 relative z-10">
+<div>
+<div class="flex items-baseline gap-3 flex-wrap">
+<span class="font-display-lg text-on-surface text-4xl font-bold tracking-tight">₹1,48,250</span>
+<span class="px-2.5 py-0.5 bg-emerald-action/10 border border-emerald-action/30 rounded-full text-emerald-action font-label-caps text-[10px] font-bold flex items-center gap-0.5"><span class="material-symbols-outlined text-[12px]">arrow_upward</span>+24.8%</span>
+</div>
+<p class="font-label-caps text-on-surface-variant/70 text-[10px] uppercase tracking-wider mt-1">Total Earned • Jan - Aug 2026</p>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low border border-white/5 w-fit">
+<div class="w-2 h-2 rounded-full bg-luxury-gold animate-pulse"></div>
+<span class="font-label-caps text-[10px] text-luxury-gold uppercase tracking-wider font-bold">Active Cycle</span>
+</div>
+</div>
+<div class="relative w-full h-44 my-2 select-none">
+<div class="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] font-mono text-on-surface-variant/50 leading-none py-0.5">
+<span class="">30k</span>
+<span class="">20k</span>
+<span class="">10k</span>
+<span class="">0</span>
+</div>
+<div class="absolute left-9 right-0 top-1 bottom-6 flex flex-col justify-between pointer-events-none">
+<div class="w-full border-b border-dashed border-white/5"></div>
+<div class="w-full border-b border-dashed border-white/5"></div>
+<div class="w-full border-b border-dashed border-white/5"></div>
+<div class="w-full border-b border-white/10"></div>
+</div>
+<svg class="absolute left-9 right-0 top-1 h-[120px] w-[calc(100%-36px)] overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 90">
+<defs>
+<linearGradient id="earningsGrad" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#F59E0B" stop-opacity="0.35"></stop>
+<stop offset="70%" stop-color="#F59E0B" stop-opacity="0.05"></stop>
+<stop offset="100%" stop-color="#F59E0B" stop-opacity="0.0"></stop>
+</linearGradient>
+<linearGradient id="lineGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#2DD4BF"></stop>
+<stop offset="50%" stop-color="#F59E0B"></stop>
+<stop offset="100%" stop-color="#10B981"></stop>
+</linearGradient>
+<filter height="140%" id="glow" width="140%" x="-20%" y="-20%">
+<feDropShadow dx="0" dy="2" flood-color="#F59E0B" flood-opacity="0.4" stdDeviation="3"></feDropShadow>
+</filter>
+</defs>
+<path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10 L 430,90 L 0,90 Z" fill="url(#earningsGrad)"></path>
+<path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10" fill="none" filter="url(#glow)" stroke="url(#lineGrad)" stroke-linecap="round" stroke-width="2.5"></path>
+<path d="M 430,10 Q 465,25 500,32" fill="none" opacity="0.5" stroke="#909097" stroke-dasharray="3,3" stroke-linecap="round" stroke-width="1.5"></path>
+<circle cx="430" cy="10" fill="#F59E0B" r="5" stroke="#131315" stroke-width="2"></circle>
+<circle cx="430" cy="10" fill="#FFFFFF" r="2"></circle>
+</svg>
+<div class="absolute right-6 top-0 -translate-y-1 bg-surface-container-high/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-luxury-gold/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none">
+<span class="w-1.5 h-1.5 rounded-full bg-luxury-gold"></span>
+<span class="font-label-caps text-[10px] text-luxury-gold font-bold tracking-tight">Aug: ₹28,400</span>
+</div>
+<div class="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-label-caps text-on-surface-variant/60 uppercase pt-1">
+<span class="">Jan</span>
+<span class="">Feb</span>
+<span class="">Mar</span>
+<span class="">Apr</span>
+<span class="">May</span>
+<span class="">Jun</span>
+<span class="">Jul</span>
+<span class="text-luxury-gold font-bold">Aug</span>
+<span class="opacity-40">Sep</span>
+<span class="opacity-40">Oct</span>
+<span class="opacity-40">Nov</span>
+<span class="opacity-40">Dec</span>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-white/5 grid grid-cols-3 gap-4 relative z-10">
+<div class="flex flex-col">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase tracking-wider">Monthly Avg</span>
+<span class="text-sm font-bold text-on-surface mt-1">₹18,530</span>
+</div>
+<div class="flex flex-col border-x border-white/5 px-4">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase tracking-wider">Best Month</span>
+<span class="text-sm font-bold text-luxury-gold mt-1">₹28,400 <span class="text-[10px] font-normal text-on-surface-variant">(Aug)</span></span>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] font-label-caps text-on-surface-variant/60 uppercase tracking-wider">Projected</span>
+<span class="text-sm font-bold text-emerald-action mt-1">₹1,95,000</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Mobile Bottom Nav (Hidden on Desktop) -->
+<nav class="lg:hidden fixed bottom-0 w-full z-50 pb-safe bg-surface-container/90 backdrop-blur-xl border-t border-white/5" data-active-classes="text-luxury-gold">
+<div class="flex justify-between items-center h-16 px-6">
+<a aria-current="page" class="flex flex-col items-center gap-1 w-12 transition-all text-luxury-gold" href="#"><span class="material-symbols-outlined">dashboard</span><span class="font-label-caps text-[10px]">HOME</span></a>
+<a class="flex flex-col items-center gap-1 w-12 text-on-surface-variant transition-all hover:text-on-surface" href="#"><span class="material-symbols-outlined">account_tree</span><span class="font-label-caps text-[10px]">PROJECTS</span></a>
+<a class="flex flex-col items-center gap-1 w-12 text-on-surface-variant transition-all hover:text-on-surface" href="#"><span class="material-symbols-outlined">groups</span><span class="font-label-caps text-[10px]">TEAM</span></a>
+<button class="flex flex-col items-center gap-1 w-12 text-on-surface-variant transition-all hover:text-on-surface" onclick="document.getElementById('side-menu').classList.remove('-translate-x-full')"><span class="material-symbols-outlined">menu</span><span class="font-label-caps text-[10px]">MENU</span></button>
+</div>
+</nav>
+</body></html>
