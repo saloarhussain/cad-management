@@ -573,9 +573,18 @@ function renderEarningsChart() {
   document.getElementById('tooltip-text').innerText = `${activePt.label}: ₹${activePt.value.toLocaleString()}`;
 
   const xAxis = document.getElementById('x-axis-labels');
-  xAxis.innerHTML = points.map((p, i) => `
-    <span onclick="hoverPoint(${i})" class="cursor-pointer transition-colors ${i === activeIdx ? 'text-luxury-gold font-bold' : (i > defaultIdx ? 'opacity-40' : 'hover:text-on-surface')}">${p.label}</span>
-  `).join('');
+  const isMonthly = currentMode === 'MONTHLY';
+  xAxis.innerHTML = points.map((p, i) => {
+    const isActive = i === activeIdx;
+    const mobileText = isMonthly ? (isActive ? p.label : p.label.charAt(0)) : p.label;
+    return `
+      <span onclick="hoverPoint(${i})" class="cursor-pointer transition-all duration-150 flex flex-col items-center select-none ${isActive ? 'text-luxury-gold font-bold' : (i > defaultIdx ? 'opacity-40' : 'hover:text-on-surface')}">
+        <span class="sm:hidden tracking-wider">${mobileText}</span>
+        <span class="hidden sm:inline tracking-wider">${p.label}</span>
+        ${isActive ? '<span class="w-1 h-1 rounded-full bg-luxury-gold mt-0.5 shadow-[0_0_6px_rgba(245,158,11,0.8)]"></span>' : ''}
+      </span>
+    `;
+  }).join('');
 
   const hoverContainer = document.getElementById('hover-slices');
   hoverContainer.innerHTML = points.map((p, i) => `

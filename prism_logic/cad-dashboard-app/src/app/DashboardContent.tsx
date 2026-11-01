@@ -1478,7 +1478,7 @@ export default function DashboardContent({
                 {/* X-axis Labels */}
                 <div className="absolute left-9 right-0 bottom-0 flex justify-between pt-1">
                   {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m) => (
-                    <div key={m} className="h-2 w-4 sm:w-5 bg-white/10 rounded skeleton-shimmer" />
+                    <div key={m} className="h-2 w-2.5 sm:w-5 bg-white/10 rounded skeleton-shimmer" />
                   ))}
                 </div>
               </div>
@@ -1651,17 +1651,40 @@ export default function DashboardContent({
               )}
 
               {/* X-axis Labels */}
-              <div className="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-bold text-on-surface-variant/60 uppercase pt-1">
+              <div className="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-bold text-on-surface-variant/70 pt-1">
                 {computedChartPoints.map((pt, idx) => {
                   const isCurrent = idx === defaultHighlightIndex;
                   const isActive = idx === activeHighlightIndex;
+                  const isMonthly = earningsViewMode === 'MONTHLY';
+                  const mobileLabel = isMonthly ? (isActive ? pt.label : pt.label.charAt(0)) : pt.label;
                   return (
                     <span
                       key={pt.label}
                       onClick={() => setHoveredPointIdx(idx)}
-                      className={`cursor-pointer transition-all duration-150 ${isActive ? 'text-[#F59E0B] font-black scale-110 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]' : isCurrent ? 'text-white/80 font-bold' : pt.isFuture ? 'opacity-40 hover:opacity-80' : 'hover:text-white'}`}
+                      className={`cursor-pointer transition-all duration-150 flex flex-col items-center select-none ${
+                        isActive 
+                          ? 'text-[#F59E0B] font-black' 
+                          : isCurrent 
+                            ? 'text-white/80 font-bold' 
+                            : pt.isFuture 
+                              ? 'opacity-35 hover:opacity-75' 
+                              : 'hover:text-white'
+                      }`}
                     >
-                      {pt.label}
+                      {/* Mobile view: clean single letter for inactive, full 3-letter name for active month */}
+                      <span className="sm:hidden tracking-wider">
+                        {mobileLabel}
+                      </span>
+
+                      {/* Desktop view: full label for all months */}
+                      <span className="hidden sm:inline tracking-wider">
+                        {pt.label}
+                      </span>
+
+                      {/* Active indicator dot below the active month */}
+                      {isActive && (
+                        <span className="w-1 h-1 rounded-full bg-[#F59E0B] mt-0.5 shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
+                      )}
                     </span>
                   );
                 })}
