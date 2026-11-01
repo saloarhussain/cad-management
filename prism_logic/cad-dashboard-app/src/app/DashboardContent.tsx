@@ -1452,21 +1452,29 @@ export default function DashboardContent({
                   <path d={projectedSvgPath} fill="none" opacity="0.5" stroke="#909097" strokeDasharray="3,3" strokeLinecap="round" strokeWidth="1.5" />
                 )}
 
-                {/* Active / Hovered Point Marker */}
-                {activeChartPoint && (
-                  <>
-                    <circle cx={activeChartPoint.x} cy={activeChartPoint.y} fill="#F59E0B" r="5" stroke="#131315" strokeWidth="2" />
-                    <circle cx={activeChartPoint.x} cy={activeChartPoint.y} fill="#FFFFFF" r="2" />
-                  </>
-                )}
               </svg>
+
+              {/* Perfectly Round Point Marker (HTML div with 1:1 aspect ratio to avoid SVG non-uniform stretching) */}
+              {activeChartPoint && (
+                <div 
+                  className="absolute pointer-events-none transition-all duration-150 z-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2"
+                  style={{ 
+                    left: `calc(36px + (${activeChartPoint.x / 500} * (100% - 36px)))`, 
+                    top: `calc(4px + ${(activeChartPoint.y / 90) * 120}px)` 
+                  }}
+                >
+                  <div className="w-3.5 h-3.5 rounded-full bg-[#F59E0B] border-2 border-[#131315] shadow-[0_0_8px_rgba(245,158,11,0.8)] flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </div>
+                </div>
+              )}
 
               {/* Dynamic Floating Tooltip */}
               {activeChartPoint && (
                 <div 
                   className="absolute top-0 -translate-y-2 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none transition-all duration-150"
                   style={{ 
-                    left: `calc(36px + ${tooltipHorizontalPercent * 0.01 * (100 - 6)}%)`, 
+                    left: `calc(36px + (${tooltipHorizontalPercent / 100} * (100% - 36px)))`, 
                     transform: 'translateX(-50%)' 
                   }}
                 >

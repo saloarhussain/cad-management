@@ -373,9 +373,12 @@ body { -webkit-tap-highlight-color: transparent; }
 <path id="svg-area" d="" fill="url(#earningsGrad)"></path>
 <path id="svg-line" d="" fill="none" filter="url(#glow)" stroke="url(#lineGrad)" stroke-linecap="round" stroke-width="2.5"></path>
 <path id="svg-proj" d="" fill="none" opacity="0.5" stroke="#909097" stroke-dasharray="3,3" stroke-linecap="round" stroke-width="1.5"></path>
-<circle id="svg-circle-outer" cx="0" cy="0" fill="#F59E0B" r="5" stroke="#131315" stroke-width="2"></circle>
-<circle id="svg-circle-inner" cx="0" cy="0" fill="#FFFFFF" r="2"></circle>
 </svg>
+<div id="chart-marker" class="absolute pointer-events-none transition-all duration-150 z-20 flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+<div class="w-3.5 h-3.5 rounded-full bg-luxury-gold border-2 border-surface shadow-[0_0_8px_rgba(245,158,11,0.8)] flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+</div>
+</div>
 <div id="chart-tooltip" class="absolute top-0 -translate-y-2 bg-surface-container-high/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-luxury-gold/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none transition-all duration-150">
 <span class="w-1.5 h-1.5 rounded-full bg-luxury-gold"></span>
 <span class="font-label-caps text-[10px] text-luxury-gold font-bold tracking-tight" id="tooltip-text">Aug: ₹28,400</span>
@@ -556,10 +559,11 @@ function renderEarningsChart() {
   document.getElementById('svg-proj').setAttribute('d', projStr);
 
   const activePt = points[activeIdx] || points[0];
-  document.getElementById('svg-circle-outer').setAttribute('cx', activePt.x);
-  document.getElementById('svg-circle-outer').setAttribute('cy', activePt.y);
-  document.getElementById('svg-circle-inner').setAttribute('cx', activePt.x);
-  document.getElementById('svg-circle-inner').setAttribute('cy', activePt.y);
+  const marker = document.getElementById('chart-marker');
+  if (marker) {
+    marker.style.left = `calc(36px + (${activePt.x / 500} * (100% - 36px)))`;
+    marker.style.top = `calc(4px + ${(activePt.y / 90) * 120}px)`;
+  }
 
   const tooltip = document.getElementById('chart-tooltip');
   const ratio = activePt.x / 500;
