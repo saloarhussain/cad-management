@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import Link from 'next/link';
 import { searchProducts, Product, Platform } from '@/lib/productSearchMock';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useAuth } from '@/components/AuthProvider';
-import { PLATFORM_CONFIG, getCurrencySymbol } from '@/lib/config';
+import { PLATFORM_CONFIG, getCurrencySymbol, GLOBAL_CURRENCIES } from '@/lib/config';
 
 interface DashboardContentProps {
   loading?: boolean;
@@ -24,6 +24,7 @@ interface DashboardContentProps {
   setStartDate: (date: Date) => void;
   endDate: Date;
   setEndDate: (date: Date) => void;
+  allRates?: Record<string, number>;
 }
 
 export default function DashboardContent({
@@ -43,7 +44,8 @@ export default function DashboardContent({
   startDate,
   setStartDate,
   endDate,
-  setEndDate
+  setEndDate,
+  allRates
 }: DashboardContentProps) {
   const isFiguresLoading = loading || (dataReady !== undefined && !dataReady);
   const { user } = useAuth();
@@ -71,7 +73,299 @@ export default function DashboardContent({
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [isPendingJobsExpanded, setIsPendingJobsExpanded] = useState(false);
   const [isDeadlinesExpanded, setIsDeadlinesExpanded] = useState(false);
-  const [earningsMode, setEarningsMode] = useState<"MONTHLY" | "YEARLY">("MONTHLY");
+
+  // --- DYNAMIC EARNINGS OVERVIEW STATE & REAL DATA CALCULATIONS ---
+  const [earningsViewMode, setEarningsViewMode] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
+  const [selectedEarningsYear, setSelectedEarningsYear] = useState<number>(() => new Date().getFullYear());
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+  const [hoveredPointIdx, setHoveredPointIdx] = useState<number | null>(null);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (yearDropdownRef.current && !yearDropdownRef.current.contains(e.target as Node)) {
+        setIsYearDropdownOpen(false);
+      }
+    };
+    if (isYearDropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+    };
+  }, [isYearDropdownOpen]);
+
+  // Safely extract date from project
+  const getProjectCreationDate = (p: any): Date => {
+    if (p.createdAt) {
+      const d = new Date(p.createdAt);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (p.orderDate) {
+      const d = new Date(p.orderDate);
+      if (!isNaN(d.getTime())) return d;
+    }
+    if (p.id && !isNaN(Number(p.id)) && Number(p.id) > 1000000000000) {
+      const d = new Date(Number(p.id));
+      if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+  };
+
+  // Convert project currency to current display currency
+  const convertToDisplayCurrency = (amount: number, fromCurrencyStr?: string) => {
+    if (!amount || isNaN(amount)) return 0;
+    const targetSymbol = stats.currency || '₹';
+    const fromCode = GLOBAL_CURRENCIES.find(c => c.symbol === fromCurrencyStr || c.code === fromCurrencyStr)?.code || (fromCurrencyStr === '₹' ? 'INR' : 'USD');
+    const targetCode = GLOBAL_CURRENCIES.find(c => c.symbol === targetSymbol || c.code === targetSymbol)?.code || (targetSymbol === '₹' ? 'INR' : 'USD');
+
+    if (fromCode === targetCode) return Math.round(amount);
+    const rateFrom = (allRates && allRates[fromCode]) || (fromCode === 'INR' ? 83.5 : 1);
+    const rateTarget = (allRates && allRates[targetCode]) || (targetCode === 'INR' ? 83.5 : 1);
+    return Math.round((amount / rateFrom) * rateTarget);
+  };
+
+  // Available years from project history
+  const availableEarningsYears = useMemo(() => {
+    const yearsSet = new Set<number>();
+    const curYear = new Date().getFullYear();
+    yearsSet.add(curYear);
+    yearsSet.add(curYear - 1);
+    (allProjects || []).forEach(p => {
+      const d = getProjectCreationDate(p);
+      yearsSet.add(d.getFullYear());
+    });
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [allProjects]);
+
+  const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Monthly dataset for selected year
+  const monthlyEarningsData = useMemo(() => {
+    const curYear = new Date().getFullYear();
+    const curMonth = new Date().getMonth();
+
+    const months = MONTH_NAMES_SHORT.map((name, idx) => ({
+      label: name,
+      fullLabel: `${name} ${selectedEarningsYear}`,
+      index: idx,
+      value: 0,
+      projectCount: 0,
+      isFuture: selectedEarningsYear === curYear ? idx > curMonth : selectedEarningsYear > curYear,
+    }));
+
+    (allProjects || []).forEach(p => {
+      const d = getProjectCreationDate(p);
+      if (d.getFullYear() === selectedEarningsYear) {
+        const m = d.getMonth();
+        if (m >= 0 && m < 12) {
+          const rev = parseFloat(p.revenue || p.paidAmount || '0');
+          if (!isNaN(rev) && rev > 0) {
+            months[m].value += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+            months[m].projectCount += 1;
+          }
+        }
+      }
+    });
+
+    return months;
+  }, [allProjects, selectedEarningsYear, stats.currency, allRates]);
+
+  // Yearly dataset for last 5 years
+  const yearlyEarningsData = useMemo(() => {
+    const curYear = new Date().getFullYear();
+    const latestYear = Math.max(curYear, ...availableEarningsYears);
+    const years = [latestYear - 4, latestYear - 3, latestYear - 2, latestYear - 1, latestYear];
+
+    return years.map((yr, idx) => {
+      let value = 0;
+      let projectCount = 0;
+      (allProjects || []).forEach(p => {
+        const d = getProjectCreationDate(p);
+        if (d.getFullYear() === yr) {
+          const rev = parseFloat(p.revenue || p.paidAmount || '0');
+          if (!isNaN(rev) && rev > 0) {
+            value += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+            projectCount += 1;
+          }
+        }
+      });
+
+      return {
+        label: yr.toString(),
+        fullLabel: yr.toString(),
+        index: idx,
+        value,
+        projectCount,
+        isFuture: yr > curYear,
+      };
+    });
+  }, [allProjects, availableEarningsYears, stats.currency, allRates]);
+
+  // Active dataset
+  const activeEarningsData = earningsViewMode === 'MONTHLY' ? monthlyEarningsData : yearlyEarningsData;
+
+  // Total earned in current view
+  const totalEarnedAmount = useMemo(() => {
+    return activeEarningsData.reduce((sum, d) => sum + d.value, 0);
+  }, [activeEarningsData]);
+
+  // Growth percentage compared to prior period
+  const earningsGrowthPercent = useMemo(() => {
+    if (earningsViewMode === 'MONTHLY') {
+      let prevTotal = 0;
+      (allProjects || []).forEach(p => {
+        const d = getProjectCreationDate(p);
+        if (d.getFullYear() === selectedEarningsYear - 1) {
+          const rev = parseFloat(p.revenue || p.paidAmount || '0');
+          if (!isNaN(rev) && rev > 0) {
+            prevTotal += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+          }
+        }
+      });
+      if (prevTotal > 0) {
+        return ((totalEarnedAmount - prevTotal) / prevTotal) * 100;
+      }
+      return totalEarnedAmount > 0 ? 100 : 0;
+    } else {
+      if (yearlyEarningsData.length >= 2) {
+        const last = yearlyEarningsData[yearlyEarningsData.length - 1].value;
+        const prev = yearlyEarningsData[yearlyEarningsData.length - 2].value;
+        if (prev > 0) return ((last - prev) / prev) * 100;
+        return last > 0 ? 100 : 0;
+      }
+      return 0;
+    }
+  }, [earningsViewMode, selectedEarningsYear, totalEarnedAmount, allProjects, yearlyEarningsData, stats.currency, allRates]);
+
+  // Best performing period
+  const bestEarningsPeriod = useMemo(() => {
+    let best = activeEarningsData[0] || { label: '—', value: 0 };
+    activeEarningsData.forEach(d => {
+      if (d.value > best.value) best = d;
+    });
+    return best;
+  }, [activeEarningsData]);
+
+  // Average per period
+  const averagePeriodValue = useMemo(() => {
+    if (earningsViewMode === 'MONTHLY') {
+      const isCurYear = selectedEarningsYear === new Date().getFullYear();
+      const elapsedMonths = isCurYear ? (new Date().getMonth() + 1) : 12;
+      return elapsedMonths > 0 ? Math.round(totalEarnedAmount / elapsedMonths) : 0;
+    } else {
+      return activeEarningsData.length > 0 ? Math.round(totalEarnedAmount / activeEarningsData.length) : 0;
+    }
+  }, [earningsViewMode, selectedEarningsYear, totalEarnedAmount, activeEarningsData]);
+
+  // Projected earnings
+  const projectedEarningsValue = useMemo(() => {
+    if (earningsViewMode === 'MONTHLY') {
+      const isCurYear = selectedEarningsYear === new Date().getFullYear();
+      if (isCurYear) {
+        const elapsed = new Date().getMonth() + 1;
+        const remaining = 12 - elapsed;
+        return totalEarnedAmount + (averagePeriodValue * remaining);
+      } else if (selectedEarningsYear > new Date().getFullYear()) {
+        return averagePeriodValue * 12;
+      }
+      return totalEarnedAmount;
+    } else {
+      return Math.round(averagePeriodValue * 1.15);
+    }
+  }, [earningsViewMode, selectedEarningsYear, totalEarnedAmount, averagePeriodValue]);
+
+  // Dynamic Y ceiling for scaling
+  const dynamicYCeiling = useMemo(() => {
+    const rawMax = Math.max(...activeEarningsData.map(d => d.value), 0);
+    if (rawMax <= 0) return 30000;
+    const mag = Math.pow(10, Math.floor(Math.log10(rawMax)));
+    const rounded = Math.ceil(rawMax / mag) * mag;
+    return Math.max(rounded, 1000);
+  }, [activeEarningsData]);
+
+  // Format tick numbers (e.g. 30k, 20k, 10k, 0)
+  const formatChartTick = (val: number) => {
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${Math.round(val / 1000)}k`;
+    return val.toString();
+  };
+
+  // SVG Coordinates calculation (500x90)
+  const computedChartPoints = useMemo(() => {
+    const count = activeEarningsData.length;
+    return activeEarningsData.map((d, i) => {
+      const x = count > 1 ? (i / (count - 1)) * 500 : 250;
+      const ratio = Math.min(1, Math.max(0, d.value / dynamicYCeiling));
+      const y = 78 - (ratio * 66); // y=78 is zero line, y=12 is peak
+      return { ...d, x, y };
+    });
+  }, [activeEarningsData, dynamicYCeiling]);
+
+  // Default active index (current month if current year, or peak month)
+  const defaultHighlightIndex = useMemo(() => {
+    if (earningsViewMode === 'MONTHLY') {
+      const curYear = new Date().getFullYear();
+      if (selectedEarningsYear === curYear) {
+        return Math.min(new Date().getMonth(), computedChartPoints.length - 1);
+      } else if (selectedEarningsYear < curYear) {
+        let bestIdx = 0;
+        computedChartPoints.forEach((p, i) => {
+          if (p.value > computedChartPoints[bestIdx].value) bestIdx = i;
+        });
+        return bestIdx;
+      } else {
+        return 0;
+      }
+    } else {
+      return computedChartPoints.length - 1;
+    }
+  }, [earningsViewMode, selectedEarningsYear, computedChartPoints]);
+
+  const activeHighlightIndex = hoveredPointIdx !== null ? hoveredPointIdx : defaultHighlightIndex;
+  const activeChartPoint = computedChartPoints[activeHighlightIndex] || computedChartPoints[0];
+
+  // SVG Paths generation with smooth cubic bezier curves
+  const { areaSvgPath, lineSvgPath, projectedSvgPath } = useMemo(() => {
+    if (computedChartPoints.length === 0) return { areaSvgPath: '', lineSvgPath: '', projectedSvgPath: '' };
+
+    const generateBezierCurve = (pts: { x: number; y: number }[]) => {
+      if (pts.length < 2) return pts.length === 1 ? `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}` : '';
+      let str = `M ${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i];
+        const p1 = pts[i + 1];
+        const midX = ((p0.x + p1.x) / 2).toFixed(1);
+        str += ` C ${midX},${p0.y.toFixed(1)} ${midX},${p1.y.toFixed(1)} ${p1.x.toFixed(1)},${p1.y.toFixed(1)}`;
+      }
+      return str;
+    };
+
+    // Actual line up to defaultHighlightIndex
+    const actualPoints = computedChartPoints.slice(0, defaultHighlightIndex + 1);
+    const linePath = generateBezierCurve(actualPoints);
+
+    let areaPath = '';
+    if (actualPoints.length > 0) {
+      const lastActual = actualPoints[actualPoints.length - 1];
+      areaPath = `${linePath} L ${lastActual.x.toFixed(1)},90 L 0,90 Z`;
+    }
+
+    // Projected future line (from defaultHighlightIndex to end)
+    const futurePoints = computedChartPoints.slice(defaultHighlightIndex);
+    const projectedPath = futurePoints.length > 1 ? generateBezierCurve(futurePoints) : '';
+
+    return { areaSvgPath: areaPath, lineSvgPath: linePath, projectedSvgPath: projectedPath };
+  }, [computedChartPoints, defaultHighlightIndex]);
+
+  // Tooltip horizontal percentage
+  const tooltipHorizontalPercent = useMemo(() => {
+    if (!activeChartPoint) return 50;
+    const ratio = activeChartPoint.x / 500;
+    return Math.min(88, Math.max(12, ratio * 100));
+  }, [activeChartPoint]);
+
 
   const handleCardClick = (metric: string) => {
     setSelectedMetric(metric);
@@ -1110,22 +1404,49 @@ export default function DashboardContent({
             </div>
             <div className="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-lg border border-white/5 w-fit">
               <button 
-                onClick={() => setEarningsMode('MONTHLY')}
-                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsMode === 'MONTHLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+                onClick={() => setEarningsViewMode('MONTHLY')}
+                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'MONTHLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
               >
                 MONTHLY
               </button>
               <button 
-                onClick={() => setEarningsMode('YEARLY')}
-                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsMode === 'YEARLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
+                onClick={() => setEarningsViewMode('YEARLY')}
+                className={`px-3 py-1 rounded text-[10px] font-bold tracking-wider transition-all ${earningsViewMode === 'YEARLY' ? 'bg-[#F59E0B] text-zinc-950 font-bold shadow-sm' : 'text-on-surface-variant hover:text-white'}`}
               >
                 YEARLY
               </button>
-              <div className="h-3 w-px bg-white/10 mx-1" />
-              <button className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold tracking-wider text-[#F59E0B] hover:bg-white/5 transition-all">
-                <span>2026</span>
-                <span className="material-symbols-outlined text-[13px]">expand_more</span>
-              </button>
+              
+              {earningsViewMode === 'MONTHLY' && (
+                <>
+                  <div className="h-3 w-px bg-white/10 mx-1" />
+                  <div className="relative" ref={yearDropdownRef}>
+                    <button 
+                      onClick={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                      className="flex items-center gap-0.5 px-2 py-1 rounded text-[10px] font-bold tracking-wider text-[#F59E0B] hover:bg-white/5 transition-all"
+                    >
+                      <span>{selectedEarningsYear}</span>
+                      <span className={`material-symbols-outlined text-[13px] transition-transform duration-200 ${isYearDropdownOpen ? 'rotate-180' : ''}`}>expand_more</span>
+                    </button>
+
+                    {isYearDropdownOpen && (
+                      <div className="absolute right-0 top-full mt-1.5 w-24 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        {availableEarningsYears.map(yr => (
+                          <button
+                            key={yr}
+                            onClick={() => {
+                              setSelectedEarningsYear(yr);
+                              setIsYearDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-1.5 text-[11px] font-bold tracking-wide transition-colors ${selectedEarningsYear === yr ? 'text-[#F59E0B] bg-[#F59E0B]/10' : 'text-zinc-300 hover:bg-white/5 hover:text-white'}`}
+                          >
+                            {yr}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1133,33 +1454,64 @@ export default function DashboardContent({
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6 relative z-10">
               <div>
                 <div className="flex items-baseline gap-3 flex-wrap">
-                  <span className="text-3xl sm:text-4xl font-headline font-black text-white tracking-tight">{stats.currency}1,48,250</span>
-                  <span className="px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 text-[10px] font-bold flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-[12px]">arrow_upward</span>+24.8%
+                  <span className="text-3xl sm:text-4xl font-headline font-black text-white tracking-tight">
+                    {stats.currency}{totalEarnedAmount.toLocaleString()}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-0.5 ${earningsGrowthPercent >= 0 ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                    <span className="material-symbols-outlined text-[12px]">
+                      {earningsGrowthPercent >= 0 ? 'arrow_upward' : 'arrow_downward'}
+                    </span>
+                    {earningsGrowthPercent >= 0 ? '+' : ''}{earningsGrowthPercent.toFixed(1)}%
                   </span>
                 </div>
-                <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-wider mt-1">Total Earned • Jan - Aug 2026</p>
+                <p className="text-[10px] font-bold text-on-surface-variant/70 uppercase tracking-wider mt-1">
+                  {earningsViewMode === 'MONTHLY' 
+                    ? `Total Earned • Jan - ${MONTH_NAMES_SHORT[defaultHighlightIndex]} ${selectedEarningsYear}`
+                    : `Total Earned • ${yearlyEarningsData[0]?.label || ''} - ${yearlyEarningsData[yearlyEarningsData.length - 1]?.label || ''}`
+                  }
+                </p>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900 border border-white/5 w-fit">
                 <div className="w-2 h-2 rounded-full bg-[#F59E0B] animate-pulse" />
-                <span className="text-[10px] text-[#F59E0B] uppercase tracking-wider font-bold">Active Cycle</span>
+                <span className="text-[10px] text-[#F59E0B] uppercase tracking-wider font-bold">
+                  {totalEarnedAmount > 0 ? 'Active Cycle' : 'Live Tracking'}
+                </span>
               </div>
             </div>
 
             <div className="relative w-full h-44 my-2 select-none">
+              {/* Y-axis Ticks */}
               <div className="absolute left-0 top-0 bottom-6 w-8 flex flex-col justify-between text-[10px] font-mono text-on-surface-variant/50 leading-none py-0.5">
-                <span>30k</span>
-                <span>20k</span>
-                <span>10k</span>
+                <span>{formatChartTick(dynamicYCeiling)}</span>
+                <span>{formatChartTick(Math.round(dynamicYCeiling * 2 / 3))}</span>
+                <span>{formatChartTick(Math.round(dynamicYCeiling / 3))}</span>
                 <span>0</span>
               </div>
+
+              {/* Background Grid Lines */}
               <div className="absolute left-9 right-0 top-1 bottom-6 flex flex-col justify-between pointer-events-none">
                 <div className="w-full border-b border-dashed border-white/5" />
                 <div className="w-full border-b border-dashed border-white/5" />
                 <div className="w-full border-b border-dashed border-white/5" />
                 <div className="w-full border-b border-white/10" />
               </div>
-              <svg className="absolute left-9 right-0 top-1 h-[120px] w-[calc(100%-36px)] overflow-visible" preserveAspectRatio="none" viewBox="0 0 500 90">
+
+              {/* Interactive Slices for Hover */}
+              <div className="absolute left-9 right-0 top-0 bottom-6 flex z-30">
+                {computedChartPoints.map((pt, idx) => (
+                  <div
+                    key={pt.label}
+                    onMouseEnter={() => setHoveredPointIdx(idx)}
+                    onMouseLeave={() => setHoveredPointIdx(null)}
+                    className="flex-1 h-full cursor-pointer relative group flex justify-center"
+                  >
+                    <div className={`w-px h-full bg-[#F59E0B]/25 transition-opacity duration-150 ${hoveredPointIdx === idx ? 'opacity-100' : 'opacity-0'}`} />
+                  </div>
+                ))}
+              </div>
+
+              {/* SVG Curve & Gradients */}
+              <svg className="absolute left-9 right-0 top-1 h-[120px] w-[calc(100%-36px)] overflow-visible pointer-events-none" preserveAspectRatio="none" viewBox="0 0 500 90">
                 <defs>
                   <linearGradient id="earningsGrad" x1="0%" x2="0%" y1="0%" y2="100%">
                     <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.35" />
@@ -1175,44 +1527,94 @@ export default function DashboardContent({
                     <feDropShadow dx="0" dy="2" floodColor="#F59E0B" floodOpacity="0.4" stdDeviation="3" />
                   </filter>
                 </defs>
-                <path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10 L 430,90 L 0,90 Z" fill="url(#earningsGrad)" />
-                <path d="M 0,72 Q 40,65 80,60 T 160,50 T 240,42 T 320,48 T 380,30 T 430,10" fill="none" filter="url(#glow)" stroke="url(#lineGrad)" strokeLinecap="round" strokeWidth="2.5" />
-                <path d="M 430,10 Q 465,25 500,32" fill="none" opacity="0.5" stroke="#909097" strokeDasharray="3,3" strokeLinecap="round" strokeWidth="1.5" />
-                <circle cx="430" cy="10" fill="#F59E0B" r="5" stroke="#131315" strokeWidth="2" />
-                <circle cx="430" cy="10" fill="#FFFFFF" r="2" />
+
+                {/* Shaded Area under actual curve */}
+                {areaSvgPath && (
+                  <path d={areaSvgPath} fill="url(#earningsGrad)" />
+                )}
+
+                {/* Glowing Solid Line for Actuals */}
+                {lineSvgPath && (
+                  <path d={lineSvgPath} fill="none" filter="url(#glow)" stroke="url(#lineGrad)" strokeLinecap="round" strokeWidth="2.5" />
+                )}
+
+                {/* Projected Line for Future Months */}
+                {projectedSvgPath && (
+                  <path d={projectedSvgPath} fill="none" opacity="0.5" stroke="#909097" strokeDasharray="3,3" strokeLinecap="round" strokeWidth="1.5" />
+                )}
+
+                {/* Active / Hovered Point Marker */}
+                {activeChartPoint && (
+                  <>
+                    <circle cx={activeChartPoint.x} cy={activeChartPoint.y} fill="#F59E0B" r="5" stroke="#131315" strokeWidth="2" />
+                    <circle cx={activeChartPoint.x} cy={activeChartPoint.y} fill="#FFFFFF" r="2" />
+                  </>
+                )}
               </svg>
-              <div className="absolute right-6 top-0 -translate-y-1 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
-                <span className="text-[10px] text-[#F59E0B] font-bold tracking-tight">Aug: {stats.currency}28,400</span>
-              </div>
+
+              {/* Dynamic Floating Tooltip */}
+              {activeChartPoint && (
+                <div 
+                  className="absolute top-0 -translate-y-2 bg-zinc-900/95 backdrop-blur-md px-2.5 py-1 rounded-md border border-[#F59E0B]/40 shadow-lg shadow-black/40 flex items-center gap-1.5 z-20 pointer-events-none transition-all duration-150"
+                  style={{ 
+                    left: `calc(36px + ${tooltipHorizontalPercent * 0.01 * (100 - 6)}%)`, 
+                    transform: 'translateX(-50%)' 
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F59E0B]" />
+                  <span className="text-[10px] text-[#F59E0B] font-bold tracking-tight whitespace-nowrap">
+                    {activeChartPoint.label}: {stats.currency}{activeChartPoint.value.toLocaleString()}
+                    {activeChartPoint.projectCount > 0 && ` (${activeChartPoint.projectCount} ${activeChartPoint.projectCount === 1 ? 'proj' : 'projs'})`}
+                  </span>
+                </div>
+              )}
+
+              {/* X-axis Labels */}
               <div className="absolute left-9 right-0 bottom-0 flex justify-between text-[10px] font-bold text-on-surface-variant/60 uppercase pt-1">
-                <span>Jan</span>
-                <span>Feb</span>
-                <span>Mar</span>
-                <span>Apr</span>
-                <span>May</span>
-                <span>Jun</span>
-                <span>Jul</span>
-                <span className="text-[#F59E0B] font-black">Aug</span>
-                <span className="opacity-40">Sep</span>
-                <span className="opacity-40">Oct</span>
-                <span className="opacity-40">Nov</span>
-                <span className="opacity-40">Dec</span>
+                {computedChartPoints.map((pt, idx) => {
+                  const isCurrent = idx === defaultHighlightIndex;
+                  const isHovered = idx === hoveredPointIdx;
+                  return (
+                    <span
+                      key={pt.label}
+                      onClick={() => setHoveredPointIdx(idx)}
+                      className={`cursor-pointer transition-colors ${isHovered || isCurrent ? 'text-[#F59E0B] font-black' : pt.isFuture ? 'opacity-40 hover:opacity-80' : 'hover:text-white'}`}
+                    >
+                      {pt.label}
+                    </span>
+                  );
+                })}
               </div>
             </div>
 
+            {/* Bottom 3 Summary Stats Cards */}
             <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-3 gap-4 relative z-10">
               <div className="flex flex-col">
-                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Monthly Avg</span>
-                <span className="text-sm font-bold text-white mt-1">{stats.currency}18,530</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
+                  {earningsViewMode === 'MONTHLY' ? 'Monthly Avg' : 'Annual Avg'}
+                </span>
+                <span className="text-sm font-bold text-white mt-1">
+                  {stats.currency}{averagePeriodValue.toLocaleString()}
+                </span>
               </div>
               <div className="flex flex-col border-x border-white/5 px-4">
-                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Best Month</span>
-                <span className="text-sm font-bold text-[#F59E0B] mt-1">{stats.currency}28,400 <span className="text-[10px] font-normal text-on-surface-variant">(Aug)</span></span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
+                  {earningsViewMode === 'MONTHLY' ? 'Best Month' : 'Best Year'}
+                </span>
+                <span className="text-sm font-bold text-[#F59E0B] mt-1">
+                  {stats.currency}{bestEarningsPeriod.value.toLocaleString()}{' '}
+                  <span className="text-[10px] font-normal text-on-surface-variant">
+                    ({bestEarningsPeriod.label})
+                  </span>
+                </span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">Projected</span>
-                <span className="text-sm font-bold text-emerald-400 mt-1">{stats.currency}1,95,000</span>
+                <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
+                  Projected
+                </span>
+                <span className="text-sm font-bold text-emerald-400 mt-1">
+                  {stats.currency}{projectedEarningsValue.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>

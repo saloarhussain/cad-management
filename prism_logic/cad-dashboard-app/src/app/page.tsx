@@ -257,6 +257,7 @@ export default function DashboardPage() {
       setStartDate={setStartDate}
       endDate={endDate}
       setEndDate={setEndDate}
+      allRates={allRates}
     />
   );
 
