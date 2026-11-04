@@ -580,29 +580,50 @@ export default function EditProjectPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 pt-5 border-t border-white/5">
-                      <div className="space-y-2">
-                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Client Payment Status</label>
-                        <div className="relative group">
-                          <select name="paymentStatus" defaultValue={project.paymentStatus || "UNPAID"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
-                            <option value="UNPAID">UNPAID</option>
-                            <option value="ADVANCE">ADVANCE PAID</option>
-                            <option value="PAID">PAID (FULL)</option>
-                          </select>
-                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                    {(() => {
+                      const hasManual = Boolean((project.description || project.brief || '').includes('[MANUAL_PAYMENT]'));
+                      const isPayoutPaid = project.payoutStatus?.toUpperCase() === 'PAID' || project.payoutStatus?.toLowerCase() === 'paid' || hasManual;
+                      const selectedPayout = isPayoutPaid ? 'PAID' : 'PENDING';
+
+                      const rawClientPayment = (project.paymentStatus || '').toUpperCase();
+                      const selectedPayment = rawClientPayment === 'PAID' ? 'PAID' : rawClientPayment.includes('ADVANCE') ? 'ADVANCE' : 'UNPAID';
+
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5 pt-5 border-t border-white/5">
+                          <div className="space-y-2">
+                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Client Payment Status</label>
+                            <div className="relative group">
+                              <select 
+                                key={`client-pay-${selectedPayment}`}
+                                name="paymentStatus" 
+                                defaultValue={selectedPayment} 
+                                className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm"
+                              >
+                                <option value="UNPAID">UNPAID</option>
+                                <option value="ADVANCE">ADVANCE PAID</option>
+                                <option value="PAID">PAID (FULL)</option>
+                              </select>
+                              <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Designer Payout Status</label>
+                            <div className="relative group">
+                              <select 
+                                key={`designer-payout-${selectedPayout}`}
+                                name="payoutStatus" 
+                                defaultValue={selectedPayout} 
+                                className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm"
+                              >
+                                <option value="PENDING">PENDING</option>
+                                <option value="PAID">PAID</option>
+                              </select>
+                              <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Designer Payout Status</label>
-                        <div className="relative group">
-                          <select name="payoutStatus" defaultValue={project.payoutStatus || "PENDING"} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all appearance-none cursor-pointer text-white text-sm">
-                            <option value="PENDING">PENDING</option>
-                            <option value="PAID">PAID</option>
-                          </select>
-                          <span className="material-symbols-outlined absolute right-3 top-3 pointer-events-none text-stone-500">expand_more</span>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()}
                   </div>
                 </div>
 

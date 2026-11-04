@@ -117,6 +117,27 @@ export async function readDb(userId: string, customClient?: SupabaseClient): Pro
           })()
         );
       }
+
+      // Auto-heal payoutStatus: if project has [MANUAL_PAYMENT] receipt or payoutStatus was marked Paid
+      const hasManualRecord = Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
+      if (hasManualRecord || p.payoutStatus?.toLowerCase() === 'paid') {
+        if (p.payoutStatus !== 'PAID') {
+          p.payoutStatus = 'PAID';
+          needsUpdate = true;
+          updates.push(
+            (async () => {
+              const { error } = await supabase
+                .from('projects')
+                .update({ payoutStatus: 'PAID' })
+                .eq('id', p.id)
+                .eq('user_id', userId);
+              if (error) {
+                console.error('[db auto-heal payoutStatus] Error:', p.id, error.message);
+              }
+            })()
+          );
+        }
+      }
     });
 
     if (needsUpdate && updates.length > 0) {

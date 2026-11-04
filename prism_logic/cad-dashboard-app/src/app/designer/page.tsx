@@ -132,7 +132,7 @@ export default function DesignerDashboard() {
 
   const unpaidProjects = projects.filter(p => {
     const isComplete = p.status === 'Approved' || p.status === 'Complete' || p.status === 'Completed';
-    const isPayoutPaid = p.payoutStatus?.toLowerCase() === 'paid';
+    const isPayoutPaid = p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
     return isComplete && !isPayoutPaid;
   });
 

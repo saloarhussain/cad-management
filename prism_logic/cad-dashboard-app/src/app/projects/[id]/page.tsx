@@ -1376,15 +1376,21 @@ export default function ProjectDetailsPage() {
                 {/* Manual Payment Record */}
                 {manualPaymentInfo && Object.keys(manualPaymentInfo).length > 0 && (
                   <div className="relative overflow-hidden p-6 rounded-2xl bg-[#1a1a17] border border-white/5 shadow-2xl mt-10">
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                        <span className="material-symbols-outlined text-blue-400 text-xl">receipt_long</span>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                          <span className="material-symbols-outlined text-blue-400 text-xl">receipt_long</span>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white uppercase tracking-tight">Manual Payment Record</h4>
+                          <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest">
+                            Offline Settlement Details
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-tight">Manual Payment Record</h4>
-                        <p className="text-[8px] text-neutral-500 font-bold uppercase tracking-widest">
-                          Offline Settlement Details
-                        </p>
+                      <div className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Designer Settled (Paid)
                       </div>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1493,6 +1499,16 @@ export default function ProjectDetailsPage() {
                     Escrow system operates independently from CADONCE rewards points
                   </p>
                 </div>
+                )}
+
+                {/* Non-manual Designer Settled Status */}
+                {!manualPaymentInfo && (project.payoutStatus?.toLowerCase() === 'paid' || project.payoutStatus?.toUpperCase() === 'PAID' || (project.paymentStatus === 'Paid' && !escrow && project.payoutStatus?.toLowerCase() !== 'pending')) && (
+                  <div className="relative overflow-hidden p-6 rounded-2xl bg-[#1a1a17] border border-white/5 shadow-2xl mt-10">
+                    <div className="w-full py-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 font-headline font-black text-[10px] uppercase tracking-[0.2em] text-center flex items-center justify-center gap-2">
+                      <span className="material-symbols-outlined text-sm">verified</span>
+                      Designer Settled (Paid)
+                    </div>
+                  </div>
                 )}
 
             </section>
@@ -2304,7 +2320,7 @@ export default function ProjectDetailsPage() {
                         const { updateProject } = await import('@/app/actions');
                         const res = await updateProject(project.id, { 
                           description: newDescription,
-                          payoutStatus: 'Paid'
+                          payoutStatus: 'PAID'
                         });
                         
                         if (res.success) {

@@ -467,7 +467,8 @@ export default function DashboardContent({
       return (allProjects || []).filter((p: any) => {
         const s = p.status?.toLowerCase() || '';
         const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-        return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
+        const isPaid = p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
+        return isComplete && !isPaid;
       });
     }
     
@@ -962,10 +963,10 @@ export default function DashboardContent({
                             </div>
                             {(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due') && (
                               <span className={`text-[8px] font-black py-0.5 px-2 rounded tracking-wider shadow-sm inline-block ${
-                                p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
+                                (p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || (p.description && p.description.includes('[MANUAL_PAYMENT]'))) ? 'bg-emerald-500 text-white' : 
                                 'bg-zinc-700 text-white'
                               }`}>
-                                {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
+                                {(p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || (p.description && p.description.includes('[MANUAL_PAYMENT]'))) ? 'Paid' : 'Pending'}
                               </span>
                             )}
                           </div>

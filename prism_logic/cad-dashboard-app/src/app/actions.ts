@@ -715,10 +715,18 @@ export async function updateProject(projectId: string, data: any) {
   try {
     const { user, supabase } = await getAuthenticatedUser();
     // 1. Check for designer change to sync escrow
-    const { data: oldProject } = await supabase.from('projects').select('designer').eq('id', projectId).maybeSingle();
+    const { data: oldProject } = await supabase.from('projects').select('designer, description').eq('id', projectId).maybeSingle();
+
+    const desc = data.description !== undefined ? data.description : oldProject?.description;
+    const hasManual = Boolean(desc && desc.includes('[MANUAL_PAYMENT]'));
+    let resolvedPayoutStatus = data.payoutStatus;
+    if (hasManual || data.payoutStatus?.toLowerCase() === 'paid') {
+      resolvedPayoutStatus = 'PAID';
+    }
 
     await updateRecord('projects', projectId, {
       ...data,
+      ...(resolvedPayoutStatus !== undefined ? { payoutStatus: resolvedPayoutStatus } : {}),
       updatedAt: new Date().toISOString()
     }, user.id, supabase);
 
@@ -781,7 +789,14 @@ export async function updateProjectAction(formData: FormData) {
       })(),
       cadFile: formData.get('cadFile'),
       paymentStatus: formData.get('paymentStatus'),
-      payoutStatus: formData.get('payoutStatus'),
+      payoutStatus: (() => {
+        const val = formData.get('payoutStatus') as string;
+        const brief = formData.get('brief') as string;
+        if ((brief && brief.includes('[MANUAL_PAYMENT]')) || val?.toLowerCase() === 'paid') {
+          return 'PAID';
+        }
+        return val || 'PENDING';
+      })(),
       paidAmount: formData.get('paidAmount'),
       updatedAt: new Date().toISOString(),
       tags: (() => {

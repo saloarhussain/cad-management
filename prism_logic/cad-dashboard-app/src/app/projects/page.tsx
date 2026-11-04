@@ -376,9 +376,9 @@ export default function ProjectsPage() {
                                 <span className="material-symbols-outlined text-red-400/70 text-[12px]">trending_down</span>
                               </div>
                                 <span className={`text-[7px] font-bold py-0.5 px-1.5 rounded tracking-wide ${
-                                  project.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
+                                  (project.payoutStatus?.toLowerCase() === 'paid' || project.payoutStatus?.toUpperCase() === 'PAID' || (project.description && project.description.includes('[MANUAL_PAYMENT]'))) ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-zinc-800 text-stone-400 border border-white/5'
                                 }`}>
-                                  {project.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                  {(project.payoutStatus?.toLowerCase() === 'paid' || project.payoutStatus?.toUpperCase() === 'PAID' || (project.description && project.description.includes('[MANUAL_PAYMENT]'))) ? 'Paid' : 
                                    project.payoutStatus?.toLowerCase() === 'pending' ? 'Pending' : 
                                    'Unpaid'}
                                 </span>
