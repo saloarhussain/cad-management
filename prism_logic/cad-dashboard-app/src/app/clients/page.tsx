@@ -48,10 +48,70 @@ const countryMap: Record<string, { flag: string; code: string }> = {
   'GLOBAL': { flag: '🌐', code: 'GLB' }
 };
 
+const months = [
+  { value: 0, label: 'January', short: 'Jan' },
+  { value: 1, label: 'February', short: 'Feb' },
+  { value: 2, label: 'March', short: 'Mar' },
+  { value: 3, label: 'April', short: 'Apr' },
+  { value: 4, label: 'May', short: 'May' },
+  { value: 5, label: 'June', short: 'Jun' },
+  { value: 6, label: 'July', short: 'Jul' },
+  { value: 7, label: 'August', short: 'Aug' },
+  { value: 8, label: 'September', short: 'Sep' },
+  { value: 9, label: 'October', short: 'Oct' },
+  { value: 10, label: 'November', short: 'Nov' },
+  { value: 11, label: 'December', short: 'Dec' },
+];
+
+function computeProjectRevenueUSD(p: any, countryCode: string, liveRates: Record<string, number>): number {
+  let amount = parseFloat(p.revenue) || 0;
+  let code = 'USD';
+  
+  if (p.revenueCurrency === '£' || p.revenueCurrency === 'GBP') code = 'GBP';
+  else if (p.revenueCurrency === '€' || p.revenueCurrency === 'EUR') code = 'EUR';
+  else if (p.revenueCurrency === '₹' || p.revenueCurrency === 'INR') code = 'INR';
+  else if (p.revenueCurrency === 'A$' || p.revenueCurrency === 'AUD') code = 'AUD';
+  else if (p.revenueCurrency === 'C$' || p.revenueCurrency === 'CAD') code = 'CAD';
+  else if (p.revenueCurrency && p.revenueCurrency.length === 3 && p.revenueCurrency !== 'USD') {
+    code = p.revenueCurrency.toUpperCase();
+  } else if (!p.revenueCurrency || p.revenueCurrency === '$') {
+    if (countryCode === 'GBR') code = 'GBP';
+    else if (['FRA', 'DEU', 'ITA', 'ESP', 'BEL'].includes(countryCode)) code = 'EUR';
+    else if (countryCode === 'IND') code = 'INR';
+    else if (countryCode === 'AUS') code = 'AUD';
+    else if (countryCode === 'CAN') code = 'CAD';
+  }
+  
+  if (code !== 'USD') {
+    if (liveRates[code]) {
+      amount = amount / liveRates[code];
+    } else {
+      if (code === 'GBP') amount *= 1.27;
+      else if (code === 'EUR') amount *= 1.08;
+      else if (code === 'INR') amount *= 0.012;
+    }
+  }
+  return amount;
+}
+
+const getClientDate = (c: any): Date | null => {
+  const dStr = c.createdAt || c.created_at;
+  if (dStr) {
+    const d = new Date(dStr);
+    if (!isNaN(d.getTime())) return d;
+  }
+  if (c.id && !isNaN(Number(c.id)) && Number(c.id) > 1000000000000) {
+    const d = new Date(Number(c.id));
+    if (!isNaN(d.getTime())) return d;
+  }
+  return null;
+};
+
 const initialMockClients: any[] = [];
 
 export default function ClientsPage() {
   const [realClients, setRealClients] = useState<any[]>([]);
+  const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortOrder, setSortOrder] = useState('none'); 
@@ -60,6 +120,17 @@ export default function ClientsPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // Date filtering state: 'all' | 'month' | 'year' | 'custom'
+  const [dateFilterMode, setDateFilterMode] = useState<'all' | 'month' | 'year' | 'custom'>('all');
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [dateBasis, setDateBasis] = useState<'any' | 'joined' | 'activity'>('any');
 
   useEffect(() => {
     const savedFavs = localStorage.getItem('cadonce_favorite_clients');
@@ -100,6 +171,7 @@ export default function ClientsPage() {
       } catch (err) {
         console.error('Failed to fetch live exchange rates', err);
       }
+      setExchangeRates(liveRates);
 
       const db = await getDb();
       if (db.clients) {
@@ -128,36 +200,7 @@ export default function ClientsPage() {
           const doneCount = clientProjects.filter((p: any) => ['Approved', 'Completed', 'Complete'].includes(p.status)).length;
           const liveCount = clientProjects.length - doneCount;
           const totalEarnings = clientProjects.reduce((sum: number, p: any) => {
-            let amount = parseFloat(p.revenue) || 0;
-            let code = 'USD';
-            
-            if (p.revenueCurrency === '£' || p.revenueCurrency === 'GBP') code = 'GBP';
-            else if (p.revenueCurrency === '€' || p.revenueCurrency === 'EUR') code = 'EUR';
-            else if (p.revenueCurrency === '₹' || p.revenueCurrency === 'INR') code = 'INR';
-            else if (p.revenueCurrency === 'A$' || p.revenueCurrency === 'AUD') code = 'AUD';
-            else if (p.revenueCurrency === 'C$' || p.revenueCurrency === 'CAD') code = 'CAD';
-            else if (p.revenueCurrency && p.revenueCurrency.length === 3 && p.revenueCurrency !== 'USD') {
-              code = p.revenueCurrency.toUpperCase();
-            } else if (!p.revenueCurrency || p.revenueCurrency === '$') {
-              // Infer currency based on client country if not explicitly set to USD
-              if (cInfo.code === 'GBR') code = 'GBP';
-              else if (['FRA', 'DEU', 'ITA', 'ESP', 'BEL'].includes(cInfo.code)) code = 'EUR';
-              else if (cInfo.code === 'IND') code = 'INR';
-              else if (cInfo.code === 'AUS') code = 'AUD';
-              else if (cInfo.code === 'CAN') code = 'CAD';
-            }
-            
-            if (code !== 'USD') {
-              if (liveRates[code]) {
-                amount = amount / liveRates[code]; // Rates are relative to USD (e.g., 1 USD = 0.79 GBP)
-              } else {
-                // Fallbacks if API fails
-                if (code === 'GBP') amount *= 1.27;
-                else if (code === 'EUR') amount *= 1.08;
-                else if (code === 'INR') amount *= 0.012;
-              }
-            }
-            return sum + amount;
+            return sum + computeProjectRevenueUSD(p, cInfo.code, liveRates);
           }, 0);
 
           return {
@@ -170,6 +213,11 @@ export default function ClientsPage() {
             earnings: `$${totalEarnings.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
             done: doneCount,
             live: liveCount,
+            allTimeEarningsValue: totalEarnings,
+            allTimeEarnings: `$${totalEarnings.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+            allTimeDone: doneCount,
+            allTimeLive: liveCount,
+            rawProjects: clientProjects,
             icon: 'person',
             color: 'text-primary-fixed',
             borderColor: 'border-white/5'
@@ -193,13 +241,138 @@ export default function ClientsPage() {
   const countries = useMemo(() => ['All', ...new Set(allClients.map(c => c.location))], [allClients]);
   const earningsBrackets = ['All', '>$100k', '<$100k'];
 
+  // Dynamically compute available years based on client join dates and project records
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const yearsSet = new Set<number>([currentYear, currentYear - 1, currentYear - 2]);
+    allClients.forEach(c => {
+      const d = getClientDate(c);
+      if (d) yearsSet.add(d.getFullYear());
+      (c.rawProjects || []).forEach((p: any) => {
+        const pd = p.createdAt || p.orderDate;
+        if (pd) {
+          const pDate = new Date(pd);
+          if (!isNaN(pDate.getTime())) yearsSet.add(pDate.getFullYear());
+        }
+      });
+    });
+    return Array.from(yearsSet).sort((a, b) => b - a);
+  }, [allClients]);
+
+  // Date range boundaries
+  const dateRangeBounds = useMemo(() => {
+    if (dateFilterMode === 'all') return null;
+
+    if (dateFilterMode === 'month') {
+      const year = selectedDate.getFullYear();
+      const month = selectedDate.getMonth();
+      const start = new Date(year, month, 1, 0, 0, 0, 0);
+      const end = new Date(year, month + 1, 0, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    if (dateFilterMode === 'year') {
+      const year = selectedDate.getFullYear();
+      const start = new Date(year, 0, 1, 0, 0, 0, 0);
+      const end = new Date(year, 11, 31, 23, 59, 59, 999);
+      return { start, end };
+    }
+
+    if (dateFilterMode === 'custom') {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+
+    return null;
+  }, [dateFilterMode, selectedDate, startDate, endDate]);
+
+  const getDateFilterLabel = () => {
+    if (dateFilterMode === 'all') return 'All Time';
+    if (dateFilterMode === 'month') {
+      return selectedDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+    if (dateFilterMode === 'year') {
+      return selectedDate.getFullYear().toString();
+    }
+    if (dateFilterMode === 'custom') {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      return `${s.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${e.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`;
+    }
+    return 'All Time';
+  };
+
   const filteredClients = useMemo(() => {
-    let result = allClients.filter(client => {
+    const processed = allClients.map(client => {
+      if (!dateRangeBounds) {
+        return {
+          ...client,
+          displayEarningsValue: client.earningsValue,
+          displayEarnings: client.earnings,
+          displayDone: client.done,
+          displayLive: client.live,
+          periodProjectsCount: (client.rawProjects || []).length,
+          matchesDate: true
+        };
+      }
+
+      const { start, end } = dateRangeBounds;
+      
+      const joinDate = getClientDate(client);
+      const joinedInRange = joinDate ? (joinDate >= start && joinDate <= end) : false;
+
+      const inRangeProjects = (client.rawProjects || []).filter((p: any) => {
+        const pDateStr = p.createdAt || p.orderDate;
+        if (!pDateStr) return false;
+        const pd = new Date(pDateStr);
+        if (isNaN(pd.getTime())) return false;
+        return pd >= start && pd <= end;
+      });
+
+      const hasActivityInRange = inRangeProjects.length > 0;
+
+      let matchesDate = false;
+      if (dateBasis === 'joined') {
+        matchesDate = joinedInRange;
+      } else if (dateBasis === 'activity') {
+        matchesDate = hasActivityInRange;
+      } else {
+        matchesDate = joinedInRange || hasActivityInRange;
+      }
+
+      const periodEarningsValue = inRangeProjects.reduce((sum: number, p: any) => {
+        return sum + computeProjectRevenueUSD(p, client.location, exchangeRates);
+      }, 0);
+
+      const periodDone = inRangeProjects.filter((p: any) =>
+        ['Approved', 'Completed', 'Complete'].includes(p.status)
+      ).length;
+      const periodLive = inRangeProjects.length - periodDone;
+
+      return {
+        ...client,
+        displayEarningsValue: periodEarningsValue,
+        displayEarnings: `$${periodEarningsValue.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+        displayDone: periodDone,
+        displayLive: periodLive,
+        periodProjectsCount: inRangeProjects.length,
+        joinedInRange,
+        matchesDate
+      };
+    });
+
+    let result = processed.filter(client => {
+      if (!client.matchesDate) return false;
+
       const searchStr = `${client.name} ${client.contact}`.toLowerCase();
       const matchesSearch = searchStr.includes(searchQuery.toLowerCase());
       const matchesCountry = selectedCountry === 'All' || client.location === selectedCountry;
+      const valToCompare = dateFilterMode === 'all' ? client.earningsValue : client.displayEarningsValue;
       const matchesEarnings = earningBracket === 'All' || 
-                            (earningBracket === '>$100k' ? client.earningsValue >= 100000 : client.earningsValue < 100000);
+                            (earningBracket === '>$100k' ? valToCompare >= 100000 : valToCompare < 100000);
       const matchesFavorites = showFavoritesOnly ? favorites.includes(client.id) : true;
       
       return matchesSearch && matchesCountry && matchesEarnings && matchesFavorites;
@@ -212,13 +385,13 @@ export default function ClientsPage() {
         return bFav - aFav;
       });
     } else if (sortOrder === 'earnings') {
-      result.sort((a, b) => b.earningsValue - a.earningsValue);
+      result.sort((a, b) => b.displayEarningsValue - a.displayEarningsValue);
     } else if (sortOrder === 'projects') {
-      result.sort((a, b) => (b.done + b.live) - (a.done + a.live));
+      result.sort((a, b) => (b.displayDone + b.displayLive) - (a.displayDone + a.displayLive));
     }
 
     return result;
-  }, [allClients, searchQuery, sortOrder, selectedCountry, earningBracket, favorites, showFavoritesOnly]);
+  }, [allClients, dateRangeBounds, dateFilterMode, dateBasis, exchangeRates, searchQuery, selectedCountry, earningBracket, showFavoritesOnly, favorites, sortOrder]);
 
   const handleExport = () => {
     const dataToExport = filteredClients.map(client => ({
@@ -227,9 +400,15 @@ export default function ClientsPage() {
       'Email': client.email,
       'Mobile': client.mobile,
       'Location': client.location,
-      'Total Revenue': client.earnings,
-      'Done Projects': client.done,
-      'Live Projects': client.live,
+      ...(dateFilterMode !== 'all' ? {
+        'Period Revenue': client.displayEarnings,
+        'Period Tasks Done': client.displayDone,
+        'Period Tasks Live': client.displayLive,
+        'Filter Window': getDateFilterLabel(),
+      } : {}),
+      'Total Revenue (All Time)': client.allTimeEarnings || client.earnings,
+      'Done Projects (All Time)': client.allTimeDone ?? client.done,
+      'Live Projects (All Time)': client.allTimeLive ?? client.live,
       'Created At': client.createdAt ? new Date(client.createdAt).toLocaleDateString() : 'N/A'
     }));
 
@@ -237,27 +416,28 @@ export default function ClientsPage() {
     const workbook = utils.book_new();
     utils.book_append_sheet(workbook, worksheet, "Clients");
     
-    // Set column widths
     const wscols = [
-      { wch: 25 }, // Name
-      { wch: 25 }, // Company
-      { wch: 30 }, // Email
-      { wch: 20 }, // Mobile
-      { wch: 10 }, // Location
-      { wch: 15 }, // Revenue
-      { wch: 10 }, // Done
-      { wch: 10 }, // Live
-      { wch: 15 }  // Date
+      { wch: 25 },
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 20 },
+      { wch: 10 },
+      ...(dateFilterMode !== 'all' ? [{ wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 20 }] : []),
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 15 }
     ];
     worksheet['!cols'] = wscols;
 
-    writeFile(workbook, `CADONCE_Clients_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+    const modeTag = dateFilterMode !== 'all' ? `_${dateFilterMode}` : '';
+    writeFile(workbook, `CADONCE_Clients_Export${modeTag}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
+
+  const isAnyFilterActive = selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' || dateFilterMode !== 'all';
 
   return (
     <div className="bg-background text-on-surface font-body min-h-screen">
-
-
       <AuthGuard>
         {isLoading ? (
           <div className="min-h-screen bg-[#161308] flex items-center justify-center">
@@ -285,21 +465,29 @@ export default function ClientsPage() {
                 <p className="text-sm font-black text-white">{filteredClients.length}</p>
               </div>
               <div className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl">
-                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">Active Value</p>
-                <p className="text-sm font-black text-[#F59E0B]">${filteredClients.reduce((acc, c) => acc + c.earningsValue, 0).toLocaleString()}</p>
+                <p className="text-[7px] font-black text-neutral-500 uppercase tracking-widest mb-0.5">
+                  {dateFilterMode === 'all' ? 'Active Value' : 'Period Value'}
+                </p>
+                <p className="text-sm font-black text-[#F59E0B]">
+                  ${filteredClients.reduce((acc, c) => acc + (dateFilterMode === 'all' ? c.earningsValue : c.displayEarningsValue), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </p>
               </div>
               <div className="hidden sm:block px-4 py-2 bg-yellow-400/10 border border-yellow-400/20 rounded-xl">
-                <p className="text-[7px] font-black text-yellow-400 uppercase tracking-widest mb-0.5">Status</p>
+                <p className="text-[7px] font-black text-yellow-400 uppercase tracking-widest mb-0.5">
+                  {dateFilterMode === 'all' ? 'Status' : 'Temporal Scope'}
+                </p>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                  <span className="text-[8px] font-black text-white uppercase">Operational</span>
+                  <span className="text-[8px] font-black text-white uppercase truncate max-w-[120px]">
+                    {dateFilterMode === 'all' ? 'Operational' : getDateFilterLabel()}
+                  </span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Advanced Filters & Search Bar */}
-          <div className="flex flex-col md:flex-row gap-4 mb-8">
+          <div className="flex flex-col md:flex-row gap-4 mb-4">
             <div className="flex-1 relative group">
               <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 group-focus-within:text-[#F59E0B] transition-colors">search</span>
               <input 
@@ -321,10 +509,12 @@ export default function ClientsPage() {
               </button>
               <button 
                 onClick={() => setShowFilters(true)}
-                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${selectedCountry !== 'All' || earningBracket !== 'All' || sortOrder !== 'none' ? 'bg-[#F59E0B] border-[#F59E0B] text-black' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
+                className={`w-full px-2 md:px-6 py-3 rounded-2xl border transition-all flex items-center justify-center gap-2 active:scale-95 ${isAnyFilterActive ? 'bg-[#F59E0B] border-[#F59E0B] text-black font-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-white/60 hover:text-white'}`}
               >
                 <span className="material-symbols-outlined text-sm">tune</span>
-                <span className="text-[10px] font-black uppercase tracking-widest">Filters</span>
+                <span className="text-[10px] font-black uppercase tracking-widest truncate">
+                  {dateFilterMode !== 'all' ? `Filters (${getDateFilterLabel()})` : 'Filters'}
+                </span>
               </button>
               <button 
                 onClick={handleExport}
@@ -340,6 +530,81 @@ export default function ClientsPage() {
               </Link>
             </div>
           </div>
+
+          {/* Active Filter Chips Bar */}
+          {(dateFilterMode !== 'all' || selectedCountry !== 'All' || sortOrder !== 'none' || showFavoritesOnly) && (
+            <div className="flex items-center gap-2 mb-6 flex-wrap animate-in fade-in duration-200">
+              <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest">Active Filters:</span>
+              
+              {dateFilterMode !== 'all' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F59E0B]/15 border border-[#F59E0B]/40 text-[#F59E0B] rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[12px]">calendar_month</span>
+                  {getDateFilterLabel()}
+                  <button 
+                    onClick={() => setDateFilterMode('all')} 
+                    className="hover:text-white transition-colors ml-1 w-3.5 h-3.5 rounded-full bg-[#F59E0B]/20 inline-flex items-center justify-center text-[10px]"
+                    title="Remove date filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {selectedCountry !== 'All' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-cyan-400/15 border border-cyan-400/40 text-cyan-400 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[12px]">public</span>
+                  {selectedCountry}
+                  <button 
+                    onClick={() => setSelectedCountry('All')} 
+                    className="hover:text-white transition-colors ml-1 w-3.5 h-3.5 rounded-full bg-cyan-400/20 inline-flex items-center justify-center text-[10px]"
+                    title="Remove country filter"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {sortOrder !== 'none' && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/10 border border-white/20 text-white rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[12px]">sort</span>
+                  Hierarchy: {sortOrder}
+                  <button 
+                    onClick={() => setSortOrder('none')} 
+                    className="hover:text-white transition-colors ml-1 w-3.5 h-3.5 rounded-full bg-white/20 inline-flex items-center justify-center text-[10px]"
+                    title="Reset sort"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              {showFavoritesOnly && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-yellow-400/15 border border-yellow-400/40 text-yellow-400 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                  Favorites Only
+                  <button 
+                    onClick={() => setShowFavoritesOnly(false)} 
+                    className="hover:text-white transition-colors ml-1 w-3.5 h-3.5 rounded-full bg-yellow-400/20 inline-flex items-center justify-center text-[10px]"
+                    title="Show all"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+
+              <button
+                onClick={() => {
+                  setDateFilterMode('all');
+                  setSelectedCountry('All');
+                  setSortOrder('none');
+                  setShowFavoritesOnly(false);
+                }}
+                className="text-[9px] font-black text-neutral-400 hover:text-white uppercase tracking-widest underline underline-offset-4 ml-1 transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+          )}
 
           {/* Strategic Client Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
@@ -390,23 +655,37 @@ export default function ClientsPage() {
                 {/* KPI Section */}
                 <div className="grid grid-cols-2 gap-3 mb-6 relative z-20">
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors">
-                    <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Total Revenue</p>
-                    <p className="font-headline font-black text-white text-xl tracking-tight leading-none">{client.earnings}</p>
+                    <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">
+                      {dateFilterMode === 'all' ? 'Total Revenue' : 'Period Revenue'}
+                    </p>
+                    <p className="font-headline font-black text-white text-xl tracking-tight leading-none">{client.displayEarnings}</p>
+                    {dateFilterMode !== 'all' && (
+                      <p className="text-[8px] font-bold text-neutral-400 mt-1 uppercase tracking-wider truncate">
+                        All-time: {client.allTimeEarnings}
+                      </p>
+                    )}
                   </div>
                   <div className="bg-white/5 rounded-2xl p-4 border border-white/5 group-hover:border-[#F59E0B]/10 transition-colors flex justify-between items-center">
                     <div>
-                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">Task</p>
+                      <p className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mb-1">
+                        {dateFilterMode === 'all' ? 'Task' : 'Period Tasks'}
+                      </p>
                       <div className="flex items-center gap-3">
                         <div className="text-center">
-                          <p className="text-xs font-black text-white leading-none">{client.done}</p>
+                          <p className="text-xs font-black text-white leading-none">{client.displayDone}</p>
                           <p className="text-[6px] font-bold text-neutral-600 uppercase">Done</p>
                         </div>
                         <div className="w-px h-6 bg-white/10" />
                         <div className="text-center">
-                          <p className="text-xs font-black text-[#F59E0B] leading-none">{client.live}</p>
+                          <p className="text-xs font-black text-[#F59E0B] leading-none">{client.displayLive}</p>
                           <p className="text-[6px] font-bold text-neutral-600 uppercase">Live</p>
                         </div>
                       </div>
+                      {dateFilterMode !== 'all' && (
+                        <p className="text-[7px] font-bold text-neutral-400 mt-1 uppercase tracking-wider">
+                          All-time: {client.allTimeDone + client.allTimeLive} tasks
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -447,17 +726,31 @@ export default function ClientsPage() {
                   <span className="material-symbols-outlined text-4xl">person_search</span>
                 </div>
                 <p className="text-white/30 font-bold uppercase tracking-[0.3em] text-xs italic">No matching partner records found</p>
+                {isAnyFilterActive && (
+                  <button 
+                    onClick={() => {
+                      setDateFilterMode('all');
+                      setSelectedCountry('All');
+                      setSortOrder('none');
+                      setShowFavoritesOnly(false);
+                      setSearchQuery('');
+                    }}
+                    className="mt-4 px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#F59E0B] text-[10px] font-black uppercase tracking-widest hover:bg-[#F59E0B] hover:text-black transition-all"
+                  >
+                    Reset All Filters
+                  </button>
+                )}
               </div>
             )}
           </div>
         </main>
 
-        {/* Filter Modal */}
+        {/* Filter Modal (Segment Data / Partner Optimization Protocol) */}
         {showFilters && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 sm:p-6">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setShowFilters(false)} />
-            <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
-              <div className="p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#F59E0B]/5 to-transparent">
+            <div className="relative w-full max-w-md bg-[#1a1a1a] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 max-h-[92vh] flex flex-col">
+              <div className="p-6 sm:p-8 border-b border-white/5 flex justify-between items-center bg-gradient-to-r from-[#F59E0B]/5 to-transparent shrink-0">
                 <div>
                   <h3 className="text-white font-headline font-black text-xl italic uppercase tracking-tighter">Segment Data</h3>
                   <p className="text-neutral-500 text-[8px] uppercase tracking-[0.3em] font-bold">Partner Optimization Protocol</p>
@@ -467,16 +760,16 @@ export default function ClientsPage() {
                 </button>
               </div>
               
-              <div className="p-8 space-y-8">
-                {/* Sort Order */}
-                <div className="space-y-4">
+              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto no-scrollbar flex-1">
+                {/* 1. Sort Order */}
+                <div className="space-y-3">
                   <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block text-left">Hierarchy</label>
                   <div className="grid grid-cols-4 gap-2">
                     {['none', 'favorites', 'earnings', 'projects'].map(opt => (
                       <button 
                         key={opt}
                         onClick={() => setSortOrder(opt)}
-                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                        className={`py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${sortOrder === opt ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500 hover:text-white'}`}
                       >
                         {opt}
                       </button>
@@ -484,15 +777,167 @@ export default function ClientsPage() {
                   </div>
                 </div>
 
-                {/* Country Filter */}
-                <div className="space-y-4 text-left">
-                  <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block">Geographic Node</label>
+                {/* 2. Temporal Horizon (Date Filter: Month, Year, Custom, All) */}
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block">Temporal Horizon</label>
+                    <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">
+                      {dateFilterMode === 'all' ? 'All records' : getDateFilterLabel()}
+                    </span>
+                  </div>
+
+                  {/* Mode Buttons */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      { id: 'all', label: 'All' },
+                      { id: 'month', label: 'Month' },
+                      { id: 'year', label: 'Year' },
+                      { id: 'custom', label: 'Custom' }
+                    ].map(m => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setDateFilterMode(m.id as any)}
+                        className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${dateFilterMode === m.id ? 'bg-[#F59E0B] border-[#F59E0B] text-black shadow-lg shadow-yellow-400/20' : 'bg-white/5 border-white/10 text-neutral-500 hover:text-white'}`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Month Selection */}
+                  {dateFilterMode === 'month' && (
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest">Select Cycle Month</span>
+                        <div className="flex items-center gap-1 bg-white/5 p-0.5 rounded-lg border border-white/10">
+                          {availableYears.map(y => (
+                            <button
+                              key={y}
+                              type="button"
+                              onClick={() => {
+                                const d = new Date(selectedDate);
+                                d.setFullYear(y);
+                                setSelectedDate(d);
+                              }}
+                              className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-all ${selectedDate.getFullYear() === y ? 'bg-[#F59E0B] text-black font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                            >
+                              {y}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {months.map(m => (
+                          <button
+                            key={m.value}
+                            type="button"
+                            onClick={() => {
+                              const d = new Date(selectedDate);
+                              d.setMonth(m.value);
+                              setSelectedDate(d);
+                            }}
+                            className={`py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border ${selectedDate.getMonth() === m.value ? 'bg-cyan-400 border-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/20' : 'bg-white/5 border-white/5 text-neutral-400 hover:text-white hover:bg-white/10'}`}
+                          >
+                            {m.short}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Year Selection */}
+                  {dateFilterMode === 'year' && (
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3 animate-in fade-in duration-200">
+                      <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block">Select Year Cycle</span>
+                      <div className="grid grid-cols-4 gap-2">
+                        {availableYears.map(y => (
+                          <button
+                            key={y}
+                            type="button"
+                            onClick={() => {
+                              const d = new Date(selectedDate);
+                              d.setFullYear(y);
+                              setSelectedDate(d);
+                            }}
+                            className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${selectedDate.getFullYear() === y ? 'bg-cyan-400 border-cyan-400 text-black font-extrabold shadow-md shadow-cyan-400/20' : 'bg-white/5 border-white/10 text-neutral-400 hover:text-white hover:bg-white/10'}`}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Custom Range Selection */}
+                  {dateFilterMode === 'custom' && (
+                    <div className="p-4 bg-white/[0.02] border border-white/5 rounded-2xl space-y-3 animate-in fade-in duration-200">
+                      <span className="text-[8px] font-black text-neutral-400 uppercase tracking-widest block">Custom Window</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-neutral-500 uppercase tracking-widest block">From</label>
+                          <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full bg-[#161308] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-neutral-500 uppercase tracking-widest block">To</label>
+                          <input
+                            type="date"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                            className="w-full bg-[#161308] border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Date Criteria Filter (Joined Date / Project Activity / Both) */}
+                  {dateFilterMode !== 'all' && (
+                    <div className="pt-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-[8px] font-black text-neutral-500 uppercase tracking-widest block">Filter Target</label>
+                        <span className="text-[7px] text-neutral-400 uppercase">
+                          {dateBasis === 'any' ? 'Joined or Active' : dateBasis === 'joined' ? 'Onboarded Date' : 'Active Projects'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {[
+                          { key: 'any', label: 'All Activity' },
+                          { key: 'joined', label: 'Joined Date' },
+                          { key: 'activity', label: 'Projects Only' }
+                        ].map(crit => (
+                          <button
+                            key={crit.key}
+                            type="button"
+                            onClick={() => setDateBasis(crit.key as any)}
+                            className={`py-2 px-1 rounded-xl text-[8px] font-black uppercase tracking-wider transition-all border ${dateBasis === crit.key ? 'bg-white/20 border-white/40 text-white shadow-sm' : 'bg-white/5 border-white/5 text-neutral-500 hover:text-white'}`}
+                          >
+                            {crit.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. Country Filter */}
+                <div className="space-y-3 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest block">Geographic Node</label>
+                    <span className="text-[8px] font-bold text-neutral-400 uppercase tracking-wider">{selectedCountry}</span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {countries.map(c => (
                       <button 
                         key={c}
                         onClick={() => setSelectedCountry(c)}
-                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedCountry === c ? 'bg-cyan-400 border-cyan-400 text-black' : 'bg-white/5 border-white/10 text-neutral-500'}`}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border ${selectedCountry === c ? 'bg-cyan-400 border-cyan-400 text-black shadow-md shadow-cyan-400/20' : 'bg-white/5 border-white/10 text-neutral-500 hover:text-white'}`}
                       >
                         {c}
                       </button>
@@ -501,8 +946,21 @@ export default function ClientsPage() {
                 </div>
               </div>
 
-              <div className="p-8 bg-white/2 border-t border-white/5">
-                <button onClick={() => setShowFilters(false)} className="w-full electric-gradient py-5 rounded-2xl text-black font-black uppercase tracking-[0.2em] text-[11px] shadow-lg active:scale-[0.98] transition-transform">
+              {/* Modal Footer */}
+              <div className="p-6 sm:p-8 bg-white/2 border-t border-white/5 flex gap-3 items-center shrink-0">
+                {isAnyFilterActive && (
+                  <button 
+                    onClick={() => {
+                      setDateFilterMode('all');
+                      setSelectedCountry('All');
+                      setSortOrder('none');
+                    }}
+                    className="px-4 py-5 rounded-2xl bg-white/5 border border-white/10 text-neutral-400 hover:text-white text-[10px] font-black uppercase tracking-widest active:scale-95 transition-all"
+                  >
+                    Reset
+                  </button>
+                )}
+                <button onClick={() => setShowFilters(false)} className="flex-1 electric-gradient py-5 rounded-2xl text-black font-black uppercase tracking-[0.2em] text-[11px] shadow-lg active:scale-[0.98] transition-transform">
                   Apply Configuration
                 </button>
               </div>
@@ -515,4 +973,3 @@ export default function ClientsPage() {
     </div>
   );
 }
-
