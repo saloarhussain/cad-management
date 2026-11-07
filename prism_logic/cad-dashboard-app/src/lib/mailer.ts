@@ -142,7 +142,6 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
         .col-header { padding: 8px 15px; font-size: 16px; }
         .col-body { padding: 15px; font-size: 12px; }
         th, td { padding: 8px 10px !important; font-size: 11px !important; }
-        .payment-info { font-size: 12px !important; }
       }
 
       /* Items Table */
@@ -157,9 +156,7 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
       .bold-td { font-weight: bold; }
       
       /* Payment Info */
-      .payment-info { margin-top: 40px; font-size: 14px; line-height: 1.8; }
-      .payment-title { font-size: 16px; font-weight: bold; text-transform: uppercase; margin-bottom: 15px; }
-    </style>
+      </style>
   </head>
   <body>
     <div class="container">
@@ -250,18 +247,6 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
           </tr>
         </tbody>
       </table>
-
-      <div class="payment-info">
-        <div class="payment-title">PAYMENT INFORMATION:</div>
-        <div><span class="label-bold">Bank Name :</span> Monoova Payments Pty Ltd</div>
-        <div><span class="label-bold">Bank Location :</span> AUSTRALIA</div>
-        <div><span class="label-bold">Account Holder’s Name :</span> SALOAR HUSSAIN ANWAR ALI SHAIKH</div>
-        <div><span class="label-bold">Account Type :</span> Current</div>
-        <div><span class="label-bold">BIC :</span> CUSCAU2SXXX</div>
-        <div><span class="label-bold">Bank State Branch Code (BSB) :</span> 802985</div>
-        <div><span class="label-bold">Bank Account Number :</span> 416552962</div>
-        <div><span class="label-bold">Bank Address :</span> Level 11, Darling Park Tower 1, 201 Sussex Street, Sydney NSW 2000, Australia</div>
-      </div>
     </div>
   </body>
   </html>
