@@ -6,6 +6,7 @@ import { useAuth } from '@/components/AuthProvider';
 import { saveProject, getDb } from '@/app/actions';
 import AuthGuard from '@/components/AuthGuard';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
+import { GLOBAL_CURRENCIES } from '@/lib/config';
 
 const PRESET_SKILLS = [
   'High-Poly',
@@ -586,9 +587,9 @@ export default function NewProjectPage() {
       clientShortName: clientVal.slice(0, 2).toUpperCase(),
       designer: designerVal,
       revenue: (formData.get('revenue') as string) || '0',
-      revenueCurrency: (formData.get('revenueCurrency') as string) || '$',
+      revenueCurrency: (formData.get('revenueCurrency') as string) || 'USD',
       expense: (formData.get('expense') as string) || '0',
-      expenseCurrency: (formData.get('expenseCurrency') as string) || '₹',
+      expenseCurrency: (formData.get('expenseCurrency') as string) || 'INR',
       orderDate: (formData.get('orderDate') as string) || new Date().toISOString().split('T')[0],
       deadlineDate: (formData.get('deadlineDate') as string) || '',
       description: (formData.get('brief') as string) || '',
@@ -1043,11 +1044,11 @@ export default function NewProjectPage() {
                           onChange={(e) => setRevCurr(e.target.value)}
                           className="bg-transparent border-none py-3.5 pl-3 pr-8 text-amber-400 font-black text-xs focus:ring-0 appearance-none cursor-pointer outline-none"
                         >
-                          <option value="USD" className="bg-[#14120c] text-white">$ (USD)</option>
-                          <option value="EUR" className="bg-[#14120c] text-white">€ (EUR)</option>
-                          <option value="GBP" className="bg-[#14120c] text-white">£ (GBP)</option>
-                          <option value="JPY" className="bg-[#14120c] text-white">¥ (JPY)</option>
-                          <option value="INR" className="bg-[#14120c] text-white">₹ (INR)</option>
+                          {GLOBAL_CURRENCIES.map(c => (
+                            <option key={c.code} value={c.code} className="bg-[#14120c] text-white">
+                              {c.symbol} ({c.code})
+                            </option>
+                          ))}
                         </select>
                         <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-amber-400 text-xs">expand_more</span>
                       </div>
@@ -1080,11 +1081,11 @@ export default function NewProjectPage() {
                           onChange={(e) => setExpCurr(e.target.value)}
                           className="bg-transparent border-none py-3.5 pl-3 pr-8 text-red-400 font-black text-xs focus:ring-0 appearance-none cursor-pointer outline-none"
                         >
-                          <option value="INR" className="bg-[#14120c] text-white">₹ (INR)</option>
-                          <option value="USD" className="bg-[#14120c] text-white">$ (USD)</option>
-                          <option value="EUR" className="bg-[#14120c] text-white">€ (EUR)</option>
-                          <option value="GBP" className="bg-[#14120c] text-white">£ (GBP)</option>
-                          <option value="JPY" className="bg-[#14120c] text-white">¥ (JPY)</option>
+                          {GLOBAL_CURRENCIES.map(c => (
+                            <option key={c.code} value={c.code} className="bg-[#14120c] text-white">
+                              {c.symbol} ({c.code})
+                            </option>
+                          ))}
                         </select>
                         <span className="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-red-400 text-xs">expand_more</span>
                       </div>

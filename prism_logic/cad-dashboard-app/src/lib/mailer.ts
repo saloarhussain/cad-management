@@ -62,10 +62,13 @@ export async function sendEmail({ to, replyTo, subject, html, text, credentials 
 // --- Email Templates ---
 
 import { getTaxIdLabel } from './tax';
+import { getInvoiceCurrencyDetails } from './config';
+export { getInvoiceCurrencyDetails };
 
 export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
   const revenue = parseFloat(project.revenue || '0').toLocaleString('en-US');
   const paidAmount = parseFloat(project.paidAmount || '0').toLocaleString('en-US');
+  const curr = getInvoiceCurrencyDetails(project.revenueCurrency);
   
   // Format Date (e.g., 15 January 2026)
   const dateObj = new Date();
@@ -212,8 +215,8 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
             <th style="width: 40%">Description</th>
             <th>SAC Code</th>
             <th>Qty</th>
-            <th>Rate (AUD)</th>
-            <th>Total (AUD)</th>
+            <th>Rate (${curr.code})</th>
+            <th>Total (${curr.code})</th>
           </tr>
         </thead>
         <tbody>
@@ -221,29 +224,29 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
             <td style="border-left: none;">3D Jewellery CAD Design Work - ${project.title}</td>
             <td>998391</td>
             <td>1</td>
-            <td>$${revenue}</td>
-            <td style="border-right: none;">$${revenue}</td>
+            <td>${curr.symbol}${revenue}</td>
+            <td style="border-right: none;">${curr.symbol}${revenue}</td>
           </tr>
           <tr>
             <td class="bold-td" style="border-left: none;">Subtotal</td>
             <td class="no-border-x"></td>
             <td class="no-border-x"></td>
             <td class="no-border-x"></td>
-            <td class="bold-td" style="border-right: none;">$${revenue} AUD</td>
+            <td class="bold-td" style="border-right: none;">${curr.symbol}${revenue} ${curr.code}</td>
           </tr>
           <tr>
             <td class="bold-td" style="border-left: none;">GST (0% - Export)</td>
             <td class="no-border-x"></td>
             <td class="no-border-x"></td>
             <td class="no-border-x"></td>
-            <td class="bold-td" style="border-right: none;">$0</td>
+            <td class="bold-td" style="border-right: none;">${curr.symbol}0</td>
           </tr>
           <tr>
             <td class="bold-td" style="border-left: none; border-bottom: none;">Total Amount</td>
             <td style="border: none;"></td>
             <td style="border: none;"></td>
             <td style="border: none;"></td>
-            <td class="bg-orange" style="border-right: none; border-bottom: none;">$${revenue} AUD</td>
+            <td class="bg-orange" style="border-right: none; border-bottom: none;">${curr.symbol}${revenue} ${curr.code}</td>
           </tr>
         </tbody>
       </table>

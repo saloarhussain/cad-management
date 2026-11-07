@@ -70,5 +70,55 @@ export function getCurrencySymbol(code: string): string {
     'A$': 'A$',
     'C$': 'C$'
   };
-  return mapping[upper] || code;
+  if (mapping[upper]) return mapping[upper];
+  const found = GLOBAL_CURRENCIES.find(c => c.code === upper || c.symbol === code);
+  if (found) return found.symbol;
+  return code;
+}
+
+export function getInvoiceCurrencyDetails(revenueCurrency?: string): { code: string; symbol: string } {
+  const raw = (revenueCurrency || 'USD').trim();
+  const upper = raw.toUpperCase();
+
+  // 1. Direct match by 3-letter code
+  const matchByCode = GLOBAL_CURRENCIES.find(c => c.code === upper);
+  if (matchByCode) {
+    let sym = matchByCode.symbol;
+    // For dollar currencies (USD, AUD, CAD, NZD, SGD, MXN), on the invoice where header shows (AUD), (USD) etc, '$' is standard:
+    if (['USD', 'AUD', 'CAD', 'NZD', 'SGD', 'MXN'].includes(matchByCode.code)) {
+      sym = '$';
+    }
+    return { code: matchByCode.code, symbol: sym };
+  }
+
+  // 2. Direct match by symbol
+  const symbolMapping: Record<string, { code: string; symbol: string }> = {
+    '$': { code: 'USD', symbol: '$' },
+    '€': { code: 'EUR', symbol: '€' },
+    '£': { code: 'GBP', symbol: '£' },
+    '₹': { code: 'INR', symbol: '₹' },
+    '¥': { code: 'JPY', symbol: '¥' },
+    'A$': { code: 'AUD', symbol: '$' },
+    'AU$': { code: 'AUD', symbol: '$' },
+    'C$': { code: 'CAD', symbol: '$' },
+    'CA$': { code: 'CAD', symbol: '$' },
+    'S$': { code: 'SGD', symbol: '$' },
+    'NZ$': { code: 'NZD', symbol: '$' },
+    'R$': { code: 'BRL', symbol: 'R$' },
+  };
+
+  if (symbolMapping[raw] || symbolMapping[upper]) {
+    return symbolMapping[raw] || symbolMapping[upper];
+  }
+
+  const matchBySymbol = GLOBAL_CURRENCIES.find(c => c.symbol === raw);
+  if (matchBySymbol) {
+    let sym = matchBySymbol.symbol;
+    if (['USD', 'AUD', 'CAD', 'NZD', 'SGD', 'MXN'].includes(matchBySymbol.code)) {
+      sym = '$';
+    }
+    return { code: matchBySymbol.code, symbol: sym };
+  }
+
+  return { code: upper.length === 3 ? upper : 'USD', symbol: '$' };
 }

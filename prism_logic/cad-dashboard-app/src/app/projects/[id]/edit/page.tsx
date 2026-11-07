@@ -7,14 +7,21 @@ import { updateProjectAction, getDb } from '@/app/actions';
 import CadFileUpload from '@/components/viewport/CadFileUpload';
 import AuthGuard from '@/components/AuthGuard';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
+import { GLOBAL_CURRENCIES } from '@/lib/config';
 
-const normalizeCurrency = (curr: string) => {
-  if (curr === '$') return 'USD';
-  if (curr === '€') return 'EUR';
-  if (curr === '£') return 'GBP';
-  if (curr === '¥') return 'JPY';
-  if (curr === '₹') return 'INR';
-  return curr;
+const normalizeCurrency = (curr?: string) => {
+  if (!curr) return 'USD';
+  const trimmed = curr.trim();
+  if (trimmed === '$') return 'USD';
+  if (trimmed === '€') return 'EUR';
+  if (trimmed === '£') return 'GBP';
+  if (trimmed === '¥') return 'JPY';
+  if (trimmed === '₹') return 'INR';
+  if (trimmed === 'A$' || trimmed === 'AU$') return 'AUD';
+  if (trimmed === 'C$' || trimmed === 'CA$') return 'CAD';
+  const found = GLOBAL_CURRENCIES.find(c => c.code === trimmed.toUpperCase() || c.symbol === trimmed);
+  if (found) return found.code;
+  return trimmed.toUpperCase();
 };
 
 const DatePickerFacade = ({ label, isDeadline, name, initialValue }: { label: string, isDeadline?: boolean, name?: string, initialValue?: string }) => {
@@ -547,11 +554,11 @@ export default function EditProjectPage() {
                               defaultValue={normalizeCurrency(project.revenueCurrency) || "USD"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-[#fce003] font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
+                              {GLOBAL_CURRENCIES.map(c => (
+                                <option key={c.code} value={c.code} className="text-stone-900 bg-white">
+                                  {c.symbol} ({c.code})
+                                </option>
+                              ))}
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-[#fce003] scale-75">expand_more</span>
                           </div>
@@ -567,11 +574,11 @@ export default function EditProjectPage() {
                               defaultValue={normalizeCurrency(project.expenseCurrency) || "INR"}
                               className="bg-transparent border-none py-3 pl-3 pr-8 text-error font-bold text-sm focus:ring-0 appearance-none cursor-pointer"
                             >
-                              <option value="USD" className="text-stone-900 bg-white">$ (USD)</option>
-                              <option value="EUR" className="text-stone-900 bg-white">€ (EUR)</option>
-                              <option value="GBP" className="text-stone-900 bg-white">£ (GBP)</option>
-                              <option value="JPY" className="text-stone-900 bg-white">¥ (JPY)</option>
-                              <option value="INR" className="text-stone-900 bg-white">₹ (INR)</option>
+                              {GLOBAL_CURRENCIES.map(c => (
+                                <option key={c.code} value={c.code} className="text-stone-900 bg-white">
+                                  {c.symbol} ({c.code})
+                                </option>
+                              ))}
                             </select>
                             <span className="material-symbols-outlined absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-error scale-75">expand_more</span>
                           </div>

@@ -515,9 +515,9 @@ export async function saveProject(formData: FormData) {
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
-      revenueCurrency: formData.get('revenueCurrency') || '$',
+      revenueCurrency: formData.get('revenueCurrency') || 'USD',
       expense: formData.get('expense'),
-      expenseCurrency: formData.get('expenseCurrency') || '₹',
+      expenseCurrency: formData.get('expenseCurrency') || 'INR',
       orderDate: formData.get('orderDate'),
       deadlineDate: formData.get('deadlineDate'),
       description: formData.get('brief'),
@@ -772,9 +772,9 @@ export async function updateProjectAction(formData: FormData) {
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
-      revenueCurrency: formData.get('revenueCurrency') as string || '$',
+      revenueCurrency: formData.get('revenueCurrency') as string || 'USD',
       expense: formData.get('expense'),
-      expenseCurrency: formData.get('expenseCurrency') as string || '₹',
+      expenseCurrency: formData.get('expenseCurrency') as string || 'INR',
       orderDate: formData.get('orderDate'),
       deadlineDate: formData.get('deadlineDate'),
       description: formData.get('brief'),
@@ -1483,11 +1483,13 @@ export async function sendInvoice(projectId: string) {
     const systemConfig = Array.isArray(parsedMethods) ? parsedMethods.find((m: any) => m.id === 'system_config') : {};
 
     const { sendEmail, invoiceTemplate } = await import('@/lib/mailer');
+    const { getInvoiceCurrencyDetails } = await import('@/lib/config');
+    const curr = getInvoiceCurrencyDetails(project.revenueCurrency);
     await sendEmail({
       to: email,
       subject: `Invoice for Project: ${project.title}`,
       html: invoiceTemplate(project, client, systemConfig),
-      text: `Invoice for ${project.title}. Total: $${project.revenue}. Balance: $${parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')}`,
+      text: `Invoice for ${project.title}. Total: ${curr.symbol}${project.revenue} ${curr.code}. Balance: ${curr.symbol}${parseFloat(project.revenue || '0') - parseFloat(project.paidAmount || '0')} ${curr.code}`,
       credentials,
     });
 
