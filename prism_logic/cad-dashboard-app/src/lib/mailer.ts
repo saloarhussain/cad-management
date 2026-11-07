@@ -65,6 +65,26 @@ import { getTaxIdLabel } from './tax';
 import { getInvoiceCurrencyDetails } from './config';
 export { getInvoiceCurrencyDetails };
 
+function isValidValue(val: any): boolean {
+  if (val === null || val === undefined) return false;
+  const s = String(val).trim();
+  if (
+    !s ||
+    s.toLowerCase() === 'n/a' ||
+    s.toLowerCase() === 'na' ||
+    s.toLowerCase() === 'null' ||
+    s.toLowerCase() === 'undefined'
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function renderField(label: string, value: any): string {
+  if (!isValidValue(value)) return '';
+  return `<div><span class="label-bold">${label}</span> - ${String(value).trim()}</div>`;
+}
+
 export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
   const revenue = parseFloat(project.revenue || '0').toLocaleString('en-US');
   const paidAmount = parseFloat(project.paidAmount || '0').toLocaleString('en-US');
@@ -76,15 +96,16 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
   const invoiceNo = project.orderId || `M${project.id ? project.id.toString().slice(0, 5).padStart(5, '0') : '10001'}`;
 
   // Client Details
-  const cName = client?.name || project.client || 'Client';
-  const cCompany = client?.companyName || client?.name || 'N/A';
-  const cEmail = client?.email || project.client_email || 'N/A';
-  const cCountry = client?.country || 'N/A';
-  const cTaxId = client?.taxId || client?.abn || 'N/A';
-  const cPhone = client?.mobile || client?.phone || 'N/A';
-  const cAddress = client?.address || 'N/A';
-  const cCity = client?.city || 'N/A';
-  const cZip = client?.pincode || client?.zipCode || client?.zip || 'N/A';
+  const cName = client?.name || project.client || '';
+  const cCompany = client?.companyName || (client?.name !== project.client ? project.client : '') || '';
+  const cEmail = client?.email || project.client_email || '';
+  const cCountry = client?.country || '';
+  const cTaxId = client?.taxId || client?.abn || '';
+  const cPhone = client?.mobile || client?.phone || '';
+  const cAddress = client?.address || '';
+  const cCity = client?.city || '';
+  const cZip = client?.pincode || client?.zipCode || client?.zip || '';
+  const cState = client?.state || '';
   
   const taxIdLabel = getTaxIdLabel(cCountry);
   
@@ -178,30 +199,31 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
         <div class="col">
           <div class="col-header">From</div>
           <div class="col-body">
-            <div><span class="label-bold">Country</span> - ${orgCountry}</div>
-            <div><span class="label-bold">Name</span> - ${orgName}</div>
-            <div><span class="label-bold">Company</span> - ${orgCompany}</div>
-            <div><span class="label-bold">${orgTaxIdLabel}</span> - ${orgTaxId}</div>
-            <div><span class="label-bold">Email</span> - ${orgEmail}</div>
-            <div><span class="label-bold">Ph No</span> - ${orgPhone}</div>
-            <div><span class="label-bold">Address</span> - ${orgAddress}</div>
-            <div><span class="label-bold">City</span> - ${orgCity}</div>
-            <div><span class="label-bold">Pincode</span> - ${orgPincode}</div>
-            <div><span class="label-bold">State</span> - ${orgState}</div>
+            ${renderField('Country', orgCountry)}
+            ${renderField('Name', orgName)}
+            ${renderField('Company', orgCompany)}
+            ${renderField(orgTaxIdLabel, orgTaxId)}
+            ${renderField('Email', orgEmail)}
+            ${renderField('Ph No', orgPhone)}
+            ${renderField('Address', orgAddress)}
+            ${renderField('City', orgCity)}
+            ${renderField('Pincode', orgPincode)}
+            ${renderField('State', orgState)}
           </div>
         </div>
         <div class="col">
           <div class="col-header">To</div>
           <div class="col-body">
-            <div><span class="label-bold">Country</span> - ${cCountry}</div>
-            <div><span class="label-bold">Name</span> - ${cName}</div>
-            <div><span class="label-bold">Company</span> - ${cCompany}</div>
-            <div><span class="label-bold">${taxIdLabel}</span> - ${cTaxId}</div>
-            <div><span class="label-bold">Email</span> - ${cEmail}</div>
-            <div><span class="label-bold">Ph No</span> - ${cPhone}</div>
-            <div><span class="label-bold">Address</span> - ${cAddress}</div>
-            <div><span class="label-bold">City</span> - ${cCity}</div>
-            <div><span class="label-bold">Zip code</span> - ${cZip}</div>
+            ${renderField('Country', cCountry)}
+            ${renderField('Name', cName)}
+            ${renderField('Company', cCompany)}
+            ${renderField(taxIdLabel, cTaxId)}
+            ${renderField('Email', cEmail)}
+            ${renderField('Ph No', cPhone)}
+            ${renderField('Address', cAddress)}
+            ${renderField('City', cCity)}
+            ${renderField('State', cState)}
+            ${renderField('Zip code', cZip)}
           </div>
         </div>
       </div>
