@@ -131,7 +131,11 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <style>
-      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #fff; color: #000; margin: 0; padding: 0; }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #fff; color: #000; margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .container { max-width: 800px; margin: 0 auto; background: #fff; padding: 40px; box-sizing: border-box; }
       
       /* Header */
@@ -140,14 +144,14 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
       .header-title { font-size: 36px; font-weight: bold; margin: 0 0 40px 0; text-align: center; }
       .invoice-meta { font-size: 16px; font-weight: bold; line-height: 1.5; margin-bottom: 5px; }
       .header-right { text-align: right; }
-      .logo { display: inline-flex; align-items: center; font-size: 28px; font-weight: 900; color: #f29c1f; letter-spacing: 1px; }
-      .logo-icon { display: inline-flex; justify-content: center; align-items: center; width: 36px; height: 36px; background-color: #f29c1f; color: white; border-radius: 50%; font-size: 24px; margin-right: 10px; font-weight: bold; line-height: 1; }
+      .logo { display: inline-flex; align-items: center; font-size: 28px; font-weight: 900; color: #f29c1f; letter-spacing: 1px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      .logo-icon { display: inline-flex; justify-content: center; align-items: center; width: 36px; height: 36px; background-color: #f29c1f !important; color: white !important; border-radius: 50%; font-size: 24px; margin-right: 10px; font-weight: bold; line-height: 1; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 
       /* Two Columns (From / To) */
       .address-container { display: flex; border: 1px solid #e0e0e0; margin-bottom: 30px; }
       .col { flex: 1; border-right: 1px solid #e0e0e0; }
       .col:last-child { border-right: none; }
-      .col-header { background-color: #fcae3f; color: white; padding: 10px 20px; font-weight: bold; font-size: 18px; }
+      .col-header { background-color: #fcae3f !important; color: white !important; padding: 10px 20px; font-weight: bold; font-size: 18px; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .col-body { padding: 20px; font-size: 14px; line-height: 1.8; }
       .col-body div { margin-bottom: 4px; }
       .label-bold { font-weight: bold; }
@@ -165,15 +169,44 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
         th, td { padding: 8px 10px !important; font-size: 11px !important; }
       }
 
+      /* Print Specific Rules */
+      @media print {
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        body {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .col-header, th, .bg-orange {
+          background-color: #fcae3f !important;
+          color: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .logo-icon {
+          background-color: #f29c1f !important;
+          color: white !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .logo {
+          color: #f29c1f !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+      }
+
       /* Items Table */
       table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
-      th { background-color: #fcae3f; color: white; text-align: left; padding: 10px 15px; font-weight: bold; font-size: 15px; border-right: 1px solid white; }
+      th { background-color: #fcae3f !important; color: white !important; text-align: left; padding: 10px 15px; font-weight: bold; font-size: 15px; border-right: 1px solid white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       th:last-child { border-right: none; }
       td { padding: 12px 15px; border: 1px solid #e0e0e0; font-size: 14px; }
       td.no-border-x { border-left: none; border-right: none; }
       
       /* Totals */
-      .bg-orange { background-color: #fcae3f; color: white; font-weight: bold; }
+      .bg-orange { background-color: #fcae3f !important; color: white !important; font-weight: bold; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
       .bold-td { font-weight: bold; }
       
       /* Payment Info */
