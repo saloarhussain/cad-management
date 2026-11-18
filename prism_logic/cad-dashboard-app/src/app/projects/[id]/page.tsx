@@ -348,8 +348,11 @@ export default function ProjectDetailsPage() {
       } else {
         setWasAiParsed(false);
         setIsReceiptParsed(true);
+        const errorMsg = (data.error && !data.error.includes('GoogleGenerativeAI') && !data.error.includes('http') && !data.error.includes('404'))
+          ? data.error 
+          : 'AI scanning is currently unavailable. Please enter details manually below.';
         setNotification({ 
-          message: data.error || 'AI scanning unavailable. Please enter details manually below.', 
+          message: errorMsg, 
           type: 'error' 
         });
       }

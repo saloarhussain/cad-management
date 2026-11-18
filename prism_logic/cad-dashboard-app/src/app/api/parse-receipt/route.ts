@@ -3,11 +3,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const maxDuration = 60; // Allow up to 60 seconds for Gemini API
 
+// Verified active vision models for the current API version
 const CANDIDATE_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro'
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.5-flash'
 ];
 
 async function sleep(ms: number) {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
     Extract the following manual payment details from the attached receipt image. 
     Respond strictly in JSON format with no markdown formatting or backticks.
     Use these exact keys:
-    - platform: The bank name or payment app (e.g. Kotak811, GPay, PhonePe, Chase, PayPal).
+    - platform: The bank name or payment app (e.g. Kotak811, GPay, PhonePe, Chase, PayPal, Wire Transfer).
     - transactionId: The unique transaction ID or reference number.
     - recipientName: The name of the person or business that received the money.
     - date: The date of the transaction in YYYY-MM-DD format.
@@ -74,9 +75,9 @@ export async function POST(req: Request) {
           lastError = err;
           console.warn(`[Receipt Parser] Model ${modelName} (attempt ${attempt + 1}) failed:`, err?.message || err);
           if (err?.message?.includes('503') || err?.message?.includes('429') || err?.status === 503 || err?.status === 429) {
-            await sleep(800 * (attempt + 1));
+            await sleep(600 * (attempt + 1));
           } else {
-            break; // Move to next model if not a transient load issue
+            break; // Skip to next candidate model if not a temporary load issue
           }
         }
       }
@@ -84,14 +85,9 @@ export async function POST(req: Request) {
     }
 
     if (!text) {
-      const is503 = lastError?.message?.includes('503') || lastError?.message?.includes('high demand');
-      const friendlyMessage = is503
-        ? 'AI receipt scanner is currently experiencing high Google server demand. Please enter details manually.'
-        : (lastError?.message || 'Could not parse receipt automatically. Please enter details manually.');
-
       return NextResponse.json({ 
         success: false, 
-        error: friendlyMessage,
+        error: 'AI receipt scanner is currently busy. Please enter payment details manually below.',
         fallbackToManual: true 
       }, { status: 200 });
     }
@@ -125,7 +121,7 @@ export async function POST(req: Request) {
     console.error('Gemini Receipt Parse Error:', error);
     return NextResponse.json({ 
       success: false,
-      error: error.message || 'Failed to parse receipt. Please enter details manually.',
+      error: 'Receipt auto-scanning unavailable. Please enter payment details manually below.',
       fallbackToManual: true
     }, { status: 200 });
   }
