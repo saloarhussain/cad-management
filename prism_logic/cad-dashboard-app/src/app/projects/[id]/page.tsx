@@ -118,6 +118,7 @@ export default function ProjectDetailsPage() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [isParsingReceipt, setIsParsingReceipt] = useState(false);
   const [isReceiptParsed, setIsReceiptParsed] = useState(false);
+  const [wasAiParsed, setWasAiParsed] = useState(false);
   const [manualPaymentForm, setManualPaymentForm] = useState({
     platform: '',
     transactionId: '',
@@ -339,16 +340,24 @@ export default function ProjectDetailsPage() {
           recipientName: data.data.recipientName || prev.recipientName,
           date: data.data.date || prev.date,
           time: data.data.time || prev.time,
-          amountPaid: data.data.amountPaid || prev.amountPaid,
+          amountPaid: data.data.amountPaid ? String(data.data.amountPaid) : prev.amountPaid,
         }));
+        setWasAiParsed(true);
         setIsReceiptParsed(true);
-        setNotification({ message: 'Receipt parsed successfully!', type: 'success' });
+        setNotification({ message: 'Receipt scanned! Please review and confirm.', type: 'success' });
       } else {
-        setNotification({ message: data.error || 'Could not parse receipt.', type: 'error' });
+        setWasAiParsed(false);
+        setIsReceiptParsed(true);
+        setNotification({ 
+          message: data.error || 'AI scanning unavailable. Please enter details manually below.', 
+          type: 'error' 
+        });
       }
     } catch (err) {
       console.error(err);
-      setNotification({ message: 'Failed to upload receipt.', type: 'error' });
+      setWasAiParsed(false);
+      setIsReceiptParsed(true);
+      setNotification({ message: 'AI scanning failed. Please enter details manually below.', type: 'error' });
     } finally {
       setIsParsingReceipt(false);
     }
@@ -1452,7 +1461,13 @@ export default function ProjectDetailsPage() {
                       )}
                       <button 
                         onClick={() => {
-                          setManualPaymentForm(prev => ({ ...prev, amountPaid: project.expense || '' }));
+                          setManualPaymentForm(prev => ({ 
+                            ...prev, 
+                            amountPaid: project.expense || '',
+                            recipientName: project.designer?.name || prev.recipientName || '',
+                            date: prev.date || new Date().toISOString().split('T')[0]
+                          }));
+                          setWasAiParsed(false);
                           setIsReceiptParsed(false);
                           setShowManualPaymentModal(true);
                         }}
@@ -2225,77 +2240,155 @@ export default function ProjectDetailsPage() {
               </div>
 
               {!isReceiptParsed ? (
-                <div 
-                  className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all relative group flex flex-col items-center justify-center min-h-[300px] ${isParsingReceipt ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5'}`}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const file = e.dataTransfer.files?.[0];
-                    if (file && !isParsingReceipt) {
-                      handleReceiptUpload({ target: { files: [file] } } as any);
-                    }
-                  }}
-                >
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleReceiptUpload} 
-                    disabled={isParsingReceipt}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10" 
-                  />
-                  <div className="space-y-4 relative z-0 pointer-events-none">
-                    <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center transition-all ${isParsingReceipt ? 'bg-blue-500/20 animate-pulse' : 'bg-white/5 group-hover:bg-blue-500/10'}`}>
-                      <span className={`material-symbols-outlined text-4xl transition-all ${isParsingReceipt ? 'text-blue-400' : 'text-white/40 group-hover:text-blue-400'}`}>
-                        {isParsingReceipt ? 'hourglass_empty' : 'cloud_upload'}
-                      </span>
+                <div className="space-y-4">
+                  <div 
+                    className={`border-2 border-dashed rounded-3xl p-10 text-center transition-all relative group flex flex-col items-center justify-center min-h-[260px] ${isParsingReceipt ? 'border-blue-500/50 bg-blue-500/5' : 'border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5'}`}
+                    onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const file = e.dataTransfer.files?.[0];
+                      if (file && !isParsingReceipt) {
+                        handleReceiptUpload({ target: { files: [file] } } as any);
+                      }
+                    }}
+                  >
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={handleReceiptUpload} 
+                      disabled={isParsingReceipt}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10" 
+                    />
+                    <div className="space-y-4 relative z-0 pointer-events-none">
+                      <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center transition-all ${isParsingReceipt ? 'bg-blue-500/20 animate-pulse' : 'bg-white/5 group-hover:bg-blue-500/10'}`}>
+                        <span className={`material-symbols-outlined text-4xl transition-all ${isParsingReceipt ? 'text-blue-400' : 'text-white/40 group-hover:text-blue-400'}`}>
+                          {isParsingReceipt ? 'hourglass_empty' : 'cloud_upload'}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-white">{isParsingReceipt ? 'Scanning Receipt...' : 'Upload Payment Receipt'}</h3>
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">
+                          {isParsingReceipt ? 'Extracting details via Gemini AI' : 'Drag & drop image or click to browse'}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-black text-white">{isParsingReceipt ? 'Analyzing Receipt...' : 'Upload Payment Receipt'}</h3>
-                      <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">
-                        {isParsingReceipt ? 'Extracting details via Gemini AI' : 'Drag & drop image or click to browse'}
-                      </p>
-                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center pt-2">
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setWasAiParsed(false);
+                        setIsReceiptParsed(true);
+                      }}
+                      className="text-[10px] font-bold text-blue-400 hover:text-blue-300 uppercase tracking-widest flex items-center gap-1.5 transition-colors py-2 px-4 rounded-xl hover:bg-blue-500/10 border border-blue-500/20"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit_note</span>
+                      Or Enter Payment Details Manually
+                    </button>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="bg-success/10 border border-success/20 rounded-2xl p-4 flex items-center gap-3 mb-4">
-                    <span className="material-symbols-outlined text-success">check_circle</span>
-                    <div>
-                      <p className="text-[10px] font-black text-success uppercase tracking-widest">Parsed Successfully</p>
-                      <p className="text-[9px] font-bold text-success/60 mt-0.5">Please review the extracted details below</p>
+                  {wasAiParsed ? (
+                    <div className="bg-success/10 border border-success/20 rounded-2xl p-4 flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-success text-xl">check_circle</span>
+                        <div>
+                          <p className="text-[10px] font-black text-success uppercase tracking-widest">Scanned by AI</p>
+                          <p className="text-[9px] font-bold text-success/70 mt-0.5">Please review or edit extracted details below</p>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsReceiptParsed(false)} 
+                        className="text-[9px] font-bold text-white/50 hover:text-white uppercase tracking-wider underline cursor-pointer"
+                      >
+                        Re-upload
+                      </button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="material-symbols-outlined text-blue-400 text-xl">edit_note</span>
+                        <div>
+                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Manual Entry Mode</p>
+                          <p className="text-[9px] font-bold text-blue-400/70 mt-0.5">Enter settlement information below</p>
+                        </div>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsReceiptParsed(false)} 
+                        className="text-[9px] font-bold text-white/50 hover:text-white uppercase tracking-wider underline cursor-pointer"
+                      >
+                        Upload Image
+                      </button>
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Platform (e.g. Bank, GPay)</label>
-                      <input type="text" value={manualPaymentForm.platform} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Kotak811" />
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Platform (e.g. Bank, GPay, UPI, Cash) *</label>
+                      <input 
+                        type="text" 
+                        value={manualPaymentForm.platform} 
+                        onChange={(e) => setManualPaymentForm(prev => ({ ...prev, platform: e.target.value }))}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
+                        placeholder="e.g. Kotak811, GPay, PhonePe, Wire Transfer" 
+                      />
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Transaction ID</label>
-                      <input type="text" value={manualPaymentForm.transactionId} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Txn ID" />
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Transaction ID / Reference Number *</label>
+                      <input 
+                        type="text" 
+                        value={manualPaymentForm.transactionId} 
+                        onChange={(e) => setManualPaymentForm(prev => ({ ...prev, transactionId: e.target.value }))}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all font-mono" 
+                        placeholder="e.g. TXN9876543210" 
+                      />
                     </div>
                     <div>
                       <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Recipient Name</label>
-                      <input type="text" value={manualPaymentForm.recipientName} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" placeholder="Designer Name" />
+                      <input 
+                        type="text" 
+                        value={manualPaymentForm.recipientName} 
+                        onChange={(e) => setManualPaymentForm(prev => ({ ...prev, recipientName: e.target.value }))}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
+                        placeholder="Designer / Beneficiary Name" 
+                      />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Date</label>
-                        <input type="date" value={manualPaymentForm.date} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                        <input 
+                          type="date" 
+                          value={manualPaymentForm.date} 
+                          onChange={(e) => setManualPaymentForm(prev => ({ ...prev, date: e.target.value }))}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
+                        />
                       </div>
                       <div>
                         <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Time</label>
-                        <input type="time" value={manualPaymentForm.time} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                        <input 
+                          type="time" 
+                          value={manualPaymentForm.time} 
+                          onChange={(e) => setManualPaymentForm(prev => ({ ...prev, time: e.target.value }))}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all" 
+                        />
                       </div>
                     </div>
                     <div>
-                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Amount Paid</label>
+                      <label className="text-[9px] font-bold text-white/40 uppercase tracking-widest block mb-1.5">Amount Paid *</label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₹</span>
-                        <input type="text" value={manualPaymentForm.amountPaid} readOnly className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm text-white/70 cursor-not-allowed focus:outline-none transition-all" />
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">{getCurrencySymbol(project.expenseCurrency || 'INR')}</span>
+                        <input 
+                          type="text" 
+                          value={manualPaymentForm.amountPaid} 
+                          onChange={(e) => setManualPaymentForm(prev => ({ ...prev, amountPaid: e.target.value }))}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl pl-8 pr-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition-all font-bold" 
+                          placeholder="Amount"
+                        />
                       </div>
                     </div>
                   </div>
@@ -2310,7 +2403,7 @@ export default function ProjectDetailsPage() {
                     <button 
                       onClick={async () => {
                         if (!manualPaymentForm.platform || !manualPaymentForm.transactionId || !manualPaymentForm.amountPaid) {
-                          setNotification({ message: 'Please fill all required fields.', type: 'error' });
+                          setNotification({ message: 'Please fill all required fields (Platform, Txn ID, Amount).', type: 'error' });
                           return;
                         }
                         const manualPaymentBlock = `\n\n[MANUAL_PAYMENT]\nPlatform: ${manualPaymentForm.platform}\nTransaction ID: ${manualPaymentForm.transactionId}\nRecipient Name: ${manualPaymentForm.recipientName}\nDate: ${manualPaymentForm.date}\nTime: ${manualPaymentForm.time}\nAmount Paid: ${manualPaymentForm.amountPaid}`;

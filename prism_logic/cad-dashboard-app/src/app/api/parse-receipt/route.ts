@@ -3,6 +3,17 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const maxDuration = 60; // Allow up to 60 seconds for Gemini API
 
+const CANDIDATE_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro'
+];
+
+async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -13,11 +24,14 @@ export async function POST(req: Request) {
     }
 
     if (!process.env.GEMINI_API_KEY) {
-      return NextResponse.json({ error: 'Gemini API Key missing in environment' }, { status: 500 });
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Gemini API Key missing in environment. Please enter details manually.',
+        fallbackToManual: true 
+      }, { status: 200 });
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -26,7 +40,7 @@ export async function POST(req: Request) {
       {
         inlineData: {
           data: buffer.toString("base64"),
-          mimeType: file.type,
+          mimeType: file.type || 'image/jpeg',
         },
       },
     ];
@@ -45,29 +59,74 @@ export async function POST(req: Request) {
     If you cannot find a specific field, leave it as an empty string.
     `;
 
-    const result = await model.generateContent([prompt, ...imageParts]);
-    const response = await result.response;
-    let text = response.text();
-    
-    // Clean up potential markdown formatting from Gemini
-    if (text.startsWith('```json')) {
-      text = text.substring(7);
-      if (text.endsWith('```')) {
-        text = text.substring(0, text.length - 3);
+    let text = '';
+    let lastError: any = null;
+
+    for (const modelName of CANDIDATE_MODELS) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent([prompt, ...imageParts]);
+          const response = await result.response;
+          text = response.text()?.trim() || '';
+          if (text) break;
+        } catch (err: any) {
+          lastError = err;
+          console.warn(`[Receipt Parser] Model ${modelName} (attempt ${attempt + 1}) failed:`, err?.message || err);
+          if (err?.message?.includes('503') || err?.message?.includes('429') || err?.status === 503 || err?.status === 429) {
+            await sleep(800 * (attempt + 1));
+          } else {
+            break; // Move to next model if not a transient load issue
+          }
+        }
       }
-    } else if (text.startsWith('```')) {
-      text = text.substring(3);
-      if (text.endsWith('```')) {
-        text = text.substring(0, text.length - 3);
+      if (text) break;
+    }
+
+    if (!text) {
+      const is503 = lastError?.message?.includes('503') || lastError?.message?.includes('high demand');
+      const friendlyMessage = is503
+        ? 'AI receipt scanner is currently experiencing high Google server demand. Please enter details manually.'
+        : (lastError?.message || 'Could not parse receipt automatically. Please enter details manually.');
+
+      return NextResponse.json({ 
+        success: false, 
+        error: friendlyMessage,
+        fallbackToManual: true 
+      }, { status: 200 });
+    }
+
+    // Clean up potential markdown formatting from Gemini
+    let cleaned = text;
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.substring(7);
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.substring(3);
+    }
+    if (cleaned.endsWith('```')) {
+      cleaned = cleaned.substring(0, cleaned.length - 3);
+    }
+    cleaned = cleaned.trim();
+
+    let parsedData: any = {};
+    try {
+      parsedData = JSON.parse(cleaned);
+    } catch {
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsedData = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error('AI response was not valid JSON format.');
       }
     }
-    
-    text = text.trim();
-    const parsedData = JSON.parse(text);
 
     return NextResponse.json({ success: true, data: parsedData });
   } catch (error: any) {
     console.error('Gemini Receipt Parse Error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to parse receipt' }, { status: 500 });
+    return NextResponse.json({ 
+      success: false,
+      error: error.message || 'Failed to parse receipt. Please enter details manually.',
+      fallbackToManual: true
+    }, { status: 200 });
   }
 }
