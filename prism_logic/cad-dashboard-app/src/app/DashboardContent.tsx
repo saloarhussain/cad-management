@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { searchProducts, Product, Platform } from '@/lib/productSearchMock';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useAuth } from '@/components/AuthProvider';
@@ -68,9 +69,12 @@ export default function DashboardContent({
       .filter((d: any) => d && d.trim() !== '')
   ).size;
 
+  const router = useRouter();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isProjectsModalOpen, setIsProjectsModalOpen] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [modalSearchQuery, setModalSearchQuery] = useState('');
+  const [copiedInvoiceId, setCopiedInvoiceId] = useState<string | number | null>(null);
   const [isPendingJobsExpanded, setIsPendingJobsExpanded] = useState(false);
   const [isDeadlinesExpanded, setIsDeadlinesExpanded] = useState(false);
 
@@ -440,20 +444,35 @@ export default function DashboardContent({
   }, []);
 
 
+  const getInvoiceNumber = (p: any): string => {
+    if (p?.invoiceNo && String(p.invoiceNo).trim()) return String(p.invoiceNo).trim();
+    if (p?.invoiceNumber && String(p.invoiceNumber).trim()) return String(p.invoiceNumber).trim();
+    if (p?.orderId && String(p.orderId).trim() && p.orderId !== 'Pending' && p.orderId !== 'Generating...') {
+      return String(p.orderId).trim();
+    }
+    if (p?.id) {
+      const idStr = String(p.id).trim();
+      return `M${idStr.slice(0, 5).padStart(5, '0')}`;
+    }
+    return 'M10001';
+  };
+
   const handleCardClick = (metric: string) => {
     setSelectedMetric(metric);
+    setModalSearchQuery('');
+    setCopiedInvoiceId(null);
     setIsProjectsModalOpen(true);
   };
 
-  const getProjectsForMetric = () => {
+  const getProjectsForMetric = useCallback(() => {
     if (!selectedMetric) return [];
     
     if (selectedMetric === 'Total Revenue') {
-      return filteredProjects;
+      return filteredProjects || [];
     }
 
     if (selectedMetric === 'Expenses') {
-      return filteredProjects.filter((p: any) => p.designer && p.designer.trim() !== '');
+      return (filteredProjects || []).filter((p: any) => p.designer && p.designer.trim() !== '');
     }
     
     if (selectedMetric === 'Pending') {
@@ -473,7 +492,29 @@ export default function DashboardContent({
     }
     
     return [];
-  };
+  }, [selectedMetric, filteredProjects, allProjects]);
+
+  const modalFilteredProjects = useMemo(() => {
+    const list = getProjectsForMetric();
+    if (!modalSearchQuery.trim()) return list;
+    const q = modalSearchQuery.toLowerCase().trim();
+    return list.filter((p: any) => {
+      const inv = getInvoiceNumber(p).toLowerCase();
+      const title = (p.title || '').toLowerCase();
+      const client = (p.client || '').toLowerCase();
+      const designer = (p.designer || '').toLowerCase();
+      const orderId = (p.orderId || '').toLowerCase();
+      const id = String(p.id || '').toLowerCase();
+      return (
+        inv.includes(q) ||
+        title.includes(q) ||
+        client.includes(q) ||
+        designer.includes(q) ||
+        orderId.includes(q) ||
+        id.includes(q)
+      );
+    });
+  }, [getProjectsForMetric, modalSearchQuery]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [userCountry, setUserCountry] = useState<string>('IN'); // Default to IN
@@ -621,7 +662,7 @@ export default function DashboardContent({
 
       // Prepare data for Excel
       const dataToExport = filteredProjects.map(p => ({
-        InvoiceNo: p.orderId || `M${p.id ? p.id.toString().slice(0, 5).padStart(5, '0') : '10001'}`,
+        InvoiceNo: getInvoiceNumber(p),
         Title: p.title,
         Client: p.client,
         Designer: p.designer || 'Unassigned',
@@ -915,54 +956,187 @@ export default function DashboardContent({
 
         {/* Projects Modal */}
         {isProjectsModalOpen && selectedMetric && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
             <div
               className="absolute inset-0 bg-zinc-950/80 backdrop-blur-md"
-              onClick={() => setIsProjectsModalOpen(false)}
+              onClick={() => {
+                setIsProjectsModalOpen(false);
+                setModalSearchQuery('');
+              }}
             />
-            <div className="relative w-full max-w-2xl bg-surface-container border border-outline-variant/30 rounded-2xl shadow-2xl p-6 animate-in fade-in zoom-in duration-200 max-h-[80vh] flex flex-col">
-              <div className="flex justify-between items-center mb-6 flex-shrink-0">
-                <div>
-                  <h3 className="font-headline font-black text-lg text-on-surface">{selectedMetric} Projects</h3>
+            <div className="relative w-full max-w-2xl bg-surface-container border border-outline-variant/30 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] sm:max-h-[85vh] flex flex-col overflow-hidden">
+              <div className="flex justify-between items-center mb-3 sm:mb-4 flex-shrink-0 gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#F59E0B] text-xl sm:text-2xl">
+                      {selectedMetric === 'Total Revenue' ? 'payments' : 
+                       selectedMetric === 'Pending' ? 'pending_actions' : 
+                       selectedMetric === 'Expenses' ? 'account_balance_wallet' : 'price_check'}
+                    </span>
+                    <h3 className="font-headline font-black text-base sm:text-xl text-on-surface truncate">
+                      {selectedMetric} Projects
+                    </h3>
+                  </div>
                   <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest mt-1 opacity-60">
-                    {getProjectsForMetric().length} Projects
+                    {modalFilteredProjects.length} {modalFilteredProjects.length === 1 ? 'Project' : 'Projects'}
+                    {modalSearchQuery.trim() && ` (filtered from ${getProjectsForMetric().length})`}
                   </p>
                 </div>
-                <button onClick={() => setIsProjectsModalOpen(false)} className="text-on-surface-variant hover:text-on-surface">
-                  <span className="material-symbols-outlined">close</span>
+                <button 
+                  onClick={() => {
+                    setIsProjectsModalOpen(false);
+                    setModalSearchQuery('');
+                  }} 
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all active:scale-95 flex-shrink-0"
+                  aria-label="Close modal"
+                >
+                  <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
                 </button>
               </div>
 
-              <div className="space-y-3 overflow-y-auto no-scrollbar flex-1">
-                {getProjectsForMetric().length > 0 ? (
-                  getProjectsForMetric().map((p: any) => (
-                    <Link key={p.id} href={`/projects/${p.id}`} className="p-3 bg-zinc-900 border border-white/5 rounded-xl flex flex-col gap-2 hover:border-[#F59E0B]/50 hover:bg-zinc-800/50 transition-all cursor-pointer group">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center">
-                          <p className="text-[4.5px] font-black text-on-surface-variant tracking-widest opacity-60">Order ID: {p.id}</p>
-                          <p className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">
-                            {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Expense' : 'Revenue'}
-                          </p>
+              {/* Responsive Search / Filter Input */}
+              {getProjectsForMetric().length > 2 && (
+                <div className="relative mb-3 flex-shrink-0">
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-[18px] pointer-events-none">
+                    search
+                  </span>
+                  <input
+                    type="text"
+                    value={modalSearchQuery}
+                    onChange={(e) => setModalSearchQuery(e.target.value)}
+                    placeholder="Search by invoice #, client, project..."
+                    className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-[#F59E0B]/50 transition-all font-medium"
+                  />
+                  {modalSearchQuery && (
+                    <button
+                      onClick={() => setModalSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface"
+                      aria-label="Clear search"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">cancel</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <div className="space-y-3 overflow-y-auto no-scrollbar flex-1 pr-0.5">
+                {modalFilteredProjects.length > 0 ? (
+                  modalFilteredProjects.map((p: any) => {
+                    const invoiceNo = getInvoiceNumber(p);
+                    return (
+                      <div 
+                        key={p.id} 
+                        onClick={() => router.push(`/projects/${p.id}`)} 
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            router.push(`/projects/${p.id}`);
+                          }
+                        }}
+                        className="p-3.5 sm:p-4 bg-zinc-900/90 hover:bg-zinc-800/80 border border-white/5 hover:border-[#F59E0B]/40 rounded-xl sm:rounded-2xl flex flex-col gap-2.5 sm:gap-3 transition-all cursor-pointer group shadow-sm hover:shadow-lg focus:outline-none focus:ring-1 focus:ring-[#F59E0B]/50"
+                      >
+                        {/* Top Meta Header: Invoice Number & Metrics */}
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          {/* Invoice Badge + Quick Tools */}
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+                            {/* Invoice Number Pill */}
+                            <div 
+                              className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md sm:rounded-lg bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-[#F59E0B] font-mono text-[10px] sm:text-[11px] font-black tracking-wide shrink-0 shadow-sm"
+                              title={`Invoice Number: ${invoiceNo}`}
+                            >
+                              <span className="material-symbols-outlined text-[13px] sm:text-[14px]">receipt_long</span>
+                              <span className="text-[7.5px] sm:text-[8.5px] uppercase tracking-wider text-on-surface-variant/70 font-sans font-bold">INV</span>
+                              <span className="text-white group-hover:text-[#F59E0B] transition-colors">{invoiceNo}</span>
+                            </div>
+
+                            {/* Copy Invoice Number Button */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                navigator.clipboard?.writeText(invoiceNo);
+                                setCopiedInvoiceId(p.id);
+                                setTimeout(() => setCopiedInvoiceId(null), 1800);
+                              }}
+                              title="Copy Invoice Number"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-on-surface-variant/70 hover:text-white transition-all text-[9px] font-bold active:scale-90 shrink-0"
+                            >
+                              <span className="material-symbols-outlined text-[12px] text-[#F59E0B]">
+                                {copiedInvoiceId === p.id ? 'check' : 'content_copy'}
+                              </span>
+                              <span className="hidden xs:inline">{copiedInvoiceId === p.id ? 'Copied' : 'Copy'}</span>
+                            </button>
+
+                            {/* View / Print Official Invoice */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                window.open(`/api/projects/${p.id}/invoice?print=true`, '_blank');
+                              }}
+                              title="View & Print Invoice"
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 hover:bg-[#F59E0B]/20 text-on-surface-variant/70 hover:text-[#F59E0B] transition-all text-[9px] font-bold active:scale-95 shrink-0"
+                            >
+                              <span className="material-symbols-outlined text-[12px]">open_in_new</span>
+                              <span className="hidden xs:inline">Invoice</span>
+                            </button>
+
+                            {/* Order Reference if exists and different */}
+                            {p.orderId && p.orderId !== invoiceNo && (
+                              <span className="text-[9px] sm:text-[10px] font-mono text-on-surface-variant/50 tracking-wider hidden sm:inline truncate">
+                                Order: #{p.orderId}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Metric Category Label */}
+                          <div className="flex items-center gap-1 shrink-0 ml-auto">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-widest">
+                              {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Expense' : 'Revenue'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center gap-2">
+
+                        {/* Title, Client/Designer & Price Row */}
+                        <div className="flex items-start sm:items-center justify-between gap-3 flex-col sm:flex-row">
                           <div className="min-w-0 flex-1">
-                            <h4 className="font-headline font-extrabold text-on-surface text-sm leading-tight truncate group-hover:text-[#F59E0B] transition-colors" title={p.title}>
+                            <h4 
+                              className="font-headline font-extrabold text-on-surface text-sm sm:text-base leading-tight truncate group-hover:text-[#F59E0B] transition-colors" 
+                              title={p.title}
+                            >
                               {p.title}
                             </h4>
-                            <p className="text-[10px] text-on-surface-variant font-medium mt-1 truncate">
-                              <span className="opacity-50">{selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Designer: ' : 'Client: '}</span>
-                              <span className="font-bold text-on-surface-variant">{selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.designer || 'Unassigned') : p.client}</span>
+                            <p className="text-[10px] sm:text-[11px] text-on-surface-variant font-medium mt-1 truncate">
+                              <span className="opacity-50">
+                                {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'Designer: ' : 'Client: '}
+                              </span>
+                              <span className="font-bold text-on-surface-variant">
+                                {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' 
+                                  ? (p.designer || 'Unassigned') 
+                                  : (p.client || 'Direct Client')}
+                              </span>
                             </p>
                           </div>
-                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                            <div className={`font-headline font-extrabold px-2.5 py-1 rounded border text-xs ${
-                              selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? 'border-zinc-500 text-white' : 'border-[#F59E0B] text-[#F59E0B]'
+
+                          {/* Price & Payout status pill */}
+                          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5 w-full sm:w-auto shrink-0">
+                            <div className={`font-headline font-extrabold px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg border text-xs sm:text-sm tracking-tight ${
+                              selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' 
+                                ? 'border-zinc-700 bg-zinc-800/80 text-white' 
+                                : 'border-[#F59E0B]/50 bg-[#F59E0B]/10 text-[#F59E0B]'
                             }`}>
-                              {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? getCurrencySymbol(p.expenseCurrency || 'INR') : getCurrencySymbol(p.revenueCurrency || 'USD')}
+                              {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' 
+                                ? getCurrencySymbol(p.expenseCurrency || 'INR') 
+                                : getCurrencySymbol(p.revenueCurrency || 'USD')}
                               {parseFloat(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.expense || '0') : (p.revenue || '0')).toLocaleString()}
                             </div>
+
                             {(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due') && (
-                              <span className={`text-[8px] font-black py-0.5 px-2 rounded tracking-wider shadow-sm inline-block ${
+                              <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider shadow-sm inline-block ${
                                 (p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || (p.description && p.description.includes('[MANUAL_PAYMENT]'))) ? 'bg-emerald-500 text-white' : 
                                 'bg-zinc-700 text-white'
                               }`}>
@@ -971,56 +1145,82 @@ export default function DashboardContent({
                             )}
                           </div>
                         </div>
-                      </div>
-                      
-                      {selectedMetric !== 'Expenses' && selectedMetric !== 'Payouts Due' && (
-                        <div className="flex justify-between items-center pt-2 border-t border-white/5 gap-4">
-                          <div className="flex-1 bg-zinc-950/40 p-2 rounded-lg border border-white/5 flex flex-col gap-1 sm:bg-transparent sm:p-0 sm:border-none sm:text-left">
-                            <span className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">Client Status</span>
-                            <div className="sm:flex sm:justify-start">
-                              <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm ${
-                                p.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
-                                p.paymentStatus?.toLowerCase().includes('advance') ? 'bg-sky-500 text-white' : 
-                                'bg-[#e9e2cf] text-zinc-950'
-                              }`}>
-                                {p.paymentStatus?.toLowerCase() === 'paid' ? 'Paid' : 
-                                 p.paymentStatus?.toLowerCase() === 'unpaid' ? 'Unpaid' : 
-                                 p.paymentStatus?.toLowerCase() === 'pending' ? 'Pending' : 
-                                 (p.paymentStatus || 'Unpaid')}
+
+                        {/* Status Badges Row */}
+                        {selectedMetric !== 'Expenses' && selectedMetric !== 'Payouts Due' ? (
+                          <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-2.5 border-t border-white/5 items-center">
+                            {/* Client Status */}
+                            <div className="bg-zinc-950/40 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-start gap-1 sm:gap-2">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-on-surface-variant tracking-widest uppercase opacity-60">Client Status:</span>
+                              <div>
+                                <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 sm:px-2.5 rounded tracking-wider inline-block text-center shadow-sm ${
+                                  p.paymentStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
+                                  p.paymentStatus?.toLowerCase().includes('advance') ? 'bg-sky-500 text-white' : 
+                                  'bg-[#e9e2cf] text-zinc-950'
+                                }`}>
+                                  {p.paymentStatus?.toLowerCase() === 'paid' ? 'Paid' : 
+                                   p.paymentStatus?.toLowerCase() === 'unpaid' ? 'Unpaid' : 
+                                   p.paymentStatus?.toLowerCase() === 'pending' ? 'Pending' : 
+                                   (p.paymentStatus || 'Unpaid')}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Designer Payout / Progress */}
+                            <div className="bg-zinc-950/40 sm:bg-transparent p-2 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-none flex flex-col sm:flex-row sm:items-center sm:justify-end gap-1 sm:gap-2 text-right">
+                              <span className="text-[8px] sm:text-[9px] font-bold text-on-surface-variant tracking-widest uppercase opacity-60">
+                                {selectedMetric === 'Pending' ? 'Progress:' : 'Payout:'}
                               </span>
+                              <div>
+                                {selectedMetric === 'Pending' ? (
+                                  <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 sm:px-2.5 rounded tracking-wider inline-block text-center shadow-sm border ${
+                                    p.status?.toLowerCase().includes('urgent') || p.status?.toLowerCase().includes('high') ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                    p.status?.toLowerCase().includes('complete') || p.status?.toLowerCase().includes('approve') || p.status?.toLowerCase().includes('done') || p.status?.toLowerCase().includes('delivered') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
+                                    p.status?.toLowerCase().includes('pending') || p.status?.toLowerCase().includes('review') || p.status?.toLowerCase().includes('await') ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
+                                    'bg-sky-500/20 text-sky-400 border-sky-500/30'
+                                  }`}>
+                                    {p.status || 'In Progress'}
+                                  </span>
+                                ) : (
+                                  <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 sm:px-2.5 rounded tracking-wider inline-block text-center shadow-sm ${
+                                    p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
+                                    'bg-zinc-700 text-white'
+                                  }`}>
+                                    {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <div className="flex-1 bg-zinc-950/40 p-2 rounded-lg border border-white/5 flex flex-col gap-1 sm:bg-transparent sm:p-0 sm:border-none sm:text-right">
-                            <span className="text-[8px] font-bold text-on-surface-variant tracking-widest opacity-60">
-                              {selectedMetric === 'Pending' ? 'Project Progress' : 'Designer Payout'}
+                        ) : (
+                          <div className="flex items-center justify-between pt-2.5 border-t border-white/5 text-[9px] text-on-surface-variant/70">
+                            <span className="truncate">
+                              <strong className="text-white/60">Designer:</strong> {p.designer || 'Unassigned'}
                             </span>
-                            <div className="sm:flex sm:justify-end">
-                              {selectedMetric === 'Pending' ? (
-                                <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm border ${
-                                  p.status?.toLowerCase().includes('urgent') || p.status?.toLowerCase().includes('high') ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                  p.status?.toLowerCase().includes('complete') || p.status?.toLowerCase().includes('approve') || p.status?.toLowerCase().includes('done') || p.status?.toLowerCase().includes('delivered') ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' :
-                                  p.status?.toLowerCase().includes('pending') || p.status?.toLowerCase().includes('review') || p.status?.toLowerCase().includes('await') ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' :
-                                  'bg-sky-500/20 text-sky-400 border-sky-500/30'
-                                }`}>
-                                  {p.status || 'In Progress'}
-                                </span>
-                              ) : (
-                                <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider inline-block text-center w-full sm:w-auto shadow-sm ${
-                                  p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
-                                  'bg-zinc-700 text-white'
-                                }`}>
-                                  {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
-                                </span>
-                              )}
-                            </div>
+                            <span className="font-mono text-white/50 shrink-0">
+                              {p.deadlineDate ? `Due: ${p.deadlineDate}` : ''}
+                            </span>
                           </div>
-                        </div>
-                      )}
-                    </Link>
-                  ))
+                        )}
+                      </div>
+                    );
+                  })
                 ) : (
-                  <div className="text-center py-10 opacity-50">
-                    <span className="text-[10px] font-black uppercase tracking-widest">No projects found for this metric.</span>
+                  <div className="text-center py-10 opacity-60 flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">
+                      {modalSearchQuery.trim() ? 'search_off' : 'receipt_long'}
+                    </span>
+                    <span className="text-[11px] font-black uppercase tracking-widest">
+                      {modalSearchQuery.trim() ? 'No matching projects found' : 'No projects found for this metric.'}
+                    </span>
+                    {modalSearchQuery.trim() && (
+                      <button 
+                        onClick={() => setModalSearchQuery('')}
+                        className="text-[10px] text-[#F59E0B] hover:underline font-bold mt-1"
+                      >
+                        Reset search filter
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1285,7 +1485,7 @@ export default function DashboardContent({
                                 <div className="min-w-0">
                                   <h4 className="text-xs font-black text-white uppercase truncate tracking-tight">{p.title}</h4>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <span className="text-[8px] font-black text-white/30 uppercase tracking-wider">#{p.orderId || 'N/A'}</span>
+                                    <span className="text-[8px] font-mono font-bold text-white/50 uppercase tracking-wider">INV: {getInvoiceNumber(p)}</span>
                                     <span className="w-1 h-1 rounded-full bg-white/10" />
                                     <span className="text-[8px] font-black text-[#00fbfe] uppercase tracking-wider">{p.status || 'Pending'}</span>
                                   </div>
