@@ -482,18 +482,13 @@ export async function saveProject(formData: FormData) {
     const source: 'Direct' | 'Fiverr' | 'Upwork' | 'Other' = 
       rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Upwork' ? 'Upwork' : rawSource === 'Other' ? 'Other' : 'Direct';
 
-    // Source reference (e.g. Fiverr order ID: FO8234038CF82, Upwork contract ID, etc.)
+    // Source reference (e.g. Fiverr order ID: FO8234038CF82, Upwork contract ID, etc.) - Optional
     let source_ref = ((formData.get('source_ref') as string) || '').trim();
 
     // If client submitted an old orderId field starting with FO, capture it as source_ref
     const rawOrderIdInput = ((formData.get('orderId') as string) || '').trim();
     if (!source_ref && (rawOrderIdInput.startsWith('FO') || rawOrderIdInput.startsWith('#FO'))) {
       source_ref = rawOrderIdInput.replace(/^#/, '');
-    }
-
-    // Validation: When source = Fiverr or Upwork, source_ref is strictly required
-    if ((source === 'Fiverr' || source === 'Upwork') && !source_ref) {
-      return { success: false, error: `${source} order reference ID is required when source is ${source}.` };
     }
 
     // The invoice number in Cadonce MUST always belong to the continuous GST MC series

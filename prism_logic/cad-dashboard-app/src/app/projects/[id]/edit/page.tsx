@@ -462,11 +462,11 @@ export default function EditProjectPage() {
                           </div>
 
                           <div className="space-y-2">
-                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Source Reference (e.g. Fiverr / Upwork ID)</label>
+                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Source Ref ID (Optional)</label>
                             <input 
                               name="source_ref" 
                               defaultValue={project.source_ref || (project.orderId?.startsWith('FO') ? project.orderId : '')} 
-                              placeholder="e.g. FO8234038CF82 or Upwork ref" 
+                              placeholder="e.g. FO8234038CF82, Upwork ref, or external PO" 
                               className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm font-mono text-white" 
                               type="text" 
                             />

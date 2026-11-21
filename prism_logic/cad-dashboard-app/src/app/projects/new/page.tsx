@@ -575,11 +575,6 @@ export default function NewProjectPage() {
       return;
     }
 
-    if ((source === 'Fiverr' || source === 'Upwork') && !sourceRef.trim()) {
-      alert(`${source} Order ID is required when source is set to ${source}.`);
-      return;
-    }
-
     setSaving(true);
     formData.set('client', clientVal);
     formData.set('designer', designerVal);
@@ -789,43 +784,31 @@ export default function NewProjectPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                          {source === 'Fiverr' 
-                            ? 'Fiverr Order ID' 
-                            : source === 'Upwork'
-                            ? 'Upwork Order / Contract ID'
-                            : 'Reference / PO ID (Optional)'}
+                          Source Ref ID
                         </label>
-                        {(source === 'Fiverr' || source === 'Upwork') && (
-                          <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
-                            Required *
-                          </span>
-                        )}
+                        <span className="text-[9px] font-bold text-stone-500 uppercase tracking-widest">
+                          Optional
+                        </span>
                       </div>
                       <div className="relative">
                         <input 
                           name="source_ref" 
                           value={sourceRef}
                           onChange={(e) => setSourceRef(e.target.value)}
-                          required={source === 'Fiverr' || source === 'Upwork'}
-                          className={`w-full bg-black/40 border ${
-                            (source === 'Fiverr' || source === 'Upwork') && !sourceRef.trim()
-                              ? 'border-red-500/50 focus:border-red-500'
-                              : 'border-white/10 focus:border-[#F59E0B]'
-                          } rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner`} 
+                          className="w-full bg-black/40 border border-white/10 focus:border-[#F59E0B] rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner" 
                           placeholder={
                             source === 'Fiverr' 
-                              ? "e.g. FO8234038CF82" 
+                              ? "e.g. FO8234038CF82 (Fiverr Order ID)" 
                               : source === 'Upwork'
-                              ? "e.g. 39482019 or contract ref"
-                              : "e.g. PO-2026-9042 or client reference"
+                              ? "e.g. 39482019 (Upwork Contract/Order ID)"
+                              : "e.g. PO-2026-9042 or External Ref"
                           } 
                           type="text" 
                         />
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 text-sm pointer-events-none">tag</span>
                       </div>
                       <p className="text-[10px] text-stone-500 font-medium ml-1">
-                        GST Invoice Number is auto-generated in continuous statutory series (MC/26-27/XXXX) on save.
+                        GST Invoice Number is auto-generated in continuous statutory series (MC/26-27/XXXX). Enter Source Ref ID when receiving an order from Fiverr, Upwork, or another platform.
                       </p>
                     </div>
                   </div>
