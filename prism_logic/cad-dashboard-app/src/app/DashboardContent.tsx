@@ -444,7 +444,7 @@ export default function DashboardContent({
   }, []);
 
 
-  const getSource = (p: any): 'Direct' | 'Fiverr' | 'Other' => {
+  const getSource = (p: any): 'Direct' | 'Fiverr' | 'Upwork' | 'Other' => {
     if (p?.source) return p.source;
     if (Array.isArray(p?.tags)) {
       const tag = p.tags.find((t: string) => t.startsWith('SOURCE:'));
@@ -1096,11 +1096,16 @@ export default function DashboardContent({
                               <span className="text-white group-hover:text-[#F59E0B] transition-colors">{invoiceNo}</span>
                             </div>
 
-                            {/* Source Badge (Direct / Fiverr / Other) */}
+                            {/* Source Badge (Direct / Fiverr / Upwork / Other) */}
                             {getSource(p) === 'Fiverr' ? (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#1dbf73]/15 border border-[#1dbf73]/30 text-[#1dbf73] font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#1dbf73]" />
                                 Fiverr
+                              </span>
+                            ) : getSource(p) === 'Upwork' ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#14a800]/15 border border-[#14a800]/30 text-[#14a800] font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#14a800]" />
+                                Upwork
                               </span>
                             ) : getSource(p) === 'Other' ? (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-stone-300 font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">

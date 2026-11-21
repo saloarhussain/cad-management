@@ -224,9 +224,9 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
             </div>
           ` : ''}
           <div class="invoice-meta">INVOICE NO - ${invoiceNo}</div>
-          ${(project.source_ref || (Array.isArray(project.tags) && project.tags.find((t: string) => t.startsWith('REF:')))) ? `
+          ${(project.source_ref || (Array.isArray(project.tags) && project.tags.some((t: string) => t.startsWith('REF:')))) ? `
             <div class="invoice-meta" style="font-size: 13px; font-weight: normal; color: #666; margin-bottom: 4px;">
-              Ref: ${project.source_ref || project.tags.find((t: string) => t.startsWith('REF:')).replace('REF:', '')}
+              Ref: ${project.source_ref || project.tags.find((t: string) => t.startsWith('REF:'))?.replace('REF:', '')}
             </div>
           ` : ''}
           <div class="invoice-meta">INVOICE DATE - ${invoiceDate}</div>

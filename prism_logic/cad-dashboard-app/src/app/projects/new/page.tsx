@@ -489,7 +489,7 @@ export default function NewProjectPage() {
   const [expenseInput, setExpenseInput] = useState("");
   const [revCurr, setRevCurr] = useState("USD");
   const [expCurr, setExpCurr] = useState("INR");
-  const [source, setSource] = useState<'Direct' | 'Fiverr' | 'Other'>('Direct');
+  const [source, setSource] = useState<'Direct' | 'Fiverr' | 'Upwork' | 'Other'>('Direct');
   const [sourceRef, setSourceRef] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
@@ -575,8 +575,8 @@ export default function NewProjectPage() {
       return;
     }
 
-    if (source === 'Fiverr' && !sourceRef.trim()) {
-      alert('Fiverr Order ID is required when source is set to Fiverr.');
+    if ((source === 'Fiverr' || source === 'Upwork') && !sourceRef.trim()) {
+      alert(`${source} Order ID is required when source is set to ${source}.`);
       return;
     }
 
@@ -761,8 +761,8 @@ export default function NewProjectPage() {
                       <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
                         Invoice Source
                       </label>
-                      <div className="grid grid-cols-3 gap-2">
-                        {(['Direct', 'Fiverr', 'Other'] as const).map((s) => (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {(['Direct', 'Fiverr', 'Upwork', 'Other'] as const).map((s) => (
                           <button
                             key={s}
                             type="button"
@@ -771,11 +771,14 @@ export default function NewProjectPage() {
                               source === s
                                 ? s === 'Fiverr'
                                   ? 'bg-[#1dbf73]/20 border-[#1dbf73] text-[#1dbf73] shadow-sm'
+                                  : s === 'Upwork'
+                                  ? 'bg-[#14a800]/20 border-[#14a800] text-[#14a800] shadow-sm'
                                   : 'bg-[#F59E0B]/20 border-[#F59E0B] text-[#F59E0B] shadow-sm'
                                 : 'bg-black/40 border-white/10 text-stone-400 hover:text-white hover:border-white/20'
                             }`}
                           >
                             {s === 'Fiverr' && <span className="w-1.5 h-1.5 rounded-full bg-[#1dbf73]" />}
+                            {s === 'Upwork' && <span className="w-1.5 h-1.5 rounded-full bg-[#14a800]" />}
                             {s}
                           </button>
                         ))}
@@ -786,9 +789,13 @@ export default function NewProjectPage() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                          {source === 'Fiverr' ? 'Fiverr Order ID' : 'Reference / PO ID (Optional)'}
+                          {source === 'Fiverr' 
+                            ? 'Fiverr Order ID' 
+                            : source === 'Upwork'
+                            ? 'Upwork Order / Contract ID'
+                            : 'Reference / PO ID (Optional)'}
                         </label>
-                        {source === 'Fiverr' && (
+                        {(source === 'Fiverr' || source === 'Upwork') && (
                           <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
                             Required *
@@ -800,19 +807,25 @@ export default function NewProjectPage() {
                           name="source_ref" 
                           value={sourceRef}
                           onChange={(e) => setSourceRef(e.target.value)}
-                          required={source === 'Fiverr'}
+                          required={source === 'Fiverr' || source === 'Upwork'}
                           className={`w-full bg-black/40 border ${
-                            source === 'Fiverr' && !sourceRef.trim()
+                            (source === 'Fiverr' || source === 'Upwork') && !sourceRef.trim()
                               ? 'border-red-500/50 focus:border-red-500'
                               : 'border-white/10 focus:border-[#F59E0B]'
                           } rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner`} 
-                          placeholder={source === 'Fiverr' ? "e.g. FO8234038CF82" : "e.g. PO-2026-9042 or client reference"} 
+                          placeholder={
+                            source === 'Fiverr' 
+                              ? "e.g. FO8234038CF82" 
+                              : source === 'Upwork'
+                              ? "e.g. 39482019 or contract ref"
+                              : "e.g. PO-2026-9042 or client reference"
+                          } 
                           type="text" 
                         />
                         <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 text-sm pointer-events-none">tag</span>
                       </div>
                       <p className="text-[10px] text-stone-500 font-medium ml-1">
-                        GST Invoice Number is auto-generated in continuous statutory series (MC/YY-YY/XXXX) on save.
+                        GST Invoice Number is auto-generated in continuous statutory series (MC/26-27/XXXX) on save.
                       </p>
                     </div>
                   </div>

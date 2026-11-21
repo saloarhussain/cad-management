@@ -471,11 +471,17 @@ function GstTable13Content() {
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         {inv.source === 'Fiverr' ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#1dbf73]/15 border border-[#1dbf73]/30 text-[#1dbf73] font-bold text-[9px] uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#1dbf73]" />
                             Fiverr
+                          </span>
+                        ) : inv.source === 'Upwork' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#14a800]/15 border border-[#14a800]/30 text-[#14a800] font-bold text-[9px] uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#14a800]" />
+                            Upwork
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/5 border border-white/10 text-stone-300 font-bold text-[9px] uppercase tracking-wider">
-                            Direct
+                            {inv.source || 'Direct'}
                           </span>
                         )}
                       </td>

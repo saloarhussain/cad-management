@@ -12,7 +12,7 @@
 const fyLocks: Record<string, Promise<void>> = {};
 
 function acquireFyLock(fy: string): Promise<() => void> {
-  let release: () => void;
+  let release: () => void = () => {};
   const lockPromise = new Promise<void>((resolve) => {
     release = resolve;
   });

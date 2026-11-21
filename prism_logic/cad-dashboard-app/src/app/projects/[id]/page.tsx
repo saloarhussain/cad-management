@@ -804,9 +804,9 @@ export default function ProjectDetailsPage() {
                           <span className={`w-2 h-2 rounded-full ${project.status?.toLowerCase() === 'cancelled' ? 'bg-red-500' : project.status === 'Completed' ? 'bg-success' : 'bg-[#fce003] animate-pulse'}`}></span>
                         </div>
                         <p className="text-xs font-mono font-bold text-primary truncate">{project.orderId || 'N/A'}</p>
-                        {(project.source_ref || (Array.isArray(project.tags) && project.tags.find((t: string) => t.startsWith('REF:')))) && (
+                        {(project.source_ref || (Array.isArray(project.tags) && project.tags.some((t: string) => t.startsWith('REF:')))) && (
                           <p className="text-[10px] font-mono text-neutral-400 truncate mt-0.5">
-                            Ref: {project.source_ref || project.tags.find((t: string) => t.startsWith('REF:')).replace('REF:', '')}
+                            Ref: {project.source_ref || project.tags.find((t: string) => t.startsWith('REF:'))?.replace('REF:', '')}
                           </p>
                         )}
                         <div className="mt-1 flex items-center gap-1.5">

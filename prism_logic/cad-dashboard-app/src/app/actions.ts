@@ -477,12 +477,12 @@ export async function saveProject(formData: FormData) {
   try {
     const { user, supabase } = await getAuthenticatedUser();
     
-    // Determine source: Direct | Fiverr | Other (default to Direct)
+    // Determine source: Direct | Fiverr | Upwork | Other (default to Direct)
     const rawSource = (formData.get('source') as string) || 'Direct';
-    const source: 'Direct' | 'Fiverr' | 'Other' = 
-      rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Other' ? 'Other' : 'Direct';
+    const source: 'Direct' | 'Fiverr' | 'Upwork' | 'Other' = 
+      rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Upwork' ? 'Upwork' : rawSource === 'Other' ? 'Other' : 'Direct';
 
-    // Source reference (e.g. Fiverr order ID: FO8234038CF82)
+    // Source reference (e.g. Fiverr order ID: FO8234038CF82, Upwork contract ID, etc.)
     let source_ref = ((formData.get('source_ref') as string) || '').trim();
 
     // If client submitted an old orderId field starting with FO, capture it as source_ref
@@ -491,13 +491,14 @@ export async function saveProject(formData: FormData) {
       source_ref = rawOrderIdInput.replace(/^#/, '');
     }
 
-    // Validation: When source = Fiverr, source_ref is strictly required
-    if (source === 'Fiverr' && !source_ref) {
-      return { success: false, error: 'Fiverr order reference ID is required when source is Fiverr.' };
+    // Validation: When source = Fiverr or Upwork, source_ref is strictly required
+    if ((source === 'Fiverr' || source === 'Upwork') && !source_ref) {
+      return { success: false, error: `${source} order reference ID is required when source is ${source}.` };
     }
 
     // The invoice number in Cadonce MUST always belong to the continuous GST MC series
-    const orderId = await getNextGstInvoiceNumber(supabase, formData.get('orderDate'));
+    const rawOrderDate = (formData.get('orderDate') as string) || undefined;
+    const orderId = await getNextGstInvoiceNumber(supabase, rawOrderDate);
 
     const parsedTags = (() => {
       const val = formData.get('tags');
@@ -836,11 +837,13 @@ export async function updateProjectAction(formData: FormData) {
     const { data: existingProj } = await supabase.from('projects').select('orderId, source, source_ref, tags').eq('id', projectId).maybeSingle();
     let orderId = existingProj?.orderId || (formData.get('orderId') as string);
     if (!orderId || !orderId.startsWith('MC/')) {
-      orderId = await getNextGstInvoiceNumber(supabase, formData.get('orderDate'));
+      const rawOrderDate = (formData.get('orderDate') as string) || undefined;
+      orderId = await getNextGstInvoiceNumber(supabase, rawOrderDate);
     }
 
     const rawSource = (formData.get('source') as string) || existingProj?.source || 'Direct';
-    const source = rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Other' ? 'Other' : 'Direct';
+    const source: 'Direct' | 'Fiverr' | 'Upwork' | 'Other' = 
+      rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Upwork' ? 'Upwork' : rawSource === 'Other' ? 'Other' : 'Direct';
     const rawSourceRef = formData.get('source_ref') !== null 
       ? (formData.get('source_ref') as string).trim() 
       : (existingProj?.source_ref || '');
