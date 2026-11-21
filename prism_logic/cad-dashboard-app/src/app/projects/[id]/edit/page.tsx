@@ -436,9 +436,41 @@ export default function EditProjectPage() {
                         </div>
                       </div>
                       
-                      <div className="space-y-2">
-                        <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Order ID</label>
-                        <input name="orderId" defaultValue={project.orderId} className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white" type="text" />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">GST Invoice Number</label>
+                          <div className="w-full bg-surface-container-lowest/60 border border-white/5 rounded p-3 text-stone-300 font-mono text-sm flex items-center justify-between">
+                            <span>{project.orderId || 'Auto-assigned'}</span>
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">Statutory Continuous Series</span>
+                          </div>
+                          <input type="hidden" name="orderId" value={project.orderId} />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Source</label>
+                            <select 
+                              name="source" 
+                              defaultValue={project.source || (project.orderId?.startsWith('FO') ? 'Fiverr' : 'Direct')}
+                              className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm text-white"
+                            >
+                              <option value="Direct">Direct</option>
+                              <option value="Fiverr">Fiverr</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="font-label text-[10px] font-bold uppercase tracking-wider text-stone-400">Source Reference (e.g. Fiverr ID)</label>
+                            <input 
+                              name="source_ref" 
+                              defaultValue={project.source_ref || (project.orderId?.startsWith('FO') ? project.orderId : '')} 
+                              placeholder="e.g. FO8234038CF82" 
+                              className="w-full bg-surface-container-lowest border-none rounded p-3 text-on-surface focus:ring-2 focus:ring-[#fce003] transition-all text-sm font-mono text-white" 
+                              type="text" 
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-4">

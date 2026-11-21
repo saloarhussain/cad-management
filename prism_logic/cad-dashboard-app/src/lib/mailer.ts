@@ -218,7 +218,17 @@ export function invoiceTemplate(project: any, client: any, orgSettings?: any) {
       
       <div class="header-container">
         <div class="header-left">
+          ${(project.status?.toLowerCase() === 'cancelled' || project.cancelled_at) ? `
+            <div style="display: inline-block; padding: 4px 10px; background: #fee2e2; border: 1px solid #ef4444; color: #b91c1c; font-weight: bold; border-radius: 4px; font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">
+              ⚠ CANCELLED INVOICE ${project.cancellation_reason ? `— ${project.cancellation_reason}` : ''}
+            </div>
+          ` : ''}
           <div class="invoice-meta">INVOICE NO - ${invoiceNo}</div>
+          ${(project.source_ref || (Array.isArray(project.tags) && project.tags.find((t: string) => t.startsWith('REF:')))) ? `
+            <div class="invoice-meta" style="font-size: 13px; font-weight: normal; color: #666; margin-bottom: 4px;">
+              Ref: ${project.source_ref || project.tags.find((t: string) => t.startsWith('REF:')).replace('REF:', '')}
+            </div>
+          ` : ''}
           <div class="invoice-meta">INVOICE DATE - ${invoiceDate}</div>
         </div>
         <div class="header-right">

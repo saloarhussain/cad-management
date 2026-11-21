@@ -34,6 +34,7 @@ export const SidebarNav: React.FC = () => {
     { label: 'Clients', icon: 'badge', href: '/clients' },
     { label: 'Inbox', icon: 'mail', href: '/inbox' },
     { label: 'Transfers', icon: 'cloud_upload', href: '/transfer' },
+    { label: 'GST Table 13', icon: 'account_balance', href: '/gst-table-13' },
     { label: 'Settings', icon: 'settings', href: '/settings' },
     { label: 'Render', icon: 'photo_camera', href: '/render' },
     { label: 'Portfolio', icon: 'folder_special', href: '/portfolio' },

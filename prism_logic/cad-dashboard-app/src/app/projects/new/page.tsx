@@ -489,6 +489,8 @@ export default function NewProjectPage() {
   const [expenseInput, setExpenseInput] = useState("");
   const [revCurr, setRevCurr] = useState("USD");
   const [expCurr, setExpCurr] = useState("INR");
+  const [source, setSource] = useState<'Direct' | 'Fiverr' | 'Other'>('Direct');
+  const [sourceRef, setSourceRef] = useState('');
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -573,15 +575,24 @@ export default function NewProjectPage() {
       return;
     }
 
+    if (source === 'Fiverr' && !sourceRef.trim()) {
+      alert('Fiverr Order ID is required when source is set to Fiverr.');
+      return;
+    }
+
     setSaving(true);
     formData.set('client', clientVal);
     formData.set('designer', designerVal);
+    formData.set('source', source);
+    formData.set('source_ref', sourceRef.trim());
     formData.append('tags', JSON.stringify(skills));
 
     const tempProject = {
       id: Date.now().toString(),
       title: titleVal,
-      orderId: (formData.get('orderId') as string) || 'Generating...',
+      orderId: 'Generating...',
+      source,
+      source_ref: sourceRef.trim() || null,
       client: clientVal,
       clientCompany: clientVal,
       clientShortName: clientVal.slice(0, 2).toUpperCase(),
@@ -744,19 +755,65 @@ export default function NewProjectPage() {
                     />
                   </div>
 
-                  {/* Order ID & Tag */}
-                  <div className="space-y-2">
-                    <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
-                      Tracking / Order ID
-                    </label>
-                    <div className="relative">
-                      <input 
-                        name="orderId" 
-                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner" 
-                        placeholder="e.g. #ORD-2026-9042 (Leave empty for auto-generation)" 
-                        type="text" 
-                      />
-                      <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 text-sm pointer-events-none">tag</span>
+                  {/* Invoice Source & Reference */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
+                        Invoice Source
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {(['Direct', 'Fiverr', 'Other'] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setSource(s)}
+                            className={`py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border ${
+                              source === s
+                                ? s === 'Fiverr'
+                                  ? 'bg-[#1dbf73]/20 border-[#1dbf73] text-[#1dbf73] shadow-sm'
+                                  : 'bg-[#F59E0B]/20 border-[#F59E0B] text-[#F59E0B] shadow-sm'
+                                : 'bg-black/40 border-white/10 text-stone-400 hover:text-white hover:border-white/20'
+                            }`}
+                          >
+                            {s === 'Fiverr' && <span className="w-1.5 h-1.5 rounded-full bg-[#1dbf73]" />}
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <input type="hidden" name="source" value={source} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <label className="font-label text-[10px] font-black uppercase tracking-wider text-stone-300 ml-1">
+                          {source === 'Fiverr' ? 'Fiverr Order ID' : 'Reference / PO ID (Optional)'}
+                        </label>
+                        {source === 'Fiverr' && (
+                          <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"></span>
+                            Required *
+                          </span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input 
+                          name="source_ref" 
+                          value={sourceRef}
+                          onChange={(e) => setSourceRef(e.target.value)}
+                          required={source === 'Fiverr'}
+                          className={`w-full bg-black/40 border ${
+                            source === 'Fiverr' && !sourceRef.trim()
+                              ? 'border-red-500/50 focus:border-red-500'
+                              : 'border-white/10 focus:border-[#F59E0B]'
+                          } rounded-xl p-3.5 pl-10 text-white font-mono text-sm placeholder:text-stone-700 focus:ring-1 focus:ring-[#F59E0B] transition-all outline-none shadow-inner`} 
+                          placeholder={source === 'Fiverr' ? "e.g. FO8234038CF82" : "e.g. PO-2026-9042 or client reference"} 
+                          type="text" 
+                        />
+                        <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-500 text-sm pointer-events-none">tag</span>
+                      </div>
+                      <p className="text-[10px] text-stone-500 font-medium ml-1">
+                        GST Invoice Number is auto-generated in continuous statutory series (MC/YY-YY/XXXX) on save.
+                      </p>
                     </div>
                   </div>
                 </div>

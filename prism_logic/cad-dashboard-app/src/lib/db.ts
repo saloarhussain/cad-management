@@ -164,7 +164,20 @@ export async function insertRecord(table: string, data: any, userId: string, cus
   if (!userId) throw new Error('Authentication required');
   const supabase = customClient || browserClient;
   const { error } = await supabase.from(table).insert({ ...data, user_id: userId });
-  if (error) throw new Error(`Insert failed: ${error.message}`);
+  if (error) {
+    // Graceful fallback if database schema migration has not yet been run
+    if (error.code === 'PGRST204' && table === 'projects') {
+      const sanitized = { ...data };
+      delete sanitized.source;
+      delete sanitized.source_ref;
+      delete sanitized.cancelled_at;
+      delete sanitized.cancellation_reason;
+      const retry = await supabase.from(table).insert({ ...sanitized, user_id: userId });
+      if (retry.error) throw new Error(`Insert failed: ${retry.error.message}`);
+      return;
+    }
+    throw new Error(`Insert failed: ${error.message}`);
+  }
 }
 
 /**
@@ -174,7 +187,20 @@ export async function updateRecord(table: string, id: string, data: any, userId:
   if (!userId) throw new Error('Authentication required');
   const supabase = customClient || browserClient;
   const { error } = await supabase.from(table).update(data).eq('id', id).eq('user_id', userId);
-  if (error) throw new Error(`Update failed: ${error.message}`);
+  if (error) {
+    // Graceful fallback if database schema migration has not yet been run
+    if (error.code === 'PGRST204' && table === 'projects') {
+      const sanitized = { ...data };
+      delete sanitized.source;
+      delete sanitized.source_ref;
+      delete sanitized.cancelled_at;
+      delete sanitized.cancellation_reason;
+      const retry = await supabase.from(table).update(sanitized).eq('id', id).eq('user_id', userId);
+      if (retry.error) throw new Error(`Update failed: ${retry.error.message}`);
+      return;
+    }
+    throw new Error(`Update failed: ${error.message}`);
+  }
 }
 
 /**

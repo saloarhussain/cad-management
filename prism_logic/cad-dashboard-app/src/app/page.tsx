@@ -148,17 +148,26 @@ export default function DashboardPage() {
           return false;
         });
 
-        // Financial stats with proper conversion
-        const totalRevenue = filtered.reduce((sum: number, p: any) => 
-          sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
+        // Helper to identify cancelled invoices
+        const isCancelled = (p: any) => {
+          const s = (p.status || '').toLowerCase();
+          return s === 'cancelled' || Boolean(p.cancelled_at) || (Array.isArray(p.tags) && p.tags.includes('STATUS:CANCELLED'));
+        };
+
+        // Financial stats with proper conversion (Statutory GST rule: Cancelled invoices are strictly excluded from totals)
+        const totalRevenue = filtered
+          .filter((p: any) => !isCancelled(p))
+          .reduce((sum: number, p: any) => 
+            sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
         
         const totalExpense = filtered
-          .filter((p: any) => p.designer && p.designer.trim() !== '')
+          .filter((p: any) => !isCancelled(p) && p.designer && p.designer.trim() !== '')
           .reduce((sum: number, p: any) => 
             sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
         
         const pendingRevenue = projects
           .filter((p: any) => {
+            if (isCancelled(p)) return false;
             const s = p.status?.toLowerCase() || '';
             return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
           })
@@ -166,11 +175,13 @@ export default function DashboardPage() {
             sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
 
         const activeProjectsCount = projects.filter((p: any) => {
+          if (isCancelled(p)) return false;
           const s = p.status?.toLowerCase() || '';
           return !s.includes('complete') && !s.includes('done');
         }).length;
 
         const payoutsDueProjects = projects.filter((p: any) => {
+          if (isCancelled(p)) return false;
           const s = p.status?.toLowerCase() || '';
           const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
           return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
@@ -180,7 +191,7 @@ export default function DashboardPage() {
           sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
 
         const withDeadlines = projects
-          .filter((p: any) => p.deadlineDate && new Date(p.deadlineDate).getTime() > Date.now())
+          .filter((p: any) => !isCancelled(p) && p.deadlineDate && new Date(p.deadlineDate).getTime() > Date.now())
           .sort((a: any, b: any) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
           .slice(0, 4);
 

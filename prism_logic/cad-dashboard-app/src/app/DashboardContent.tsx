@@ -444,17 +444,44 @@ export default function DashboardContent({
   }, []);
 
 
+  const getSource = (p: any): 'Direct' | 'Fiverr' | 'Other' => {
+    if (p?.source) return p.source;
+    if (Array.isArray(p?.tags)) {
+      const tag = p.tags.find((t: string) => t.startsWith('SOURCE:'));
+      if (tag) return tag.replace('SOURCE:', '') as any;
+    }
+    if (p?.orderId && (p.orderId.startsWith('FO') || p.orderId.startsWith('#FO'))) return 'Fiverr';
+    return 'Direct';
+  };
+
+  const getSourceRef = (p: any): string | null => {
+    if (p?.source_ref && String(p.source_ref).trim()) return String(p.source_ref).trim();
+    if (Array.isArray(p?.tags)) {
+      const tag = p.tags.find((t: string) => t.startsWith('REF:'));
+      if (tag) return tag.replace('REF:', '').trim();
+    }
+    if (p?.orderId && (p.orderId.startsWith('FO') || p.orderId.startsWith('#FO'))) {
+      return p.orderId.replace(/^#/, '').trim();
+    }
+    return null;
+  };
+
+  const isInvoiceCancelled = (p: any): boolean => {
+    const s = (p?.status || '').toLowerCase();
+    return s === 'cancelled' || Boolean(p?.cancelled_at) || (Array.isArray(p?.tags) && p.tags.includes('STATUS:CANCELLED'));
+  };
+
   const getInvoiceNumber = (p: any): string => {
-    if (p?.invoiceNo && String(p.invoiceNo).trim()) return String(p.invoiceNo).trim();
-    if (p?.invoiceNumber && String(p.invoiceNumber).trim()) return String(p.invoiceNumber).trim();
     if (p?.orderId && String(p.orderId).trim() && p.orderId !== 'Pending' && p.orderId !== 'Generating...') {
       return String(p.orderId).trim();
     }
+    if (p?.invoiceNo && String(p.invoiceNo).trim()) return String(p.invoiceNo).trim();
+    if (p?.invoiceNumber && String(p.invoiceNumber).trim()) return String(p.invoiceNumber).trim();
     if (p?.id) {
       const idStr = String(p.id).trim();
-      return `M${idStr.slice(0, 5).padStart(5, '0')}`;
+      return `MC/26-27/${idStr.slice(-4).padStart(4, '0')}`;
     }
-    return 'M10001';
+    return 'MC/26-27/0001';
   };
 
   const handleCardClick = (metric: string) => {
@@ -477,6 +504,7 @@ export default function DashboardContent({
     
     if (selectedMetric === 'Pending') {
       return (allProjects || []).filter((p: any) => {
+        if (isInvoiceCancelled(p)) return false;
         const s = p.status?.toLowerCase() || '';
         return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
       });
@@ -484,6 +512,7 @@ export default function DashboardContent({
     
     if (selectedMetric === 'Payouts Due') {
       return (allProjects || []).filter((p: any) => {
+        if (isInvoiceCancelled(p)) return false;
         const s = p.status?.toLowerCase() || '';
         const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
         const isPaid = p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
@@ -504,9 +533,13 @@ export default function DashboardContent({
       const client = (p.client || '').toLowerCase();
       const designer = (p.designer || '').toLowerCase();
       const orderId = (p.orderId || '').toLowerCase();
+      const sRef = (getSourceRef(p) || '').toLowerCase();
+      const src = getSource(p).toLowerCase();
       const id = String(p.id || '').toLowerCase();
       return (
         inv.includes(q) ||
+        sRef.includes(q) ||
+        src.includes(q) ||
         title.includes(q) ||
         client.includes(q) ||
         designer.includes(q) ||
@@ -982,16 +1015,28 @@ export default function DashboardContent({
                     {modalSearchQuery.trim() && ` (filtered from ${getProjectsForMetric().length})`}
                   </p>
                 </div>
-                <button 
-                  onClick={() => {
-                    setIsProjectsModalOpen(false);
-                    setModalSearchQuery('');
-                  }} 
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all active:scale-95 flex-shrink-0"
-                  aria-label="Close modal"
-                >
-                  <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
-                </button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {selectedMetric === 'Total Revenue' && (
+                    <Link
+                      href="/gst-table-13"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 border border-[#F59E0B]/30 text-[#F59E0B] text-[11px] sm:text-xs font-bold transition-all shadow-sm active:scale-95"
+                      title="Open GST Table 13 Outward Supplies Portal"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">account_balance</span>
+                      <span className="hidden xs:inline">GST Table 13</span>
+                    </Link>
+                  )}
+                  <button 
+                    onClick={() => {
+                      setIsProjectsModalOpen(false);
+                      setModalSearchQuery('');
+                    }} 
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-all active:scale-95 flex-shrink-0"
+                    aria-label="Close modal"
+                  >
+                    <span className="material-symbols-outlined text-lg sm:text-xl">close</span>
+                  </button>
+                </div>
               </div>
 
               {/* Responsive Search / Filter Input */}
@@ -1004,7 +1049,7 @@ export default function DashboardContent({
                     type="text"
                     value={modalSearchQuery}
                     onChange={(e) => setModalSearchQuery(e.target.value)}
-                    placeholder="Search by invoice #, client, project..."
+                    placeholder="Search by MC invoice #, Ref (FO...), client, project..."
                     className="w-full bg-zinc-900/90 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs sm:text-sm text-on-surface placeholder:text-on-surface-variant/40 focus:outline-none focus:border-[#F59E0B]/50 transition-all font-medium"
                   />
                   {modalSearchQuery && (
@@ -1051,6 +1096,37 @@ export default function DashboardContent({
                               <span className="text-white group-hover:text-[#F59E0B] transition-colors">{invoiceNo}</span>
                             </div>
 
+                            {/* Source Badge (Direct / Fiverr / Other) */}
+                            {getSource(p) === 'Fiverr' ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#1dbf73]/15 border border-[#1dbf73]/30 text-[#1dbf73] font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#1dbf73]" />
+                                Fiverr
+                              </span>
+                            ) : getSource(p) === 'Other' ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-stone-300 font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
+                                Other
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-stone-300 font-bold text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
+                                Direct
+                              </span>
+                            )}
+
+                            {/* Cancelled Badge */}
+                            {isInvoiceCancelled(p) && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-red-500/20 border border-red-500/40 text-red-400 font-black text-[8.5px] sm:text-[9.5px] uppercase tracking-wider shrink-0 shadow-sm">
+                                <span className="material-symbols-outlined text-[11px]">cancel</span>
+                                Cancelled
+                              </span>
+                            )}
+
+                            {/* Source Ref (e.g. Ref: FO8234038CF82) */}
+                            {getSourceRef(p) && (
+                              <span className="text-[9px] sm:text-[10px] font-mono text-zinc-400 bg-white/5 px-2 py-0.5 rounded border border-white/5 tracking-wider truncate max-w-[140px] shrink-0" title={`Reference: ${getSourceRef(p)}`}>
+                                Ref: {getSourceRef(p)}
+                              </span>
+                            )}
+
                             {/* Copy Invoice Number Button */}
                             <button
                               type="button"
@@ -1085,11 +1161,31 @@ export default function DashboardContent({
                               <span className="hidden xs:inline">Invoice</span>
                             </button>
 
-                            {/* Order Reference if exists and different */}
-                            {p.orderId && p.orderId !== invoiceNo && (
-                              <span className="text-[9px] sm:text-[10px] font-mono text-on-surface-variant/50 tracking-wider hidden sm:inline truncate">
-                                Order: #{p.orderId}
-                              </span>
+                            {/* Cancel Invoice Action */}
+                            {!isInvoiceCancelled(p) && (
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  const reason = prompt(`Enter cancellation reason for Invoice ${invoiceNo}:`, 'Cancelled by client request');
+                                  if (reason !== null && reason.trim()) {
+                                    const { cancelInvoice } = await import('./actions');
+                                    const res = await cancelInvoice(p.id, reason.trim());
+                                    if (res.success) {
+                                      alert(`Invoice ${invoiceNo} cancelled.`);
+                                      window.location.reload();
+                                    } else {
+                                      alert(res.error || 'Failed to cancel invoice.');
+                                    }
+                                  }
+                                }}
+                                title="Cancel Invoice"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all text-[9px] font-bold active:scale-95 shrink-0"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">block</span>
+                                <span className="hidden xs:inline">Cancel</span>
+                              </button>
                             )}
                           </div>
 

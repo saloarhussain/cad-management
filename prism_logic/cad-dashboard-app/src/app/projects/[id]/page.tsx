@@ -262,15 +262,20 @@ export default function ProjectDetailsPage() {
     };
     if (isAuthenticated) fetchData();
   }, [params.id, isAuthenticated, isDesigner]);
-  const handleDelete = async () => {
-    if (confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      const { deleteProject } = await import('@/app/actions');
-      const result = await deleteProject(params.id as string);
-      if (result.success) {
-        router.push('/projects');
-      } else {
-        alert('Failed to delete project');
-      }
+  const handleCancelInvoice = async () => {
+    const reason = prompt('Please enter the cancellation reason for this invoice (GST statutory requirement):', 'Cancelled by client request');
+    if (reason === null) return;
+    if (!reason.trim()) {
+      alert('Cancellation reason is required.');
+      return;
+    }
+    const { cancelInvoice } = await import('@/app/actions');
+    const result = await cancelInvoice(params.id as string, reason.trim());
+    if (result.success) {
+      alert('Invoice cancelled successfully.');
+      window.location.reload();
+    } else {
+      alert(result.error || 'Failed to cancel invoice');
     }
   };
   const handleSendInvoice = async () => {
@@ -568,13 +573,24 @@ export default function ProjectDetailsPage() {
 
           {!isDesigner && (
             <div className="flex items-center gap-1 sm:gap-1.5">
-              <Link href={`/projects/${params.id}/edit`} className="p-1.5 sm:p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:text-[#fce003] transition-all active:scale-95">
+              <Link href={`/projects/${params.id}/edit`} className="p-1.5 sm:p-2 rounded-lg bg-white/5 border border-white/10 text-white hover:text-[#fce003] transition-all active:scale-95" title="Edit Project">
                 <span className="material-symbols-outlined text-xs sm:text-sm">edit</span>
               </Link>
 
-              <button onClick={handleDelete} className="p-1.5 sm:p-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 hover:bg-red-500/20 transition-all active:scale-95">
-                <span className="material-symbols-outlined text-xs sm:text-sm">delete</span>
-              </button>
+              {project?.status?.toLowerCase() === 'cancelled' ? (
+                <span className="px-2.5 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-black uppercase tracking-wider">
+                  Cancelled
+                </span>
+              ) : (
+                <button 
+                  onClick={handleCancelInvoice} 
+                  title="Cancel Invoice (Statutory GST Cancellation)" 
+                  className="px-2.5 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all active:scale-95 text-xs font-bold flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-xs sm:text-sm">block</span>
+                  <span className="hidden sm:inline">Cancel Invoice</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -784,13 +800,21 @@ export default function ProjectDetailsPage() {
                       {/* Metric 1: Status & Order ID */}
                       <div className="bg-surface-container rounded-2xl p-4 border border-white/5 shadow-md flex flex-col justify-between relative overflow-hidden group hover:border-yellow-400/20 transition-all">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Order & Status</span>
-                          <span className={`w-2 h-2 rounded-full ${project.status === 'Completed' ? 'bg-success' : 'bg-[#fce003] animate-pulse'}`}></span>
+                          <span className="text-[9px] font-bold text-outline uppercase tracking-widest">Invoice & Status</span>
+                          <span className={`w-2 h-2 rounded-full ${project.status?.toLowerCase() === 'cancelled' ? 'bg-red-500' : project.status === 'Completed' ? 'bg-success' : 'bg-[#fce003] animate-pulse'}`}></span>
                         </div>
                         <p className="text-xs font-mono font-bold text-primary truncate">{project.orderId || 'N/A'}</p>
+                        {(project.source_ref || (Array.isArray(project.tags) && project.tags.find((t: string) => t.startsWith('REF:')))) && (
+                          <p className="text-[10px] font-mono text-neutral-400 truncate mt-0.5">
+                            Ref: {project.source_ref || project.tags.find((t: string) => t.startsWith('REF:')).replace('REF:', '')}
+                          </p>
+                        )}
                         <div className="mt-1 flex items-center gap-1.5">
-                          <span className={`text-[10px] font-black uppercase tracking-wider ${project.status === 'Completed' ? 'text-success' : 'text-[#fce003]'}`}>
-                            {project.status || 'Active'}
+                          <span className={`text-[10px] font-black uppercase tracking-wider ${
+                            project.status?.toLowerCase() === 'cancelled' ? 'text-red-400' :
+                            project.status === 'Completed' ? 'text-success' : 'text-[#fce003]'
+                          }`}>
+                            {project.status?.toLowerCase() === 'cancelled' ? 'Cancelled' : (project.status || 'Active')}
                           </span>
                         </div>
                       </div>

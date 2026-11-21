@@ -8,6 +8,7 @@ import { sendEmail, invoiceTemplate, composeTemplate, projectAssignmentTemplate,
 import { createClient } from '@/lib/supabaseServer';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/lib/payment';
 import { getSignedUrl } from '@/lib/storage';
+import { getNextGstInvoiceNumber, getIndianFinancialYear, parseGstInvoiceNumber } from '@/lib/invoiceSeries';
 
 /**
  * Helper to get the current authenticated user in a server action.
@@ -469,49 +470,60 @@ export async function deleteDesigner(id: string) {
 }
 
 async function getNextOrderId(userId: string, supabase: any, orderDate?: any): Promise<string> {
-  const projectDate = orderDate ? new Date(orderDate) : new Date();
-  const year = projectDate.getFullYear();
-  const month = projectDate.getMonth();
-  let fyStart = year;
-  let fyEnd = year + 1;
-  if (month < 3) {
-    fyStart = year - 1;
-    fyEnd = year;
-  }
-  const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
-
-  const { data: latestProjects } = await supabase
-    .from('projects')
-    .select('orderId')
-    .eq('user_id', userId)
-    .ilike('orderId', `MC/${fyString}/%`)
-    .order('orderId', { ascending: false })
-    .limit(1);
-
-  let maxSerial = 0;
-  if (latestProjects && latestProjects.length > 0 && latestProjects[0].orderId) {
-    const match = latestProjects[0].orderId.match(new RegExp(`MC\\/${fyString}\\/(\\d+)`, 'i'));
-    if (match) {
-      maxSerial = parseInt(match[1], 10) || 0;
-    }
-  }
-  const serialNo = (maxSerial + 1).toString().padStart(4, '0');
-  return `MC/${fyString}/${serialNo}`;
+  return await getNextGstInvoiceNumber(supabase, orderDate);
 }
 
 export async function saveProject(formData: FormData) {
   try {
     const { user, supabase } = await getAuthenticatedUser();
     
-    let orderId = formData.get('orderId') as string;
-    if (!orderId) {
-      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
+    // Determine source: Direct | Fiverr | Other (default to Direct)
+    const rawSource = (formData.get('source') as string) || 'Direct';
+    const source: 'Direct' | 'Fiverr' | 'Other' = 
+      rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Other' ? 'Other' : 'Direct';
+
+    // Source reference (e.g. Fiverr order ID: FO8234038CF82)
+    let source_ref = ((formData.get('source_ref') as string) || '').trim();
+
+    // If client submitted an old orderId field starting with FO, capture it as source_ref
+    const rawOrderIdInput = ((formData.get('orderId') as string) || '').trim();
+    if (!source_ref && (rawOrderIdInput.startsWith('FO') || rawOrderIdInput.startsWith('#FO'))) {
+      source_ref = rawOrderIdInput.replace(/^#/, '');
     }
+
+    // Validation: When source = Fiverr, source_ref is strictly required
+    if (source === 'Fiverr' && !source_ref) {
+      return { success: false, error: 'Fiverr order reference ID is required when source is Fiverr.' };
+    }
+
+    // The invoice number in Cadonce MUST always belong to the continuous GST MC series
+    const orderId = await getNextGstInvoiceNumber(supabase, formData.get('orderDate'));
+
+    const parsedTags = (() => {
+      const val = formData.get('tags');
+      let baseTags: string[] = [];
+      if (val) {
+        try {
+          baseTags = JSON.parse(val as string);
+        } catch {
+          baseTags = (val as string).split(',').map(s => s.trim()).filter(Boolean);
+        }
+      }
+      // Ensure source and source_ref are safely tracked in tags for backwards compatibility
+      baseTags = baseTags.filter(t => !t.startsWith('SOURCE:') && !t.startsWith('REF:'));
+      baseTags.push(`SOURCE:${source}`);
+      if (source_ref) {
+        baseTags.push(`REF:${source_ref}`);
+      }
+      return baseTags;
+    })();
 
     const newProject = {
       id: Date.now().toString(),
       title: formData.get('title'),
       orderId,
+      source,
+      source_ref: source_ref || null,
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
@@ -536,15 +548,7 @@ export async function saveProject(formData: FormData) {
       useEscrow: formData.get('useEscrow') === 'on',
       status: 'High Priority',
       createdAt: new Date().toISOString(),
-      tags: (() => {
-        const val = formData.get('tags');
-        if (!val) return [];
-        try {
-          return JSON.parse(val as string);
-        } catch {
-          return (val as string).split(',').map(s => s.trim()).filter(Boolean);
-        }
-      })()
+      tags: parsedTags
     };
 
     await insertRecord('projects', newProject, user.id, supabase);
@@ -670,6 +674,66 @@ export async function submitProjectRequest(data: {
   }
 }
 
+export async function cancelInvoice(projectId: string, reason: string) {
+  try {
+    const { user } = await getAuthenticatedUser();
+    const { createAdminClient } = await import('@/lib/supabaseServer');
+    const adminSupabase = await createAdminClient();
+
+    // 1. Verify project exists and ownership
+    const { data: project, error: fetchError } = await adminSupabase
+      .from('projects')
+      .select('id, user_id, orderId, tags, status')
+      .eq('id', projectId)
+      .single();
+
+    if (fetchError || !project) throw new Error('Invoice / project not found');
+    if (project.user_id !== user.id) throw new Error('Unauthorized: You do not own this project.');
+
+    const nowIso = new Date().toISOString();
+    const cleanReason = (reason || 'Invoice cancelled by user').trim();
+
+    const existingTags = Array.isArray(project.tags) ? project.tags : [];
+    const updatedTags = [
+      ...existingTags.filter((t: string) => !t.startsWith('STATUS:') && !t.startsWith('CANCEL_REASON:')),
+      'STATUS:CANCELLED',
+      `CANCEL_REASON:${cleanReason}`
+    ];
+
+    // 2. Perform cancellation update
+    const { error: updateError } = await adminSupabase
+      .from('projects')
+      .update({
+        status: 'cancelled',
+        cancelled_at: nowIso,
+        cancellation_reason: cleanReason,
+        tags: updatedTags
+      })
+      .eq('id', projectId);
+
+    if (updateError) {
+      // Fallback if specific columns not yet created via SQL migration
+      const fallback = {
+        status: 'cancelled',
+        tags: updatedTags
+      };
+      const { error: fallbackError } = await adminSupabase
+        .from('projects')
+        .update(fallback)
+        .eq('id', projectId);
+      if (fallbackError) throw fallbackError;
+    }
+
+    revalidatePath('/');
+    revalidatePath('/projects');
+    revalidatePath(`/projects/${projectId}`);
+    return { success: true, message: 'Invoice cancelled successfully.' };
+  } catch (err: any) {
+    console.error('[cancelInvoice] Error:', err.message);
+    return { success: false, error: err.message || 'Failed to cancel invoice.' };
+  }
+}
+
 export async function deleteProject(projectId: string) {
   try {
     const { user } = await getAuthenticatedUser();
@@ -679,12 +743,20 @@ export async function deleteProject(projectId: string) {
     // 1. Verify Ownership before deep delete
     const { data: project, error: fetchError } = await adminSupabase
       .from('projects')
-      .select('user_id')
+      .select('user_id, orderId')
       .eq('id', projectId)
       .single();
 
     if (fetchError || !project) throw new Error('Project not found');
     if (project.user_id !== user.id) throw new Error('Unauthorized: You do not own this project.');
+
+    // Statutory GST compliance check: invoices in a continuous GST sequence must never be hard-deleted
+    if (project.orderId && project.orderId.startsWith('MC/')) {
+      return {
+        success: false,
+        error: 'Statutory GST rule: Continuous invoice numbers cannot be deleted. Please cancel this invoice instead so the number is preserved in the audit trail.'
+      };
+    }
 
     console.log(`[deleteProject] Deep Cleaning Project: ${projectId}`);
 
@@ -761,14 +833,23 @@ export async function updateProjectAction(formData: FormData) {
     const { user, supabase } = await getAuthenticatedUser();
     const projectId = formData.get('id') as string;
 
-    let orderId = formData.get('orderId') as string;
-    if (!orderId) {
-      orderId = await getNextOrderId(user.id, supabase, formData.get('orderDate'));
+    const { data: existingProj } = await supabase.from('projects').select('orderId, source, source_ref, tags').eq('id', projectId).maybeSingle();
+    let orderId = existingProj?.orderId || (formData.get('orderId') as string);
+    if (!orderId || !orderId.startsWith('MC/')) {
+      orderId = await getNextGstInvoiceNumber(supabase, formData.get('orderDate'));
     }
+
+    const rawSource = (formData.get('source') as string) || existingProj?.source || 'Direct';
+    const source = rawSource === 'Fiverr' ? 'Fiverr' : rawSource === 'Other' ? 'Other' : 'Direct';
+    const rawSourceRef = formData.get('source_ref') !== null 
+      ? (formData.get('source_ref') as string).trim() 
+      : (existingProj?.source_ref || '');
 
     const updatedData: any = {
       title: formData.get('title'),
       orderId,
+      source,
+      source_ref: rawSourceRef || null,
       client: formData.get('client'),
       designer: formData.get('designer'),
       revenue: formData.get('revenue'),
