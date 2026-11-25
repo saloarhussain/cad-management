@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { getDb } from '@/app/actions';
 import { useAuth } from '@/components/AuthProvider';
 import { useSidebar } from '@/components/SidebarContext';
-import { PLATFORM_CONFIG, GLOBAL_CURRENCIES, getCurrencySymbol } from '@/lib/config';
+import { PLATFORM_CONFIG, GLOBAL_CURRENCIES, getCurrencySymbol, parseNumericAmount, getEffectiveExpense, resolveCurrencyCode } from '@/lib/config';
 import { ProjectChat } from '@/components/ProjectChat';
 import { CloudinaryUpload } from '@/components/CloudinaryUpload';
 import dynamic from 'next/dynamic';
@@ -142,7 +142,7 @@ export default function ProjectDetailsPage() {
   const [cadFileError, setCadFileError] = useState<string | null>(null);
 
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [completionForm, setCompletionForm] = useState({ clientPaid: 'PAID', designerPaid: 'PAID' });
+  const [completionForm, setCompletionForm] = useState({ clientPaid: 'PAID', designerPaid: 'PAID', designerAmount: '' });
   const [isCompleting, setIsCompleting] = useState(false);
 
   useEffect(() => {
@@ -1374,7 +1374,7 @@ export default function ProjectDetailsPage() {
                     <div className="flex justify-between items-center mb-1">
                       <p className="text-[9px] text-on-surface-variant uppercase font-black tracking-widest">Net Profit Margin (USD)</p>
                       <div className="flex flex-col items-end">
-                         <p className="text-[8px] text-outline uppercase font-black">Designer Cost: <span className="text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense}</span></p>
+                         <p className="text-[8px] text-outline uppercase font-black">Designer Cost: <span className="text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{getEffectiveExpense(project).toLocaleString()}</span></p>
                          <div className="flex items-center gap-1 mt-0.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
                             <span className="text-[7px] text-neutral-500 font-bold uppercase tracking-widest">Live Rate: 1$ = ₹{exchangeRate.toFixed(2)}</span>
@@ -1385,13 +1385,13 @@ export default function ProjectDetailsPage() {
                       <p className="text-3xl font-headline font-black text-white tracking-tighter">
                         ${(() => {
                           const rev = parseFloat(project.revenue || '0');
-                          const exp = parseFloat(project.expense || '0');
+                          const exp = getEffectiveExpense(project);
                           
-                          const revCurrencyCode = project.revenueCurrency && project.revenueCurrency.length === 3 ? project.revenueCurrency.toUpperCase() : (GLOBAL_CURRENCIES.find(c => c.symbol === (project.revenueCurrency || '$'))?.code || 'USD');
-                          const expCurrencyCode = project.expenseCurrency && project.expenseCurrency.length === 3 ? project.expenseCurrency.toUpperCase() : (GLOBAL_CURRENCIES.find(c => c.symbol === (project.expenseCurrency || '$'))?.code || 'USD');
+                          const revCurrencyCode = resolveCurrencyCode(project.revenueCurrency, 'USD');
+                          const expCurrencyCode = resolveCurrencyCode(project.expenseCurrency, 'INR');
                           
                           const rateRevToUSD = allRates[revCurrencyCode] || 1;
-                          const rateExpToUSD = allRates[expCurrencyCode] || 1;
+                          const rateExpToUSD = allRates[expCurrencyCode] || (expCurrencyCode === 'INR' ? 83.5 : 1);
                           
                           const revUSD = rev / rateRevToUSD;
                           const expUSD = exp / rateExpToUSD;
@@ -1401,7 +1401,7 @@ export default function ProjectDetailsPage() {
                       </p>
                       {project.revenueCurrency !== project.expenseCurrency && (
                         <span className="text-[8px] font-bold text-neutral-500 uppercase tracking-widest">
-                          (Calculated from {getCurrencySymbol(project.revenueCurrency || 'USD')}{project.revenue} - {getCurrencySymbol(project.expenseCurrency || 'INR')}{project.expense})
+                          (Calculated from {getCurrencySymbol(project.revenueCurrency || 'USD')}{project.revenue} - {getCurrencySymbol(project.expenseCurrency || 'INR')}{getEffectiveExpense(project)})
                         </span>
                       )}
                     </div>
@@ -1466,7 +1466,7 @@ export default function ProjectDetailsPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tight text-neutral-400">
                       <span>Project Expense (Escrow Target)</span>
-                      <span className="text-white">{project.expenseCurrency || '₹'}{parseFloat(project.expense || '0').toLocaleString()}</span>
+                      <span className="text-white">{getCurrencySymbol(project.expenseCurrency || 'INR')}{getEffectiveExpense(project).toLocaleString()}</span>
                     </div>
                     {(escrow || project.paymentStatus === 'Escrow Secured') && (
                       <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-tight text-green-400/80">
@@ -2438,9 +2438,12 @@ export default function ProjectDetailsPage() {
                         const newDescription = (project.description || '') + manualPaymentBlock;
                         
                         const { updateProject } = await import('@/app/actions');
+                        const parsedPaid = parseNumericAmount(manualPaymentForm.amountPaid);
+                        const currentExp = parseNumericAmount(project.expense);
                         const res = await updateProject(project.id, { 
                           description: newDescription,
-                          payoutStatus: 'PAID'
+                          payoutStatus: 'PAID',
+                          ...(currentExp <= 0 && parsedPaid > 0 ? { expense: parsedPaid.toString() } : {})
                         });
                         
                         if (res.success) {
@@ -2501,6 +2504,23 @@ export default function ProjectDetailsPage() {
                     <option value="PENDING">No, Pending</option>
                   </select>
                 </div>
+
+                {completionForm.designerPaid === 'PAID' && parseNumericAmount(project.expense) <= 0 && (
+                  <div>
+                    <label className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 block">
+                      3. Amount Paid to Designer ({getCurrencySymbol(project.expenseCurrency || 'INR')})
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={completionForm.designerAmount}
+                      onChange={(e) => setCompletionForm(prev => ({ ...prev, designerAmount: e.target.value }))}
+                      placeholder={`Enter payout amount in ${project.expenseCurrency || 'INR'}`}
+                      className="w-full bg-surface-container-lowest border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#fce003] transition-all"
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3 pt-4 border-t border-white/5">
@@ -2517,12 +2537,17 @@ export default function ProjectDetailsPage() {
                     try {
                       // Import actions dynamically
                       const { updateProject } = await import('@/app/actions');
+                      const parsedDesignerAmt = parseNumericAmount(completionForm.designerAmount);
+                      const currentExp = parseNumericAmount(project.expense);
                       
                       // Update the payment status, payout status, and the overall status at once
                       const res = await updateProject(project.id, {
                         paymentStatus: completionForm.clientPaid,
                         payoutStatus: completionForm.designerPaid,
-                        status: 'Completed'
+                        status: 'Completed',
+                        ...(completionForm.designerPaid === 'PAID' && currentExp <= 0 && parsedDesignerAmt > 0
+                          ? { expense: parsedDesignerAmt.toString() }
+                          : {})
                       });
                       
                       if (res.success) {

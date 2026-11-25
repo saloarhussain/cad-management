@@ -5,6 +5,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { getDb } from '@/app/actions';
 import Avatar from '@/components/Avatar';
 import { CountrySearch } from '@/components/CountrySearch';
+import {
+  getCurrencySymbol,
+  resolveCurrencyCode,
+  getEffectiveExpense,
+  isProjectCancelled,
+  isProjectPaidOut,
+} from '@/lib/config';
 
 export default function DesignerProfilePage() {
   const params = useParams();
@@ -120,12 +127,13 @@ export default function DesignerProfilePage() {
     let inrTotal = 0;
     
     projects.forEach((p: any) => {
-      const amt = parseFloat(p.expense || '0');
-      const hasManualRecord = p.description && p.description.includes('[MANUAL_PAYMENT]');
-      const isPaid = p.payoutStatus?.toLowerCase() === 'paid' || hasManualRecord;
+      if (isProjectCancelled(p)) return;
+      const amt = getEffectiveExpense(p);
+      const isPaid = isProjectPaidOut(p);
+      const expCode = resolveCurrencyCode(p.expenseCurrency, 'INR');
       
       if ((getPaid && isPaid) || (!getPaid && !isPaid)) {
-        if (p.expenseCurrency === '$') {
+        if (expCode === 'USD') {
           usdTotal += amt;
         } else {
           inrTotal += amt;
@@ -429,7 +437,7 @@ export default function DesignerProfilePage() {
                                       : (p.orderDate ? formatDate(p.orderDate) : formatDate(p.createdAt))}
                                   </div>
                                   <div className="md:col-span-3 text-sm md:text-label-md font-medium text-text-primary md:text-right flex items-center justify-end">
-                                    {p.expenseCurrency || '₹'}{parseFloat(p.expense || '0').toLocaleString()}
+                                    {getCurrencySymbol(p.expenseCurrency || 'INR')}{getEffectiveExpense(p).toLocaleString()}
                                   </div>
                                   <div className="md:col-span-3 flex items-center justify-end gap-3">
                                     <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${
@@ -492,7 +500,7 @@ export default function DesignerProfilePage() {
                                     <div className="flex flex-col">
                                       <span className="text-[9px] text-text-secondary/50 uppercase tracking-wider font-bold mb-1">Payout</span>
                                       <span className="text-text-primary font-bold truncate">
-                                        {p.expenseCurrency || '₹'}{parseFloat(p.expense || '0').toLocaleString()}
+                                        {getCurrencySymbol(p.expenseCurrency || 'INR')}{getEffectiveExpense(p).toLocaleString()}
                                       </span>
                                     </div>
                                     <div className="flex flex-col items-start">

@@ -7,6 +7,12 @@ import { useAuth } from '@/components/AuthProvider';
 import AuthGuard from '@/components/AuthGuard';
 import { getDesignerDb, sendPayoutReminder } from '@/app/actions';
 import { useSidebar } from '@/components/SidebarContext';
+import {
+  resolveCurrencyCode,
+  getEffectiveExpense,
+  isProjectCancelled,
+  isProjectPaidOut,
+} from '@/lib/config';
 
 export default function DesignerDashboard() {
   const [projects, setProjects] = useState<any[]>([]);
@@ -131,24 +137,26 @@ export default function DesignerDashboard() {
   });
 
   const unpaidProjects = projects.filter(p => {
+    if (isProjectCancelled(p)) return false;
     const isComplete = p.status === 'Approved' || p.status === 'Complete' || p.status === 'Completed';
-    const isPayoutPaid = p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
-    return isComplete && !isPayoutPaid;
+    return isComplete && !isProjectPaidOut(p);
   });
 
   // Calculate unpaid balances separated by payment type (Escrow vs Direct/Manual)
   const unpaidEscrow = unpaidProjects
     .filter(p => p.useEscrow === true)
     .reduce((sum, p) => {
-      const amt = parseFloat(p.expense || '0');
-      return sum + (p.expenseCurrency === '$' ? amt : amt / exchangeRate);
+      const amt = getEffectiveExpense(p);
+      const code = resolveCurrencyCode(p.expenseCurrency, 'INR');
+      return sum + (code === 'USD' ? amt : amt / exchangeRate);
     }, 0);
 
   const unpaidDirect = unpaidProjects
     .filter(p => p.useEscrow !== true)
     .reduce((sum, p) => {
-      const amt = parseFloat(p.expense || '0');
-      return sum + (p.expenseCurrency === '₹' ? amt : amt * exchangeRate);
+      const amt = getEffectiveExpense(p);
+      const code = resolveCurrencyCode(p.expenseCurrency, 'INR');
+      return sum + (code === 'INR' ? amt : amt * exchangeRate);
     }, 0);
 
   // --- Real-time Metrics Calculation ---

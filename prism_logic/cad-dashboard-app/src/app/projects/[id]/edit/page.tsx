@@ -319,7 +319,12 @@ export default function EditProjectPage() {
                 <input type="hidden" name="client" value={project.client} />
                 <input type="hidden" name="designer" value={project.designer} />
                 <input type="hidden" name="revenue" value={project.revenue} />
+                <input type="hidden" name="revenueCurrency" value={normalizeCurrency(project.revenueCurrency) || 'USD'} />
                 <input type="hidden" name="expense" value={project.expense} />
+                <input type="hidden" name="expenseCurrency" value={normalizeCurrency(project.expenseCurrency) || 'INR'} />
+                <input type="hidden" name="payoutStatus" value={project.payoutStatus || 'PENDING'} />
+                <input type="hidden" name="source" value={project.source || (project.orderId?.startsWith('FO') ? 'Fiverr' : 'Direct')} />
+                <input type="hidden" name="source_ref" value={project.source_ref || (project.orderId?.startsWith('FO') ? project.orderId : '')} />
                 <input type="hidden" name="orderDate" value={project.orderDate} />
                 <input type="hidden" name="deadlineDate" value={project.deadlineDate} />
                 <input type="hidden" name="brief" value={project.description || project.brief} />

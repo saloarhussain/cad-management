@@ -5,7 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { getDb, getDesignerStatus } from '@/app/actions';
 import nextDynamic from 'next/dynamic';
-import { GLOBAL_CURRENCIES } from '@/lib/config';
+import {
+  resolveCurrencyCode,
+  getEffectiveExpense,
+  isProjectCancelled,
+  isProjectCompleted,
+  isProjectPaidOut,
+  parseProjectDate,
+  getProjectDate,
+} from '@/lib/config';
 
 import HomePage from '@/components/HomePage';
 import DashboardSkeleton from '@/components/DashboardSkeleton';
@@ -112,22 +120,23 @@ export default function DashboardPage() {
         const clients = db.clients || [];
         const designers = db.designers || [];
 
-        const convert = (amount: number, fromSymbol: string) => {
-          const fromCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === fromSymbol || c.code === fromSymbol)?.code || 'USD';
-          const targetCurrency = GLOBAL_CURRENCIES.find(c => c.symbol === displayCurrency || c.code === displayCurrency)?.code || 'INR';
+        const convert = (amount: number, fromSymbol?: string, fallbackCode: string = 'USD') => {
+          if (!amount || isNaN(amount)) return 0;
+          const fromCurrency = resolveCurrencyCode(fromSymbol, fallbackCode);
+          const targetCurrency = resolveCurrencyCode(displayCurrency, 'INR');
 
           if (fromCurrency === targetCurrency) return Math.round(amount);
           
-          const rateFrom = allRates[fromCurrency] || 1;
-          const rateTarget = allRates[targetCurrency] || 1;
+          const rateFrom = allRates[fromCurrency] || (fromCurrency === 'INR' ? 83.5 : 1);
+          const rateTarget = allRates[targetCurrency] || (targetCurrency === 'INR' ? 83.5 : 1);
 
           // Convert source to USD first, then to target
           return Math.round((amount / rateFrom) * rateTarget);
         };
 
         const filtered = projects.filter((p: any) => {
-          if (!p.createdAt) return false;
-          const pDate = new Date(p.createdAt);
+          const pDate = getProjectDate(p);
+          if (!pDate) return false;
           
           if (filterMode === 'day') {
             return pDate.toDateString() === selectedDate.toDateString();
@@ -148,51 +157,47 @@ export default function DashboardPage() {
           return false;
         });
 
-        // Helper to identify cancelled invoices
-        const isCancelled = (p: any) => {
-          const s = (p.status || '').toLowerCase();
-          return s === 'cancelled' || Boolean(p.cancelled_at) || (Array.isArray(p.tags) && p.tags.includes('STATUS:CANCELLED'));
-        };
-
         // Financial stats with proper conversion (Statutory GST rule: Cancelled invoices are strictly excluded from totals)
         const totalRevenue = filtered
-          .filter((p: any) => !isCancelled(p))
+          .filter((p: any) => !isProjectCancelled(p))
           .reduce((sum: number, p: any) => 
-            sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
+            sum + convert(parseFloat(p.revenue || '0') || 0, p.revenueCurrency, 'USD'), 0);
         
         const totalExpense = filtered
-          .filter((p: any) => !isCancelled(p) && p.designer && p.designer.trim() !== '')
+          .filter((p: any) => !isProjectCancelled(p) && p.designer && p.designer.trim() !== '')
           .reduce((sum: number, p: any) => 
-            sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
+            sum + convert(getEffectiveExpense(p), p.expenseCurrency, 'INR'), 0);
         
         const pendingRevenue = projects
-          .filter((p: any) => {
-            if (isCancelled(p)) return false;
-            const s = p.status?.toLowerCase() || '';
-            return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
-          })
+          .filter((p: any) => !isProjectCancelled(p) && !isProjectCompleted(p))
           .reduce((sum: number, p: any) => 
-            sum + convert(parseFloat(p.revenue || '0'), p.revenueCurrency || '$'), 0);
+            sum + convert(parseFloat(p.revenue || '0') || 0, p.revenueCurrency, 'USD'), 0);
 
-        const activeProjectsCount = projects.filter((p: any) => {
-          if (isCancelled(p)) return false;
-          const s = p.status?.toLowerCase() || '';
-          return !s.includes('complete') && !s.includes('done');
-        }).length;
+        const activeProjectsCount = projects.filter((p: any) => 
+          !isProjectCancelled(p) && !isProjectCompleted(p)
+        ).length;
 
-        const payoutsDueProjects = projects.filter((p: any) => {
-          if (isCancelled(p)) return false;
-          const s = p.status?.toLowerCase() || '';
-          const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-          return isComplete && (!p.payoutStatus || p.payoutStatus.toLowerCase() !== 'paid');
-        });
+        const payoutsDueProjects = projects.filter((p: any) => 
+          !isProjectCancelled(p) && isProjectCompleted(p) && !isProjectPaidOut(p)
+        );
 
         const payoutsDue = payoutsDueProjects.reduce((sum: number, p: any) => 
-          sum + convert(parseFloat(p.expense || '0'), p.expenseCurrency || '₹'), 0);
+          sum + convert(getEffectiveExpense(p), p.expenseCurrency, 'INR'), 0);
 
         const withDeadlines = projects
-          .filter((p: any) => !isCancelled(p) && p.deadlineDate && new Date(p.deadlineDate).getTime() > Date.now())
-          .sort((a: any, b: any) => new Date(a.deadlineDate).getTime() - new Date(b.deadlineDate).getTime())
+          .filter((p: any) => {
+            if (isProjectCancelled(p) || isProjectCompleted(p)) return false;
+            const dl = parseProjectDate(p.deadlineDate);
+            if (!dl) return false;
+            const endOfDeadline = new Date(dl);
+            endOfDeadline.setHours(23, 59, 59, 999);
+            return endOfDeadline.getTime() >= Date.now();
+          })
+          .sort((a: any, b: any) => {
+            const da = parseProjectDate(a.deadlineDate)?.getTime() || 0;
+            const dbTime = parseProjectDate(b.deadlineDate)?.getTime() || 0;
+            return da - dbTime;
+          })
           .slice(0, 4);
 
         // Update all data synchronously together before turning loading off

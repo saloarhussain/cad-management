@@ -5,7 +5,17 @@ import { useRouter } from 'next/navigation';
 import { searchProducts, Product, Platform } from '@/lib/productSearchMock';
 import CountdownTimer from '@/components/CountdownTimer';
 import { useAuth } from '@/components/AuthProvider';
-import { PLATFORM_CONFIG, getCurrencySymbol, GLOBAL_CURRENCIES } from '@/lib/config';
+import {
+  PLATFORM_CONFIG,
+  getCurrencySymbol,
+  resolveCurrencyCode,
+  getEffectiveExpense,
+  isProjectCancelled,
+  isProjectCompleted,
+  isProjectPaidOut,
+  parseProjectDate,
+  getProjectDate,
+} from '@/lib/config';
 
 interface DashboardContentProps {
   loading?: boolean;
@@ -53,8 +63,7 @@ export default function DashboardContent({
   const isFounder = user?.email === PLATFORM_CONFIG.FOUNDER_EMAIL;
 
   const activeProjectsList = (allProjects || []).filter((p: any) => {
-    const s = p.status?.toLowerCase() || '';
-    return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
+    return !isProjectCancelled(p) && !isProjectCompleted(p);
   });
 
   const activeClientsCount = new Set(
@@ -100,29 +109,12 @@ export default function DashboardContent({
     };
   }, [isYearDropdownOpen]);
 
-  // Safely extract date from project
-  const getProjectCreationDate = (p: any): Date => {
-    if (p.createdAt) {
-      const d = new Date(p.createdAt);
-      if (!isNaN(d.getTime())) return d;
-    }
-    if (p.orderDate) {
-      const d = new Date(p.orderDate);
-      if (!isNaN(d.getTime())) return d;
-    }
-    if (p.id && !isNaN(Number(p.id)) && Number(p.id) > 1000000000000) {
-      const d = new Date(Number(p.id));
-      if (!isNaN(d.getTime())) return d;
-    }
-    return new Date();
-  };
-
   // Convert project currency to current display currency
-  const convertToDisplayCurrency = (amount: number, fromCurrencyStr?: string) => {
+  const convertToDisplayCurrency = (amount: number, fromCurrencyStr?: string, fallbackCode: string = 'USD') => {
     if (!amount || isNaN(amount)) return 0;
     const targetSymbol = stats.currency || '₹';
-    const fromCode = GLOBAL_CURRENCIES.find(c => c.symbol === fromCurrencyStr || c.code === fromCurrencyStr)?.code || (fromCurrencyStr === '₹' ? 'INR' : 'USD');
-    const targetCode = GLOBAL_CURRENCIES.find(c => c.symbol === targetSymbol || c.code === targetSymbol)?.code || (targetSymbol === '₹' ? 'INR' : 'USD');
+    const fromCode = resolveCurrencyCode(fromCurrencyStr, fallbackCode);
+    const targetCode = resolveCurrencyCode(targetSymbol, 'INR');
 
     if (fromCode === targetCode) return Math.round(amount);
     const rateFrom = (allRates && allRates[fromCode]) || (fromCode === 'INR' ? 83.5 : 1);
@@ -137,8 +129,8 @@ export default function DashboardContent({
     yearsSet.add(curYear);
     yearsSet.add(curYear - 1);
     (allProjects || []).forEach(p => {
-      const d = getProjectCreationDate(p);
-      yearsSet.add(d.getFullYear());
+      const d = getProjectDate(p);
+      if (d) yearsSet.add(d.getFullYear());
     });
     return Array.from(yearsSet).sort((a, b) => b - a);
   }, [allProjects]);
@@ -160,13 +152,14 @@ export default function DashboardContent({
     }));
 
     (allProjects || []).forEach(p => {
-      const d = getProjectCreationDate(p);
-      if (d.getFullYear() === selectedEarningsYear) {
+      if (isProjectCancelled(p)) return;
+      const d = getProjectDate(p);
+      if (d && d.getFullYear() === selectedEarningsYear) {
         const m = d.getMonth();
         if (m >= 0 && m < 12) {
           const rev = parseFloat(p.revenue || p.paidAmount || '0');
           if (!isNaN(rev) && rev > 0) {
-            months[m].value += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+            months[m].value += convertToDisplayCurrency(rev, p.revenueCurrency, 'USD');
             months[m].projectCount += 1;
           }
         }
@@ -186,11 +179,12 @@ export default function DashboardContent({
       let value = 0;
       let projectCount = 0;
       (allProjects || []).forEach(p => {
-        const d = getProjectCreationDate(p);
-        if (d.getFullYear() === yr) {
+        if (isProjectCancelled(p)) return;
+        const d = getProjectDate(p);
+        if (d && d.getFullYear() === yr) {
           const rev = parseFloat(p.revenue || p.paidAmount || '0');
           if (!isNaN(rev) && rev > 0) {
-            value += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+            value += convertToDisplayCurrency(rev, p.revenueCurrency, 'USD');
             projectCount += 1;
           }
         }
@@ -220,11 +214,12 @@ export default function DashboardContent({
     if (earningsViewMode === 'MONTHLY') {
       let prevTotal = 0;
       (allProjects || []).forEach(p => {
-        const d = getProjectCreationDate(p);
-        if (d.getFullYear() === selectedEarningsYear - 1) {
+        if (isProjectCancelled(p)) return;
+        const d = getProjectDate(p);
+        if (d && d.getFullYear() === selectedEarningsYear - 1) {
           const rev = parseFloat(p.revenue || p.paidAmount || '0');
           if (!isNaN(rev) && rev > 0) {
-            prevTotal += convertToDisplayCurrency(rev, p.revenueCurrency || '$');
+            prevTotal += convertToDisplayCurrency(rev, p.revenueCurrency, 'USD');
           }
         }
       });
@@ -466,10 +461,7 @@ export default function DashboardContent({
     return null;
   };
 
-  const isInvoiceCancelled = (p: any): boolean => {
-    const s = (p?.status || '').toLowerCase();
-    return s === 'cancelled' || Boolean(p?.cancelled_at) || (Array.isArray(p?.tags) && p.tags.includes('STATUS:CANCELLED'));
-  };
+  const isInvoiceCancelled = (p: any): boolean => isProjectCancelled(p);
 
   const getInvoiceNumber = (p: any): string => {
     if (p?.orderId && String(p.orderId).trim() && p.orderId !== 'Pending' && p.orderId !== 'Generating...') {
@@ -495,29 +487,19 @@ export default function DashboardContent({
     if (!selectedMetric) return [];
     
     if (selectedMetric === 'Total Revenue') {
-      return filteredProjects || [];
+      return (filteredProjects || []).filter((p: any) => !isProjectCancelled(p));
     }
 
     if (selectedMetric === 'Expenses') {
-      return (filteredProjects || []).filter((p: any) => p.designer && p.designer.trim() !== '');
+      return (filteredProjects || []).filter((p: any) => !isProjectCancelled(p) && p.designer && p.designer.trim() !== '');
     }
     
     if (selectedMetric === 'Pending') {
-      return (allProjects || []).filter((p: any) => {
-        if (isInvoiceCancelled(p)) return false;
-        const s = p.status?.toLowerCase() || '';
-        return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
-      });
+      return (allProjects || []).filter((p: any) => !isProjectCancelled(p) && !isProjectCompleted(p));
     }
     
     if (selectedMetric === 'Payouts Due') {
-      return (allProjects || []).filter((p: any) => {
-        if (isInvoiceCancelled(p)) return false;
-        const s = p.status?.toLowerCase() || '';
-        const isComplete = s.includes('complete') || s.includes('done') || s.includes('delivered');
-        const isPaid = p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || Boolean(p.description && p.description.includes('[MANUAL_PAYMENT]'));
-        return isComplete && !isPaid;
-      });
+      return (allProjects || []).filter((p: any) => !isProjectCancelled(p) && isProjectCompleted(p) && !isProjectPaidOut(p));
     }
     
     return [];
@@ -660,7 +642,10 @@ export default function DashboardContent({
 
   const safeISO = (date: Date) => {
     if (!date || isNaN(date.getTime())) return '';
-    return date.toISOString().split('T')[0];
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
   const handleDeleteProduct = async (product: any) => {
@@ -701,9 +686,9 @@ export default function DashboardContent({
         Designer: p.designer || 'Unassigned',
         Status: p.status,
         Revenue: `${getCurrencySymbol(p.revenueCurrency || 'USD')}${p.revenue}`,
-        Expense: `${getCurrencySymbol(p.expenseCurrency || 'INR')}${p.expense}`,
+        Expense: `${getCurrencySymbol(p.expenseCurrency || 'INR')}${getEffectiveExpense(p)}`,
         PaymentStatus: p.paymentStatus || 'Unpaid',
-        PayoutStatus: p.payoutStatus || 'Pending',
+        PayoutStatus: isProjectPaidOut(p) ? 'Paid' : (p.payoutStatus || 'Pending'),
         CreatedAt: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : 'N/A',
         Deadline: p.deadlineDate || 'N/A'
       }));
@@ -884,8 +869,8 @@ export default function DashboardContent({
                         type="date"
                         value={safeISO(selectedDate)}
                         onChange={(e) => {
-                          const newDate = new Date(e.target.value);
-                          if (!isNaN(newDate.getTime())) {
+                          const newDate = parseProjectDate(e.target.value);
+                          if (newDate) {
                             setSelectedDate(newDate);
                           }
                         }}
@@ -923,7 +908,7 @@ export default function DashboardContent({
                           }}
                           className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                         >
-                          {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                          {availableEarningsYears.map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
                       </div>
                     </div>
@@ -941,7 +926,7 @@ export default function DashboardContent({
                         }}
                         className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all"
                       >
-                        {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+                        {availableEarningsYears.map(y => <option key={y} value={y}>{y}</option>)}
                       </select>
                     </div>
                   )}
@@ -954,8 +939,8 @@ export default function DashboardContent({
                           type="date"
                           value={safeISO(startDate)}
                           onChange={(e) => {
-                            const d = new Date(e.target.value);
-                            if (!isNaN(d.getTime())) setStartDate(d);
+                            const d = parseProjectDate(e.target.value);
+                            if (d) setStartDate(d);
                           }}
                           className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
                         />
@@ -966,8 +951,8 @@ export default function DashboardContent({
                           type="date"
                           value={safeISO(endDate)}
                           onChange={(e) => {
-                            const d = new Date(e.target.value);
-                            if (!isNaN(d.getTime())) setEndDate(d);
+                            const d = parseProjectDate(e.target.value);
+                            if (d) setEndDate(d);
                           }}
                           className="w-full bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 text-sm text-on-surface focus:outline-none focus:border-[#F59E0B]/50 transition-all color-scheme-dark"
                         />
@@ -1233,15 +1218,17 @@ export default function DashboardContent({
                               {selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' 
                                 ? getCurrencySymbol(p.expenseCurrency || 'INR') 
                                 : getCurrencySymbol(p.revenueCurrency || 'USD')}
-                              {parseFloat(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due' ? (p.expense || '0') : (p.revenue || '0')).toLocaleString()}
+                              {(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due'
+                                ? getEffectiveExpense(p)
+                                : (parseFloat(p.revenue || '0') || 0)
+                              ).toLocaleString()}
                             </div>
 
                             {(selectedMetric === 'Expenses' || selectedMetric === 'Payouts Due') && (
                               <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 rounded tracking-wider shadow-sm inline-block ${
-                                (p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || (p.description && p.description.includes('[MANUAL_PAYMENT]'))) ? 'bg-emerald-500 text-white' : 
-                                'bg-zinc-700 text-white'
+                                isProjectPaidOut(p) ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-white'
                               }`}>
-                                {(p.payoutStatus?.toLowerCase() === 'paid' || p.payoutStatus?.toUpperCase() === 'PAID' || (p.description && p.description.includes('[MANUAL_PAYMENT]'))) ? 'Paid' : 'Pending'}
+                                {isProjectPaidOut(p) ? 'Paid' : 'Pending'}
                               </span>
                             )}
                           </div>
@@ -1284,10 +1271,10 @@ export default function DashboardContent({
                                   </span>
                                 ) : (
                                   <span className={`text-[8px] sm:text-[9px] font-black py-0.5 px-2 sm:px-2.5 rounded tracking-wider inline-block text-center shadow-sm ${
-                                    p.payoutStatus?.toLowerCase() === 'paid' ? 'bg-emerald-500 text-white' : 
+                                    isProjectPaidOut(p) ? 'bg-emerald-500 text-white' : 
                                     'bg-zinc-700 text-white'
                                   }`}>
-                                    {p.payoutStatus?.toLowerCase() === 'paid' ? 'Paid' : 'Pending'}
+                                    {isProjectPaidOut(p) ? 'Paid' : 'Pending'}
                                   </span>
                                 )}
                               </div>
@@ -1554,10 +1541,7 @@ export default function DashboardContent({
               {!isFiguresLoading && isPendingJobsExpanded && (
                 <div className="border-t border-white/5 bg-black/10 px-6 py-4 space-y-3 animate-in slide-in-from-top-4 duration-300 w-full">
                   {(() => {
-                    const pendingProjects = (allProjects || []).filter((p: any) => {
-                      const s = p.status?.toLowerCase() || '';
-                      return !s.includes('complete') && !s.includes('done') && !s.includes('delivered');
-                    });
+                    const pendingProjects = (allProjects || []).filter((p: any) => !isProjectCancelled(p) && !isProjectCompleted(p));
                     
                     if (pendingProjects.length === 0) {
                       return (
